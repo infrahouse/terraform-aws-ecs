@@ -24,6 +24,8 @@ install-hooks:  ## Install repo hooks
 
 .PHONY: test
 test:  ## Run tests on the module
+	rm -f test_data/test_module/.terraform.lock.hcl
+	#rm -rf test_data/test_module/.terraform
 	pytest -xvvs tests/
 
 

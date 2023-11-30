@@ -1,8 +1,7 @@
 module "service-network" {
-  source  = "infrahouse/service-network/aws"
-  version = "2.0.0"
-  # insert the 3 required variables here
-  service_name          = "jumphost-test"
+  source                = "infrahouse/service-network/aws"
+  version               = "~> 2.0"
+  service_name          = var.service_name
   vpc_cidr_block        = "10.1.0.0/16"
   management_cidr_block = "10.1.0.0/16"
   subnets = [

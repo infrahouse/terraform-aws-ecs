@@ -11,7 +11,8 @@ from tests.conftest import (
     TRACE_TERRAFORM,
     DESTROY_AFTER,
     TEST_ZONE,
-    TEST_ROLE_ARN, REGION,
+    TEST_ROLE_ARN,
+    REGION,
 )
 
 

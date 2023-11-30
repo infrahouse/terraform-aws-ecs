@@ -40,7 +40,8 @@ data "cloudinit_config" "ecs" {
                   "\n",
                   [
                     "ECS_CLUSTER=${var.service_name}",
-                    "ECS_LOGLEVEL=debug"
+                    "ECS_LOGLEVEL=debug",
+                    "ECS_ALLOW_OFFHOST_INTROSPECTION_ACCESS=true"
                   ]
                 )
               }

@@ -61,8 +61,14 @@ variable "container_port" {
   default     = 8080
 }
 
+variable "container_healthcheck_command" {
+  description = "A shell command that a container runs to check if it's healthy. Exit code 0 means healthy, non-zero - unhealthy."
+  type        = string
+  default     = "curl -f http://localhost/ || exit 1"
+}
+
 variable "container_desired_count" {
-  description = "Number of containes the ECS service will maintain."
+  description = "Number of containers the ECS service will maintain."
   type        = number
-  default     = 2
+  default     = 1
 }
