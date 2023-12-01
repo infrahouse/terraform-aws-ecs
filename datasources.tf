@@ -64,10 +64,6 @@ data "aws_iam_policy_document" "instance_policy" {
   }
 }
 
-data "aws_iam_policy" "administrator-access" {
-  name = "AdministratorAccess"
-}
-
 data "aws_iam_policy_document" "assume_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]
