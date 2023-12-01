@@ -14,15 +14,13 @@ module "test" {
   }
   load_balancer_subnets         = module.service-network.subnet_public_ids
   asg_subnets                   = module.service-network.subnet_private_ids
-  alb_healthcheck_path          = "/"
   dns_names                     = ["foo-ecs"]
   docker_image                  = "httpd"
   container_port                = 80
   service_name                  = var.service_name
   ssh_key_name                  = aws_key_pair.test.key_name
-  task_role_arn                 = var.task_role_arn
   zone_id                       = data.aws_route53_zone.cicd.zone_id
   internet_gateway_id           = module.service-network.internet_gateway_id
-  container_desired_count       = 1
+  task_desired_count            = 1
   container_healthcheck_command = "ls"
 }
