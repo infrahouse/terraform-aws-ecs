@@ -14,7 +14,7 @@ For usage see how the module is used in the using tests in `test_data/test_modul
 ```hcl
 module "test" {
   source  = "infrahouse/ecs/aws"
-  version = "~> 0.1"
+  version = "~> 0.2"
   providers = {
     aws     = aws
     aws.dns = aws
@@ -92,6 +92,7 @@ module "test" {
 | <a name="input_service_name"></a> [service\_name](#input\_service\_name) | Service name. | `string` | n/a | yes |
 | <a name="input_ssh_key_name"></a> [ssh\_key\_name](#input\_ssh\_key\_name) | ssh key name installed in ECS host instances. | `string` | n/a | yes |
 | <a name="input_task_desired_count"></a> [task\_desired\_count](#input\_task\_desired\_count) | Number of containers the ECS service will maintain. | `number` | `1` | no |
+| <a name="input_task_environment_variables"></a> [task\_environment\_variables](#input\_task\_environment\_variables) | Environment variables passed down to a task. | <pre>list(object({<br>    name : string<br>    value : string<br>  }))</pre> | `[]` | no |
 | <a name="input_task_max_count"></a> [task\_max\_count](#input\_task\_max\_count) | Highest number of tasks to run | `number` | `10` | no |
 | <a name="input_task_min_count"></a> [task\_min\_count](#input\_task\_min\_count) | Lowest number of tasks to run | `number` | `1` | no |
 | <a name="input_zone_id"></a> [zone\_id](#input\_zone\_id) | Zone where DNS records will be created for the service and certificate validation. | `string` | n/a | yes |

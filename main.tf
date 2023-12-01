@@ -59,8 +59,9 @@ resource "aws_ecs_task_definition" "ecs" {
           "timeout" : 5,
           "interval" : 30,
           "startPeriod" : null
-        },
-      },
+        }
+        environment = var.task_environment_variables
+      }
     ]
   )
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
