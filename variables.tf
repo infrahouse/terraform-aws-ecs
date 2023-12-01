@@ -80,6 +80,15 @@ variable "task_desired_count" {
   default     = 1
 }
 
+variable "task_environment_variables" {
+  description = "Environment variables passed down to a task."
+  type = list(object({
+    name : string
+    value : string
+  }))
+  default = []
+}
+
 variable "task_max_count" {
   description = "Highest number of tasks to run"
   type        = number
