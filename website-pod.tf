@@ -14,6 +14,7 @@ module "pod" {
   alb_name_prefix             = substr(var.service_name, 0, 6)
   alb_healthcheck_enabled     = true
   alb_healthcheck_port        = "traffic-port"
+  alb_healthcheck_path        = var.alb_healthcheck_path
   health_check_type           = "EC2"
   attach_tagret_group_to_asg  = false
   asg_min_size                = var.asg_min_size
