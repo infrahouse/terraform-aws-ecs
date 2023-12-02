@@ -1,3 +1,9 @@
+variable "alb_healthcheck_path" {
+  description = "Path on the webserver that the elb will check to determine whether the instance is healthy or not."
+  type        = string
+  default     = "/index.html"
+}
+
 variable "asg_min_size" {
   description = "Minimum number of instances in ASG."
   type        = number
