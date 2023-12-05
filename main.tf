@@ -83,6 +83,11 @@ resource "aws_ecs_service" "ecs" {
     container_name   = var.service_name
     container_port   = var.container_port
   }
+  capacity_provider_strategy {
+    base              = 1
+    capacity_provider = aws_ecs_capacity_provider.ecs.name
+    weight            = 100
+  }
   depends_on = [
     aws_iam_role.ecs_task_execution_role,
   ]
