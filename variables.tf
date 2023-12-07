@@ -4,6 +4,12 @@ variable "alb_healthcheck_path" {
   default     = "/index.html"
 }
 
+variable "alb_idle_timeout" {
+  description = "The time in seconds that the connection is allowed to be idle."
+  type        = number
+  default     = 60
+}
+
 variable "asg_min_size" {
   description = "Minimum number of instances in ASG."
   type        = number
