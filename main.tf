@@ -40,28 +40,31 @@ resource "aws_ecs_task_definition" "ecs" {
   family = var.service_name
   container_definitions = jsonencode(
     [
-      {
-        name      = var.service_name
-        image     = var.docker_image
-        cpu       = 200
-        memory    = 128
-        essential = true
-        portMappings = [
-          {
-            containerPort = var.container_port
+      merge(
+        {
+          name      = var.service_name
+          image     = var.docker_image
+          cpu       = 200
+          memory    = 128
+          essential = true
+          portMappings = [
+            {
+              containerPort = var.container_port
+            }
+          ]
+          healthCheck = {
+            "retries" : 3,
+            "command" : [
+              "CMD-SHELL", var.container_healthcheck_command
+            ],
+            "timeout" : 5,
+            "interval" : 30,
+            "startPeriod" : null
           }
-        ]
-        healthCheck = {
-          "retries" : 3,
-          "command" : [
-            "CMD-SHELL", var.container_healthcheck_command
-          ],
-          "timeout" : 5,
-          "interval" : 30,
-          "startPeriod" : null
-        }
-        environment = var.task_environment_variables
-      }
+          environment = var.task_environment_variables
+        },
+        var.container_command != null ? { command : var.container_command } : {}
+      )
     ]
   )
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
