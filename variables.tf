@@ -33,16 +33,22 @@ variable "autoscaling_target_cpu_usage" {
   default     = 80
 }
 
-variable "container_port" {
-  description = "TCP port that a container serves client requests on."
-  type        = number
-  default     = 8080
+variable "container_command" {
+  description = "If specified, use this list of strings as a docker command."
+  type        = list(string)
+  default     = null
 }
 
 variable "container_healthcheck_command" {
   description = "A shell command that a container runs to check if it's healthy. Exit code 0 means healthy, non-zero - unhealthy."
   type        = string
   default     = "curl -f http://localhost/ || exit 1"
+}
+
+variable "container_port" {
+  description = "TCP port that a container serves client requests on."
+  type        = number
+  default     = 8080
 }
 
 variable "dns_names" {
