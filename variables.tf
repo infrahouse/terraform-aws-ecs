@@ -10,6 +10,12 @@ variable "alb_idle_timeout" {
   default     = 60
 }
 
+variable "alb_healthcheck_response_code_matcher" {
+  description = "Range of http return codes that can match"
+  type        = string
+  default     = "200-299"
+}
+
 variable "asg_min_size" {
   description = "Minimum number of instances in ASG."
   type        = number
