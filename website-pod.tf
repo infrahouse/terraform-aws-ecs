@@ -19,6 +19,7 @@ module "pod" {
   alb_healthcheck_response_code_matcher = var.alb_healthcheck_response_code_matcher
   health_check_type                     = "EC2"
   attach_tagret_group_to_asg            = false
+  instance_type                         = var.asg_instance_type
   asg_min_size                          = var.asg_min_size
   asg_max_size                          = var.asg_max_size
   subnets                               = var.load_balancer_subnets
