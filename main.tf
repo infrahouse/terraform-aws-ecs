@@ -44,8 +44,8 @@ resource "aws_ecs_task_definition" "ecs" {
         {
           name      = var.service_name
           image     = var.docker_image
-          cpu       = 200
-          memory    = 128
+          cpu       = var.container_cpu
+          memory    = var.container_memory
           essential = true
           portMappings = [
             {

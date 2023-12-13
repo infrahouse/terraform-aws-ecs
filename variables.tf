@@ -16,6 +16,11 @@ variable "alb_healthcheck_response_code_matcher" {
   default     = "200-299"
 }
 
+variable "asg_instance_type" {
+  description = "EC2 instances type"
+  type        = string
+  default     = "t3.micro"
+}
 variable "asg_min_size" {
   description = "Minimum number of instances in ASG."
   type        = number
@@ -49,6 +54,18 @@ variable "container_healthcheck_command" {
   description = "A shell command that a container runs to check if it's healthy. Exit code 0 means healthy, non-zero - unhealthy."
   type        = string
   default     = "curl -f http://localhost/ || exit 1"
+}
+
+variable "container_cpu" {
+  description = "Number of CPU units that a container is going to use."
+  type        = number
+  default     = 200
+}
+
+variable "container_memory" {
+  description = "Amount of RAM in megabytes the container is going to use."
+  type        = number
+  default     = 128
 }
 
 variable "container_port" {
