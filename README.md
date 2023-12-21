@@ -14,7 +14,7 @@ For usage see how the module is used in the using tests in `test_data/test_modul
 ```hcl
 module "test" {
   source  = "infrahouse/ecs/aws"
-  version = "~> 0.7"
+  version = "~> 0.8"
   providers = {
     aws     = aws
     aws.dns = aws
