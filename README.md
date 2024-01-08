@@ -50,7 +50,7 @@ module "test" {
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_pod"></a> [pod](#module\_pod) | infrahouse/website-pod/aws | ~> 2.4 |
+| <a name="module_pod"></a> [pod](#module\_pod) | infrahouse/website-pod/aws | ~> 2.5 |
 
 ## Resources
 
@@ -102,6 +102,7 @@ module "test" {
 | <a name="input_task_environment_variables"></a> [task\_environment\_variables](#input\_task\_environment\_variables) | Environment variables passed down to a task. | <pre>list(object({<br>    name : string<br>    value : string<br>  }))</pre> | `[]` | no |
 | <a name="input_task_max_count"></a> [task\_max\_count](#input\_task\_max\_count) | Highest number of tasks to run | `number` | `10` | no |
 | <a name="input_task_min_count"></a> [task\_min\_count](#input\_task\_min\_count) | Lowest number of tasks to run | `number` | `1` | no |
+| <a name="input_task_role_arn"></a> [task\_role\_arn](#input\_task\_role\_arn) | Task Role ARN. The role will be assumed by a container. | `string` | `null` | no |
 | <a name="input_zone_id"></a> [zone\_id](#input\_zone\_id) | Zone where DNS records will be created for the service and certificate validation. | `string` | n/a | yes |
 
 ## Outputs

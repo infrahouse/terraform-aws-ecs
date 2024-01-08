@@ -23,4 +23,5 @@ module "test" {
   internet_gateway_id           = module.service-network.internet_gateway_id
   task_desired_count            = 1
   container_healthcheck_command = "ls"
+  task_role_arn                 = aws_iam_role.task_role.arn
 }
