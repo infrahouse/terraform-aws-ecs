@@ -142,7 +142,8 @@ variable "task_min_count" {
   default     = 1
 }
 
-#variable "task_role_arn" {
-#  description = "Task Role ARN. The role will be assumed by a container."
-#  type        = string
-#}
+variable "task_role_arn" {
+  description = "Task Role ARN. The role will be assumed by a container."
+  type        = string
+  default     = null
+}
