@@ -82,3 +82,7 @@ data "aws_iam_policy" "ecs-task-execution-role-policy" {
 data "aws_region" "current" {}
 
 data "aws_caller_identity" "current" {}
+
+data "aws_subnet" "selected" {
+  id = var.asg_subnets[0]
+}
