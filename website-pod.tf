@@ -8,7 +8,7 @@ module "pod" {
     aws     = aws
     aws.dns = aws.dns
   }
-  version                               = "~> 2.6, >= 2.6.2"
+  version                               = "2.5.0"
   service_name                          = var.service_name
   environment                           = var.environment
   alb_name_prefix                       = substr(var.service_name, 0, 6)
