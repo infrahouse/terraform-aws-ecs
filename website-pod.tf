@@ -8,7 +8,7 @@ module "pod" {
     aws     = aws
     aws.dns = aws.dns
   }
-  version                               = "2.5.0"
+  version                               = "~> 2.6, >= 2.6.2"
   service_name                          = var.service_name
   environment                           = var.environment
   alb_name_prefix                       = substr(var.service_name, 0, 6)
@@ -22,8 +22,7 @@ module "pod" {
   instance_type                         = var.asg_instance_type
   asg_min_size                          = var.asg_min_size
   asg_max_size                          = var.asg_max_size
-  # Available after 2.6.0
-  # asg_scale_in_protected_instances      = "Refresh"
+  asg_scale_in_protected_instances      = "Refresh"
   subnets                               = var.load_balancer_subnets
   backend_subnets                       = var.asg_subnets
   zone_id                               = var.zone_id
@@ -37,10 +36,9 @@ module "pod" {
   internet_gateway_id                   = var.internet_gateway_id
   protect_from_scale_in                 = true # this is to allow ECS manage ASG instances
   autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
-  # Available after 2.6.0
-  # extra_security_groups_backend = [
-  #   aws_security_group.backend_extra.id
-  # ]
+  extra_security_groups_backend = [
+    aws_security_group.backend_extra.id
+  ]
   tags = {
     Name : var.service_name
     AmazonECSManaged : true
