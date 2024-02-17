@@ -17,6 +17,8 @@ module "pod" {
   alb_healthcheck_path                  = var.alb_healthcheck_path
   alb_idle_timeout                      = var.alb_idle_timeout
   alb_healthcheck_response_code_matcher = var.alb_healthcheck_response_code_matcher
+  alb_healthcheck_interval              = var.alb_healthcheck_interval
+  health_check_grace_period             = var.asg_health_check_grace_period
   health_check_type                     = "EC2"
   attach_tagret_group_to_asg            = false
   instance_type                         = var.asg_instance_type

@@ -1,3 +1,9 @@
+variable "alb_healthcheck_interval" {
+  description = "Number of seconds between checks"
+  type        = number
+  default     = 5
+}
+
 variable "alb_healthcheck_path" {
   description = "Path on the webserver that the elb will check to determine whether the instance is healthy or not."
   type        = string
@@ -21,6 +27,13 @@ variable "asg_instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+variable "asg_health_check_grace_period" {
+  description = "ASG will wait up to this number of seconds for instance to become healthy"
+  type        = number
+  default     = 300
+}
+
 variable "asg_min_size" {
   description = "Minimum number of instances in ASG."
   type        = number
