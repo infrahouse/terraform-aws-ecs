@@ -118,6 +118,12 @@ variable "service_name" {
   type        = string
 }
 
+variable "service_health_check_grace_period_seconds" {
+  description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647."
+  type        = number
+  default     = null
+}
+
 variable "ssh_key_name" {
   description = "ssh key name installed in ECS host instances."
   type        = string
