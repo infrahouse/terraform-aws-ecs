@@ -72,25 +72,28 @@ resource "aws_ecs_task_definition" "ecs" {
 }
 
 resource "aws_ecs_service" "ecs" {
-  name            = var.service_name
-  cluster         = aws_ecs_cluster.ecs.id
-  task_definition = aws_ecs_task_definition.ecs.arn
-  desired_count   = var.task_desired_count
+  name                              = var.service_name
+  cluster                           = aws_ecs_cluster.ecs.id
+  task_definition                   = aws_ecs_task_definition.ecs.arn
+  desired_count                     = var.task_desired_count
+  health_check_grace_period_seconds = var.service_health_check_grace_period_seconds
+
   lifecycle {
     ignore_changes = [desired_count]
   }
-  #    iam_role        = aws_iam_role.task_role.arn
 
   load_balancer {
     target_group_arn = module.pod.target_group_arn
     container_name   = var.service_name
     container_port   = var.container_port
   }
+
   capacity_provider_strategy {
     base              = 1
     capacity_provider = aws_ecs_capacity_provider.ecs.name
     weight            = 100
   }
+
   depends_on = [
     aws_iam_role.ecs_task_execution_role,
   ]
