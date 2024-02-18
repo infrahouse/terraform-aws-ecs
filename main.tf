@@ -96,5 +96,6 @@ resource "aws_ecs_service" "ecs" {
 
   depends_on = [
     aws_iam_role.ecs_task_execution_role,
+    module.pod
   ]
 }
