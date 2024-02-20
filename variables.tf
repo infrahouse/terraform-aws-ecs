@@ -16,6 +16,12 @@ variable "alb_idle_timeout" {
   default     = 60
 }
 
+variable "alb_internal" {
+  description = "If true, the LB will be internal."
+  type        = bool
+  default     = false
+}
+
 variable "alb_healthcheck_response_code_matcher" {
   description = "Range of http return codes that can match"
   type        = string
