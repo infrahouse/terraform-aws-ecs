@@ -148,10 +148,14 @@ variable "task_desired_count" {
 
 variable "task_environment_variables" {
   description = "Environment variables passed down to a task."
-  type = list(object({
-    name : string
-    value : string
-  }))
+  type = list(
+    object(
+      {
+        name : string
+        value : string
+      }
+    )
+  )
   default = []
 }
 
@@ -171,4 +175,17 @@ variable "task_role_arn" {
   description = "Task Role ARN. The role will be assumed by a container."
   type        = string
   default     = null
+}
+
+variable "task_volumes" {
+  description = "Map name->file_system_id of EFS volumes defined in task and available for containers to mount."
+  type = map(
+    object(
+      {
+        file_system_id : string
+        container_path : string
+      }
+    )
+  )
+  default = {}
 }

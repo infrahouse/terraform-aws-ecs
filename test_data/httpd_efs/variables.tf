@@ -11,3 +11,8 @@ variable "test_zone" {}
 variable "ubuntu_codename" {
   default = "jammy"
 }
+
+
+variable "subnet_public_ids" {}
+variable "subnet_private_ids" {}
+variable "internet_gateway_id" {}

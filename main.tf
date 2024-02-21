@@ -62,6 +62,12 @@ resource "aws_ecs_task_definition" "ecs" {
             "startPeriod" : null
           }
           environment = var.task_environment_variables
+          mountPoints = [
+            for name, def in var.task_volumes : {
+              sourceVolume : name
+              containerPath : def.container_path
+            }
+          ]
         },
         var.container_command != null ? { command : var.container_command } : {}
       )
@@ -69,6 +75,16 @@ resource "aws_ecs_task_definition" "ecs" {
   )
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = var.task_role_arn
+
+  dynamic "volume" {
+    for_each = var.task_volumes
+    content {
+      name = volume.key
+      efs_volume_configuration {
+        file_system_id = volume.value.file_system_id
+      }
+    }
+  }
 }
 
 resource "aws_ecs_service" "ecs" {
@@ -96,6 +112,5 @@ resource "aws_ecs_service" "ecs" {
 
   depends_on = [
     aws_iam_role.ecs_task_execution_role,
-    module.pod
   ]
 }
