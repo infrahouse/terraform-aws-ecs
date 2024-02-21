@@ -109,6 +109,16 @@ variable "environment" {
   default     = "development"
 }
 
+variable "extra_files" {
+  description = "Additional files to create on a host EC2 instance."
+  type = list(object({
+    content     = string
+    path        = string
+    permissions = string
+  }))
+  default = []
+}
+
 variable "internet_gateway_id" {
   description = "Internet gateway id. Usually created by 'infrahouse/service-network/aws'"
   type        = string
