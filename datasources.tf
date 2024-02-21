@@ -32,20 +32,23 @@ data "cloudinit_config" "ecs" {
         "#cloud-config",
         yamlencode(
           {
-            write_files : [
-              {
-                path : "/etc/ecs/ecs.config"
-                permissions : "0644"
-                content : join(
-                  "\n",
-                  [
-                    "ECS_CLUSTER=${var.service_name}",
-                    "ECS_LOGLEVEL=debug",
-                    "ECS_ALLOW_OFFHOST_INTROSPECTION_ACCESS=true"
-                  ]
-                )
-              }
-            ]
+            write_files : concat(
+              [
+                {
+                  path : "/etc/ecs/ecs.config"
+                  permissions : "0644"
+                  content : join(
+                    "\n",
+                    [
+                      "ECS_CLUSTER=${var.service_name}",
+                      "ECS_LOGLEVEL=debug",
+                      "ECS_ALLOW_OFFHOST_INTROSPECTION_ACCESS=true"
+                    ]
+                  )
+                }
+              ],
+              var.extra_files
+            )
           }
         )
       ]
