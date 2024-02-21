@@ -46,7 +46,4 @@ module "pod" {
     Name : var.service_name
     AmazonECSManaged : true
   }
-  depends_on = [
-    aws_ecs_cluster.ecs
-  ]
 }
