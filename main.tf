@@ -63,7 +63,7 @@ resource "aws_ecs_task_definition" "ecs" {
           }
           environment = var.task_environment_variables
           mountPoints = [
-            for name, def in var.task_volumes : {
+            for name, def in merge(var.task_efs_volumes, var.task_local_volumes) : {
               sourceVolume : name
               containerPath : def.container_path
             }
@@ -77,12 +77,19 @@ resource "aws_ecs_task_definition" "ecs" {
   task_role_arn      = var.task_role_arn
 
   dynamic "volume" {
-    for_each = var.task_volumes
+    for_each = var.task_efs_volumes
     content {
       name = volume.key
       efs_volume_configuration {
         file_system_id = volume.value.file_system_id
       }
+    }
+  }
+  dynamic "volume" {
+    for_each = var.task_local_volumes
+    content {
+      name      = volume.key
+      host_path = volume.value.host_path
     }
   }
 }

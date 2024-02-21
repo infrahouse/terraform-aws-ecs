@@ -187,12 +187,25 @@ variable "task_role_arn" {
   default     = null
 }
 
-variable "task_volumes" {
-  description = "Map name->file_system_id of EFS volumes defined in task and available for containers to mount."
+variable "task_efs_volumes" {
+  description = "Map name->{file_system_id, container_path} of EFS volumes defined in task and available for containers to mount."
   type = map(
     object(
       {
         file_system_id : string
+        container_path : string
+      }
+    )
+  )
+  default = {}
+}
+
+variable "task_local_volumes" {
+  description = "Map name->{host_path, container_path} of local volumes defined in task and available for containers to mount."
+  type = map(
+    object(
+      {
+        host_path : string
         container_path : string
       }
     )

@@ -30,7 +30,7 @@ module "httpd" {
   task_desired_count            = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
-  task_volumes = {
+  task_efs_volumes = {
     "volume1" : {
       file_system_id : aws_efs_file_system.volume1.id
       container_path : "/mnt/a"
@@ -39,5 +39,12 @@ module "httpd" {
       file_system_id : aws_efs_file_system.volume2.id
       container_path : "/mnt/b"
     }
+  }
+  task_local_volumes = {
+    "volume3" : {
+      host_path : "/home"
+      container_path : "/mnt/home"
+    }
+
   }
 }
