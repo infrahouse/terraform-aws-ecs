@@ -3,12 +3,11 @@ data "aws_key_pair" "ssh_key_pair" {
 }
 
 module "pod" {
-  source = "infrahouse/website-pod/aws"
+  source = "git::https://github.com/infrahouse/terraform-aws-website-pod.git?ref=2.8.1"
   providers = {
     aws     = aws
     aws.dns = aws.dns
   }
-  version                               = "~> 2.6, >= 2.6.2"
   alb_internal                          = var.alb_internal
   service_name                          = var.service_name
   environment                           = var.environment
