@@ -3,7 +3,9 @@ data "aws_key_pair" "ssh_key_pair" {
 }
 
 module "pod" {
-  source = "git::https://github.com/infrahouse/terraform-aws-website-pod.git?ref=2.8.1"
+
+  source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
+  version = "~> 2.6, >= 2.6.2"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -29,7 +31,7 @@ module "pod" {
   backend_subnets                       = var.asg_subnets
   zone_id                               = var.zone_id
   dns_a_records                         = var.dns_names
-  ami                                   = data.aws_ami.ecs.image_id
+  ami                                   = var.ami_id == null ? data.aws_ami.ecs.image_id : var.ami_id
   key_pair_name                         = data.aws_key_pair.ssh_key_pair.key_name
   target_group_port                     = var.container_port
   userdata                              = data.cloudinit_config.ecs.rendered
