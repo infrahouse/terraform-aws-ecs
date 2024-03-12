@@ -75,6 +75,7 @@ resource "aws_ecs_task_definition" "ecs" {
   )
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = var.task_role_arn
+  ipc_mode           = var.task_ipc_mode
 
   dynamic "volume" {
     for_each = var.task_efs_volumes
