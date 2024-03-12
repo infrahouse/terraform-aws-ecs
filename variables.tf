@@ -175,6 +175,12 @@ variable "task_environment_variables" {
   default = []
 }
 
+variable "task_ipc_mode" {
+  description = "The IPC resource namespace to use for the containers in the task. See https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskDefinition.html"
+  type        = string
+  default     = null
+}
+
 variable "task_max_count" {
   description = "Highest number of tasks to run"
   type        = number
