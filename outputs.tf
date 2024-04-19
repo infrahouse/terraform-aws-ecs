@@ -1,4 +1,5 @@
 output "service_arn" {
+  description = "ECS service ARN."
   value = join(
     ":",
     [
@@ -10,4 +11,14 @@ output "service_arn" {
       "service/${aws_ecs_cluster.ecs.name}/${aws_ecs_service.ecs.name}"
     ]
   )
+}
+
+output "asg_arn" {
+  description = "Autoscaling group ARN created for the ECS service."
+  value       = module.pod.asg_arn
+}
+
+output "asg_name" {
+  description = "Autoscaling group name created for the ECS service."
+  value       = module.pod.asg_name
 }
