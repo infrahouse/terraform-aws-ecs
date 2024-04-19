@@ -14,7 +14,7 @@ For usage see how the module is used in the using tests in `test_data/test_modul
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "~> 2.3"
+  version = "~> 2.9"
   providers = {
     aws     = aws
     aws.dns = aws
@@ -56,7 +56,7 @@ Pass the volumes to the ECS module:
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "~> 2.3"
+  version = "~> 2.9"
   providers = {
     aws     = aws
     aws.dns = aws
@@ -160,4 +160,6 @@ module "httpd" {
 
 | Name | Description |
 |------|-------------|
-| <a name="output_service_arn"></a> [service\_arn](#output\_service\_arn) | n/a |
+| <a name="output_asg_arn"></a> [asg\_arn](#output\_asg\_arn) | Autoscaling group ARN created for the ECS service. |
+| <a name="output_asg_name"></a> [asg\_name](#output\_asg\_name) | Autoscaling group name created for the ECS service. |
+| <a name="output_service_arn"></a> [service\_arn](#output\_service\_arn) | ECS service ARN. |
