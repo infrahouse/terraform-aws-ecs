@@ -5,7 +5,7 @@ data "aws_key_pair" "ssh_key_pair" {
 module "pod" {
 
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "~> 2.6, >= 2.6.2"
+  version = "2.9.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -14,6 +14,7 @@ module "pod" {
   service_name                          = var.service_name
   environment                           = var.environment
   alb_name_prefix                       = substr(var.service_name, 0, 6)
+  alb_access_log_enabled                = true
   alb_healthcheck_enabled               = true
   alb_healthcheck_port                  = "traffic-port"
   alb_healthcheck_path                  = var.alb_healthcheck_path
