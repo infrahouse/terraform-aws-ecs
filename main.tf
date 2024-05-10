@@ -3,7 +3,7 @@ resource "aws_ecs_capacity_provider" "ecs" {
 
   auto_scaling_group_provider {
     auto_scaling_group_arn         = module.pod.asg_arn
-    managed_termination_protection = "ENABLED"
+    managed_termination_protection = var.managed_termination_protection ? "ENABLED" : "DISABLED"
 
     managed_scaling {
       maximum_scaling_step_size = 10
