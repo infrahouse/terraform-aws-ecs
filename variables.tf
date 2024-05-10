@@ -135,8 +135,14 @@ variable "load_balancer_subnets" {
   type        = list(string)
 }
 
+variable "managed_draining" {
+  description = " Enables or disables a graceful shutdown of instances without disturbing workloads."
+  type        = bool
+  default     = true
+}
+
 variable "managed_termination_protection" {
-  description = "Enables or disables container-aware termination of instances in the auto scaling group when scale-in happens"
+  description = "Enables or disables container-aware termination of instances in the auto scaling group when scale-in happens."
   type        = bool
   default     = true
 }
