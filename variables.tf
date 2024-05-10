@@ -135,6 +135,12 @@ variable "load_balancer_subnets" {
   type        = list(string)
 }
 
+variable "managed_termination_protection" {
+  description = "Enables or disables container-aware termination of instances in the auto scaling group when scale-in happens"
+  type        = bool
+  default     = true
+}
+
 variable "service_name" {
   description = "Service name."
   type        = string
