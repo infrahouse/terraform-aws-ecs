@@ -35,6 +35,9 @@ resource "aws_ecs_cluster" "ecs" {
     name  = "containerInsights"
     value = "enabled"
   }
+  tags = {
+    autoscaling_group : module.pod.asg_name
+  }
 }
 
 resource "aws_ecs_task_definition" "ecs" {

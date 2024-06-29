@@ -3,9 +3,8 @@ data "aws_key_pair" "ssh_key_pair" {
 }
 
 module "pod" {
-
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "3.3.1"
+  version = "3.3.2"
   providers = {
     aws     = aws
     aws.dns = aws.dns
