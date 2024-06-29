@@ -1,5 +1,6 @@
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name               = "${var.service_name}TaskExecutionRole"
+  # expected length of name_prefix to be in the range (1 - 38)
+  name_prefix        = substr("${var.service_name}TaskExecutionRole", 0, 38)
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
 }
 
