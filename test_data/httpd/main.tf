@@ -28,4 +28,5 @@ module "httpd" {
   task_desired_count            = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
+  alb_access_log_force_destroy  = true
 }

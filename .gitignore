@@ -35,3 +35,4 @@ tf.plan
 /plan.stderr
 /plan.stdout
 __pycache__
+.pytest_cache

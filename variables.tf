@@ -1,3 +1,9 @@
+variable "alb_access_log_force_destroy" {
+  description = "Destroy S3 bucket with access logs even if non-empty"
+  type        = bool
+  default     = false
+}
+
 variable "alb_healthcheck_interval" {
   description = "Number of seconds between checks"
   type        = number
