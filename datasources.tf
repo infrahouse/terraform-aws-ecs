@@ -1,3 +1,10 @@
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
+data "aws_subnet" "selected" {
+  id = var.asg_subnets[0]
+}
+
 data "aws_ami" "ecs" {
   most_recent = true
 
@@ -80,12 +87,4 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
 data "aws_iam_policy" "ecs-task-execution-role-policy" {
   name = "AmazonECSTaskExecutionRolePolicy"
-}
-
-data "aws_region" "current" {}
-
-data "aws_caller_identity" "current" {}
-
-data "aws_subnet" "selected" {
-  id = var.asg_subnets[0]
 }
