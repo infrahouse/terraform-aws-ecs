@@ -35,9 +35,6 @@ resource "aws_ecs_cluster" "ecs" {
     name  = "containerInsights"
     value = "enabled"
   }
-  tags = {
-    autoscaling_group : module.pod.asg_name
-  }
 }
 
 resource "aws_ecs_task_definition" "ecs" {
@@ -125,10 +122,23 @@ resource "aws_ecs_service" "ecs" {
   depends_on = [
     aws_iam_role.ecs_task_execution_role,
     aws_iam_role_policy_attachment.ecs_task_execution_role_policy,
-    module.pod
   ]
   tags = {
+    # need these tags for implicit dependency
     execution_role_arn : aws_ecs_task_definition.ecs.execution_role_arn
     target_group_arn : module.pod.target_group_arn
+    load_balancer_arn : module.pod.load_balancer_arn
+    backend_security_group : substr(
+      base64encode(
+        jsonencode(
+          module.pod.backend_security_group
+        )
+      ), 0, 256
+    )
+    instance_role_policy_name : module.pod.instance_role_policy_name
+    instance_role_policy_attachment : module.pod.instance_role_policy_attachment
+  }
+  timeouts {
+    delete = "10m"
   }
 }

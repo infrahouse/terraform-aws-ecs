@@ -26,6 +26,8 @@ module "httpd" {
   zone_id                       = data.aws_route53_zone.cicd.zone_id
   internet_gateway_id           = var.internet_gateway_id
   task_desired_count            = 1
+  asg_max_size                  = 1
+  asg_min_size                  = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
   alb_access_log_force_destroy  = true
