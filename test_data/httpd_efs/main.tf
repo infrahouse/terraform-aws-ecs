@@ -24,7 +24,7 @@ module "httpd" {
   asg_max_size                  = 1
   asg_min_size                  = 1
   service_name                  = var.service_name
-  ssh_key_name                  = aws_key_pair.black-mbp.key_name
+  ssh_key_name                  = aws_key_pair.mediapc.key_name
   zone_id                       = data.aws_route53_zone.cicd.zone_id
   internet_gateway_id           = var.internet_gateway_id
   task_desired_count            = 1

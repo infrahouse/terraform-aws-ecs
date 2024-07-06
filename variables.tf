@@ -115,6 +115,12 @@ variable "docker_image" {
   type        = string
 }
 
+variable "ecs_loglevel" {
+  description = "Log level for ecs-agent"
+  type = string
+  default = "info"
+}
+
 variable "environment" {
   description = "Name of environment."
   type        = string
@@ -129,6 +135,19 @@ variable "extra_files" {
     permissions = string
   }))
   default = []
+}
+
+variable "extra_repos" {
+  description = "Additional APT repositories to configure on an instance."
+  type = map(
+    object(
+      {
+        source = string
+        key    = string
+      }
+    )
+  )
+  default = {}
 }
 
 variable "internet_gateway_id" {
@@ -153,6 +172,50 @@ variable "managed_termination_protection" {
   default     = true
 }
 
+variable "packages" {
+  description = "List of packages to install when the instances bootstraps."
+  type        = list(string)
+  default     = []
+}
+
+variable "puppet_custom_facts" {
+  description = "A map of custom puppet facts"
+  type        = any
+  default     = {}
+}
+
+variable "puppet_debug_logging" {
+  description = "Enable debug logging if true."
+  type        = bool
+  default     = false
+}
+
+variable "puppet_environmentpath" {
+  description = "A path for directory environments."
+  default     = "{root_directory}/environments"
+}
+
+variable "puppet_hiera_config_path" {
+  description = "Path to hiera configuration file."
+  default     = "{root_directory}/environments/{environment}/hiera.yaml"
+}
+
+variable "puppet_manifest" {
+  description = "Path to puppet manifest. By default ih-puppet will apply {root_directory}/environments/{environment}/manifests/site.pp."
+  type        = string
+  default     = null
+}
+
+variable "puppet_module_path" {
+  description = "Path to common puppet modules."
+  default     = "{root_directory}/modules"
+}
+
+variable "puppet_root_directory" {
+  description = "Path where the puppet code is hosted."
+  default     = "/opt/puppet-code"
+}
+
 variable "service_name" {
   description = "Service name."
   type        = string
@@ -164,13 +227,14 @@ variable "service_health_check_grace_period_seconds" {
   default     = null
 }
 
-variable "ssh_key_name" {
-  description = "ssh key name installed in ECS host instances."
+variable "smtp_credentials_secret" {
+  description = "AWS secret name with SMTP credentials. The secret must contain a JSON with user and password keys."
   type        = string
+  default     = null
 }
 
-variable "zone_id" {
-  description = "Zone where DNS records will be created for the service and certificate validation."
+variable "ssh_key_name" {
+  description = "ssh key name installed in ECS host instances."
   type        = string
 }
 
@@ -242,3 +306,9 @@ variable "task_local_volumes" {
   )
   default = {}
 }
+
+variable "zone_id" {
+  description = "Zone where DNS records will be created for the service and certificate validation."
+  type        = string
+}
+

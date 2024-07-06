@@ -32,10 +32,10 @@ module "pod" {
   backend_subnets                       = var.asg_subnets
   zone_id                               = var.zone_id
   dns_a_records                         = var.dns_names
-  ami                                   = var.ami_id == null ? data.aws_ami.ecs.image_id : var.ami_id
+  ami                                   = var.ami_id == null ? data.aws_ami.ubuntu_22.image_id : var.ami_id
   key_pair_name                         = data.aws_key_pair.ssh_key_pair.key_name
   target_group_port                     = var.container_port
-  userdata                              = data.cloudinit_config.ecs.rendered
+  userdata                              = module.userdata.userdata
   instance_profile_permissions          = data.aws_iam_policy_document.instance_policy.json
   internet_gateway_id                   = var.internet_gateway_id
   protect_from_scale_in                 = true # this is to allow ECS manage ASG instances

@@ -27,6 +27,27 @@ data "aws_ami" "ecs" {
 }
 
 
+data "aws_ami" "ubuntu_22" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-*"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
+}
+
 data "cloudinit_config" "ecs" {
   gzip          = false
   base64_encode = true
@@ -61,6 +82,43 @@ data "cloudinit_config" "ecs" {
       ]
     )
   }
+}
+
+module "userdata" {
+  source                   = "registry.infrahouse.com/infrahouse/cloud-init/aws"
+  version                  = "1.12.4"
+  environment              = var.environment
+  role                     = "ecsnode"
+  puppet_debug_logging     = var.puppet_debug_logging
+  puppet_environmentpath   = var.puppet_environmentpath
+  puppet_hiera_config_path = var.puppet_hiera_config_path
+  puppet_module_path       = var.puppet_module_path
+  puppet_root_directory    = var.puppet_root_directory
+  puppet_manifest          = var.puppet_manifest
+  packages = concat(
+    var.packages,
+    [
+      "awscli",
+      "nfs-common"
+    ]
+  )
+  extra_files = var.extra_files
+  extra_repos = var.extra_repos
+
+  custom_facts = merge(
+    {
+      ecs: {
+        cluster: var.service_name
+        loglevel: var.ecs_loglevel
+      }
+    },
+    var.puppet_custom_facts,
+      var.smtp_credentials_secret != null ? {
+      postfix : {
+        smtp_credentials : var.smtp_credentials_secret
+      }
+    } : {}
+  )
 }
 
 data "aws_iam_policy_document" "instance_policy" {
