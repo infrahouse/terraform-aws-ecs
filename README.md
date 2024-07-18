@@ -1,20 +1,32 @@
 # terraform-aws-ecs
-
-
 The module creates an Elastic Container Service and runs one docker image in it.
 
-The module uses 
-the [infrahouse/website-pod/aws](https://registry.terraform.io/modules/infrahouse/website-pod/aws/latest)
+![ECS.drawio.png](assets/ECS.drawio.png)
+
+A user is expected to create a VPC, subnets 
+(See the [service network](https://github.com/infrahouse/terraform-aws-service-network) module if you need to do it),
+and a Route53 zone.
+
+The module uses the [infrahouse/website-pod/aws](https://registry.terraform.io/modules/infrahouse/website-pod/aws/latest)
 module to create a load balancer, autoscaling group, and update DNS.
 
 ## Usage
+
+Basically, you need to pass the docker image and subnets where to place a load balancer 
+and autoscaling group.
+
+The module will create an SSL certificate and a DNS record. If the `dns_names` is `["www"]` 
+and the zone is "domain.com", the module will create a record "www.domain.com". 
+You can specify more than one DNS name, then the module will create DNS records for all of them 
+and the certificate will list them as aliases. You can also specify an empty name - `dns_names = ["", "www"]` - 
+if you want a popular setup https://domain.com + https://www.domain.com/.
 
 For usage see how the module is used in the using tests in `test_data/test_module`.
 
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "~> 2.9"
+  version = "~> 3.0"
   providers = {
     aws     = aws
     aws.dns = aws
@@ -28,7 +40,6 @@ module "httpd" {
   ssh_key_name                  = aws_key_pair.test.key_name
   zone_id                       = data.aws_route53_zone.cicd.zone_id
   internet_gateway_id           = module.service-network.internet_gateway_id
-  task_desired_count       = 1
 }
 ```
 
@@ -36,7 +47,7 @@ module "httpd" {
 
 The module can attach one or more EFS volumes to a container.
 
-Create the EFS volume with a mount point:
+To do that, create the EFS volume with a mount point:
 ```hcl
 resource "aws_efs_file_system" "my-volume" {
   creation_token = "my-volume"
@@ -56,7 +67,7 @@ Pass the volumes to the ECS module:
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "~> 2.9"
+  version = "~> 3.0"
   providers = {
     aws     = aws
     aws.dns = aws
@@ -74,21 +85,21 @@ module "httpd" {
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.5 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 5.11 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 5.56 |
 | <a name="requirement_cloudinit"></a> [cloudinit](#requirement\_cloudinit) | ~> 2.3 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 5.11 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 5.56 |
 | <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | ~> 2.3 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 3.3.1 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 3.3.7 |
 
 ## Resources
 
