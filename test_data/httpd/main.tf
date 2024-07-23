@@ -18,7 +18,7 @@ module "httpd" {
   }
   load_balancer_subnets         = var.subnet_public_ids
   asg_subnets                   = var.subnet_private_ids
-  dns_names                     = ["foo-ecs"]
+  dns_names                     = ["", "www"]
   docker_image                  = "httpd"
   container_port                = 80
   service_name                  = var.service_name
