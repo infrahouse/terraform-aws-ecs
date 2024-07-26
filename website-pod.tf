@@ -46,5 +46,7 @@ module "pod" {
   tags = {
     Name : var.service_name
     AmazonECSManaged : true
+    parent_module : local.module_name
+    parent_module_version : local.module_version
   }
 }
