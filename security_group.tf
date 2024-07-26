@@ -3,9 +3,12 @@ resource "aws_security_group" "backend_extra" {
   name_prefix = "${var.service_name}-"
   vpc_id      = data.aws_subnet.selected.vpc_id
 
-  tags = {
-    Name : "ECS ${var.service_name} backend"
-  }
+  tags = merge(
+    {
+      Name : "ECS ${var.service_name} backend"
+    },
+    local.tags
+  )
 }
 
 resource "aws_vpc_security_group_ingress_rule" "backend_extra_reserved" {
@@ -15,9 +18,12 @@ resource "aws_vpc_security_group_ingress_rule" "backend_extra_reserved" {
   to_port           = 2376
   ip_protocol       = "tcp"
   cidr_ipv4         = "0.0.0.0/0"
-  tags = {
-    Name = "ECS reserved"
-  }
+  tags = merge(
+    {
+      Name = "ECS reserved"
+    },
+    local.tags
+  )
 }
 
 resource "aws_vpc_security_group_ingress_rule" "backend_extra_user" {
@@ -27,7 +33,10 @@ resource "aws_vpc_security_group_ingress_rule" "backend_extra_user" {
   to_port           = 65535
   ip_protocol       = "tcp"
   cidr_ipv4         = "0.0.0.0/0"
-  tags = {
-    Name = "ECS user traffic"
-  }
+  tags = merge(
+    {
+      Name = "ECS user traffic"
+    },
+    local.tags
+  )
 }
