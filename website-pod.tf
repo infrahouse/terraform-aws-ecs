@@ -40,6 +40,7 @@ module "pod" {
   internet_gateway_id                   = var.internet_gateway_id
   protect_from_scale_in                 = true # this is to allow ECS manage ASG instances
   autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
+  root_volume_size                      = var.root_volume_size
   extra_security_groups_backend = [
     aws_security_group.backend_extra.id
   ]
