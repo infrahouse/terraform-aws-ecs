@@ -1,8 +1,13 @@
+import json
+from textwrap import dedent
+
 import boto3
 import pytest
 import logging
+from os import path as osp
 
 from infrahouse_toolkit.logging import setup_logging
+from infrahouse_toolkit.terraform import terraform_apply
 
 # "303467602807" is our test account
 TEST_ACCOUNT = "303467602807"
@@ -15,6 +20,7 @@ UBUNTU_CODENAME = "jammy"
 LOG = logging.getLogger(__name__)
 REGION = "us-east-2"
 TEST_ZONE = "ci-cd.infrahouse.com"
+TERRAFORM_ROOT_DIR = "test_data"
 
 setup_logging(LOG, debug=True)
 
@@ -58,3 +64,55 @@ def route53_client(boto3_session):
 @pytest.fixture()
 def elbv2_client(boto3_session):
     return boto3_session.client("elbv2", region_name=REGION)
+
+
+@pytest.fixture(scope="session")
+def service_network(boto3_session):
+    terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "service-network")
+    # Create service network
+    with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
+        fp.write(
+            dedent(
+                f"""
+                role_arn = "{TEST_ROLE_ARN}"
+                region   = "{REGION}"
+                """
+            )
+        )
+    with terraform_apply(
+        terraform_module_dir,
+        destroy_after=DESTROY_AFTER,
+        json_output=True,
+        enable_trace=TRACE_TERRAFORM,
+    ) as tf_service_network_output:
+        yield tf_service_network_output
+
+
+@pytest.fixture(scope="session")
+def jumphost(boto3_session, service_network):
+
+    subnet_public_ids = service_network["subnet_public_ids"]["value"]
+    subnet_private_ids = service_network["subnet_private_ids"]["value"]
+
+    terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "jumphost")
+
+    with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
+        fp.write(
+            dedent(
+                f"""
+                role_arn  = "{TEST_ROLE_ARN}"
+                region    = "{REGION}"
+                test_zone = "{TEST_ZONE}"
+
+                subnet_public_ids  = {json.dumps(subnet_public_ids)}
+                subnet_private_ids = {json.dumps(subnet_private_ids)}
+                """
+            )
+        )
+    with terraform_apply(
+        terraform_module_dir,
+        destroy_after=DESTROY_AFTER,
+        json_output=True,
+        enable_trace=TRACE_TERRAFORM,
+    ) as tf_output:
+        yield tf_output

@@ -60,6 +60,14 @@ data "cloudinit_config" "ecs" {
                 ],
                 var.extra_files
               )
+            },
+            {
+              "runcmd" : [
+                "fallocate -l ${data.aws_ec2_instance_type.ecs.memory_size * 2}M /swapfile",
+                "chmod 600 /swapfile",
+                "mkswap /swapfile",
+                "swapon /swapfile"
+              ]
             }
           )
 
@@ -93,4 +101,8 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
 data "aws_iam_policy" "ecs-task-execution-role-policy" {
   name = "AmazonECSTaskExecutionRolePolicy"
+}
+
+data "aws_ec2_instance_type" "ecs" {
+  instance_type = var.asg_instance_type
 }

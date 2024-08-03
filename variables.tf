@@ -153,6 +153,12 @@ variable "managed_termination_protection" {
   default     = true
 }
 
+variable "root_volume_size" {
+  description = "Root volume size in EC2 instance in Gigabytes"
+  type        = number
+  default     = 30
+}
+
 variable "service_name" {
   description = "Service name."
   type        = string
@@ -166,11 +172,6 @@ variable "service_health_check_grace_period_seconds" {
 
 variable "ssh_key_name" {
   description = "ssh key name installed in ECS host instances."
-  type        = string
-}
-
-variable "zone_id" {
-  description = "Zone where DNS records will be created for the service and certificate validation."
   type        = string
 }
 
@@ -273,4 +274,9 @@ variable "users" {
   #       }
   #     )
   #   )
+}
+
+variable "zone_id" {
+  description = "Zone where DNS records will be created for the service and certificate validation."
+  type        = string
 }
