@@ -71,8 +71,8 @@ variable "asg_subnets" {
 
 variable "autoscaling_metric" {
   description = "Metric to base autoscaling on. Can be ECSServiceAverageCPUUtilization, ECSServiceAverageMemoryUtilization, ALBRequestCountPerTarget"
-  type = string
-  default = "ECSServiceAverageCPUUtilization"
+  type        = string
+  default     = "ECSServiceAverageCPUUtilization"
 }
 
 variable "autoscaling_target_cpu_usage" {
