@@ -69,10 +69,22 @@ variable "asg_subnets" {
   type        = list(string)
 }
 
+variable "autoscaling_metric" {
+  description = "Metric to base autoscaling on. Can be ECSServiceAverageCPUUtilization, ECSServiceAverageMemoryUtilization, ALBRequestCountPerTarget"
+  type = string
+  default = "ECSServiceAverageCPUUtilization"
+}
+
 variable "autoscaling_target_cpu_usage" {
-  description = "How much CPU an ECS service aims to use."
+  description = "If autoscaling_metric is ECSServiceAverageCPUUtilization, how much CPU an ECS service aims to use."
   type        = number
   default     = 80
+}
+
+variable "autoscaling_target" {
+  description = "Target value for autoscaling_metric."
+  type        = number
+  default     = null
 }
 
 variable "container_command" {
