@@ -12,7 +12,8 @@ from tests.conftest import (
     TEST_ZONE,
     TEST_ROLE_ARN,
     REGION,
-    TERRAFORM_ROOT_DIR, wait_for_success,
+    TERRAFORM_ROOT_DIR,
+    wait_for_success,
 )
 
 
