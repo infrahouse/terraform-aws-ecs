@@ -41,6 +41,7 @@ module "pod" {
   protect_from_scale_in                 = true # this is to allow ECS manage ASG instances
   autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
   root_volume_size                      = var.root_volume_size
+  ssh_cidr_block                        = var.ssh_cidr_block
   extra_security_groups_backend = [
     aws_security_group.backend_extra.id
   ]

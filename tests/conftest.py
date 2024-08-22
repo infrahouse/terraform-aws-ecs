@@ -90,7 +90,6 @@ def service_network(boto3_session):
 
 @pytest.fixture(scope="session")
 def jumphost(boto3_session, service_network):
-
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
 
