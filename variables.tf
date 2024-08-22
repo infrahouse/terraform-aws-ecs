@@ -187,6 +187,12 @@ variable "ssh_key_name" {
   type        = string
 }
 
+variable "ssh_cidr_block" {
+  description = "CIDR range that is allowed to SSH into the backend instances"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
 variable "task_desired_count" {
   description = "Number of containers the ECS service will maintain."
   type        = number
