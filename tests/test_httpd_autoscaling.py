@@ -4,7 +4,6 @@ from textwrap import dedent
 
 import pytest
 from infrahouse_toolkit.terraform import terraform_apply
-from requests import get
 
 from tests.conftest import (
     LOG,
@@ -13,7 +12,7 @@ from tests.conftest import (
     TEST_ZONE,
     TEST_ROLE_ARN,
     REGION,
-    TERRAFORM_ROOT_DIR,
+    TERRAFORM_ROOT_DIR, wait_for_success,
 )
 
 
@@ -66,6 +65,4 @@ def test_module(
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
         for url in [f"https://www.{TEST_ZONE}", f"https://{TEST_ZONE}"]:
-            response = get(url)
-            assert response.status_code == 200
-            assert response.text == "<html><body><h1>It works!</h1></body></html>\n"
+            wait_for_success(url)

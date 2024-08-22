@@ -1,4 +1,5 @@
 import json
+import time
 from textwrap import dedent
 
 import boto3
@@ -8,6 +9,7 @@ from os import path as osp
 
 from infrahouse_toolkit.logging import setup_logging
 from infrahouse_toolkit.terraform import terraform_apply
+from requests import get
 
 # "303467602807" is our test account
 TEST_ACCOUNT = "303467602807"
@@ -23,6 +25,23 @@ TEST_ZONE = "ci-cd.infrahouse.com"
 TERRAFORM_ROOT_DIR = "test_data"
 
 setup_logging(LOG, debug=True)
+
+
+def wait_for_success(url, wait_time=300):
+    end_of_wait = time.time() + wait_time
+    while time.time() < end_of_wait:
+        try:
+            response = get(url)
+            assert response.status_code == 200
+            assert response.text == "<html><body><h1>It works!</h1></body></html>\n"
+            return
+
+        except AssertionError as err:
+            LOG.warning(err)
+            LOG.debug("Waiting %d more seconds", end_of_wait - time.time())
+            time.sleep(1)
+
+    raise RuntimeError(f"{url} didn't become healthy after {wait_time} seconds")
 
 
 @pytest.fixture(scope="session")
