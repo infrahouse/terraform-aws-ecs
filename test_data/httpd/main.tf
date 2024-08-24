@@ -31,6 +31,9 @@ module "httpd" {
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
   alb_access_log_force_destroy  = true
+  dockerSecurityOptions = [
+    "no-new-privileges",
+  ]
   users = [
     {
       name : "aleks"

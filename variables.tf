@@ -127,6 +127,12 @@ variable "docker_image" {
   type        = string
 }
 
+variable "dockerSecurityOptions" {
+  description = "A list of strings to provide custom configuration for multiple security systems. Supported prefixes are 'label:', 'apparmor:', and 'credentialspec:' or you can specify 'no-new-privileges'"
+  type        = list(string)
+  default     = null
+}
+
 variable "environment" {
   description = "Name of environment."
   type        = string
