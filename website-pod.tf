@@ -4,7 +4,7 @@ data "aws_key_pair" "ssh_key_pair" {
 
 module "pod" {
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "3.3.9"
+  version = "3.3.11"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -42,9 +42,6 @@ module "pod" {
   autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
   root_volume_size                      = var.root_volume_size
   ssh_cidr_block                        = var.ssh_cidr_block
-  extra_security_groups_backend = [
-    aws_security_group.backend_extra.id
-  ]
   tags = {
     Name : var.service_name
     AmazonECSManaged : true
