@@ -196,7 +196,7 @@ variable "ssh_key_name" {
 variable "ssh_cidr_block" {
   description = "CIDR range that is allowed to SSH into the backend instances"
   type        = string
-  default     = "0.0.0.0/0"
+  default     = null
 }
 
 variable "task_desired_count" {
