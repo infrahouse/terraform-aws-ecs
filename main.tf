@@ -77,7 +77,8 @@ resource "aws_ecs_task_definition" "ecs" {
             }
           ]
         },
-        var.container_command != null ? { command : var.container_command } : {}
+        var.container_command != null ? { command : var.container_command } : {},
+        var.dockerSecurityOptions != null ? { dockerSecurityOptions : var.dockerSecurityOptions } : {}
       )
     ]
   )

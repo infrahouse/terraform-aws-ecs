@@ -127,6 +127,12 @@ variable "docker_image" {
   type        = string
 }
 
+variable "dockerSecurityOptions" {
+  description = "A list of strings to provide custom configuration for multiple security systems. Supported prefixes are 'label:', 'apparmor:', and 'credentialspec:' or you can specify 'no-new-privileges'"
+  type        = list(string)
+  default     = null
+}
+
 variable "environment" {
   description = "Name of environment."
   type        = string
@@ -185,6 +191,12 @@ variable "service_health_check_grace_period_seconds" {
 variable "ssh_key_name" {
   description = "ssh key name installed in ECS host instances."
   type        = string
+}
+
+variable "ssh_cidr_block" {
+  description = "CIDR range that is allowed to SSH into the backend instances"
+  type        = string
+  default     = null
 }
 
 variable "task_desired_count" {

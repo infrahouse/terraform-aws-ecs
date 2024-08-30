@@ -4,7 +4,7 @@ data "aws_key_pair" "ssh_key_pair" {
 
 module "pod" {
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "3.3.7"
+  version = "3.3.11"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -41,9 +41,7 @@ module "pod" {
   protect_from_scale_in                 = true # this is to allow ECS manage ASG instances
   autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
   root_volume_size                      = var.root_volume_size
-  extra_security_groups_backend = [
-    aws_security_group.backend_extra.id
-  ]
+  ssh_cidr_block                        = var.ssh_cidr_block
   tags = {
     Name : var.service_name
     AmazonECSManaged : true
