@@ -1,5 +1,10 @@
+resource "random_string" "capacity-provider-suffix" {
+  length  = 6
+  special = false
+}
+
 resource "aws_ecs_capacity_provider" "ecs" {
-  name = var.service_name
+  name = "${var.service_name}-${random_string.capacity-provider-suffix.result}"
 
   auto_scaling_group_provider {
     auto_scaling_group_arn         = module.pod.asg_arn
