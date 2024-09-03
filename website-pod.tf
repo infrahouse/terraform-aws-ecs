@@ -4,12 +4,11 @@ data "aws_key_pair" "ssh_key_pair" {
 
 module "pod" {
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "3.3.11"
+  version = "3.4.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
   }
-  alb_internal                          = var.alb_internal
   service_name                          = var.service_name
   environment                           = var.environment
   alb_name_prefix                       = substr(var.service_name, 0, 6)
@@ -32,6 +31,7 @@ module "pod" {
   backend_subnets                       = var.asg_subnets
   zone_id                               = var.zone_id
   dns_a_records                         = var.dns_names
+  assume_dns                            = var.assume_dns
   ami                                   = var.ami_id == null ? data.aws_ami.ecs.image_id : var.ami_id
   key_pair_name                         = data.aws_key_pair.ssh_key_pair.key_name
   target_group_port                     = var.container_port

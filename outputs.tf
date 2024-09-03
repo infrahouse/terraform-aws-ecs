@@ -22,3 +22,8 @@ output "asg_name" {
   description = "Autoscaling group name created for the ECS service."
   value       = module.pod.asg_name
 }
+
+output "load_balancer_dns_name" {
+  description = "Load balancer DNS name."
+  value       = module.pod.load_balancer_dns_name
+}
