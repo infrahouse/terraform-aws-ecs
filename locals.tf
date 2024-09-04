@@ -1,5 +1,5 @@
 locals {
-  module_version = "3.6.0"
+  module_version = "3.6.1"
 
   module_name = "infrahouse/ecs/aws"
   tags = {
