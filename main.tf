@@ -15,7 +15,7 @@ resource "aws_ecs_capacity_provider" "ecs" {
       instance_warmup_period = 300
     }
   }
-  tags = local.tags
+  tags = local.default_module_tags
 }
 
 resource "aws_ecs_cluster_capacity_providers" "ecs" {
@@ -36,7 +36,7 @@ resource "aws_ecs_cluster" "ecs" {
     name  = "containerInsights"
     value = "enabled"
   }
-  tags = local.tags
+  tags = local.default_module_tags
 }
 
 resource "aws_ecs_task_definition" "ecs" {
@@ -97,7 +97,7 @@ resource "aws_ecs_task_definition" "ecs" {
       host_path = volume.value.host_path
     }
   }
-  tags = local.tags
+  tags = local.default_module_tags
 }
 
 resource "aws_ecs_service" "ecs" {
@@ -143,7 +143,7 @@ resource "aws_ecs_service" "ecs" {
       instance_role_policy_name : module.pod.instance_role_policy_name
       instance_role_policy_attachment : module.pod.instance_role_policy_attachment
     },
-    local.tags
+    local.default_module_tags
   )
   timeouts {
     delete = "10m"
