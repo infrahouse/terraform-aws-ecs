@@ -9,4 +9,5 @@ locals {
     created_by_module : local.module_name
     module_version = local.module_version
   }
+  cloudwatch_group = var.cloudwatch_log_group == null ? "/ecs/${var.environment}/${var.service_name}" : var.cloudwatch_log_group
 }
