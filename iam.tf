@@ -16,7 +16,7 @@ resource "aws_iam_policy" "ecs_task_execution_logs_policy" {
   tags   = local.default_module_tags
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_logs_policy" {
   count      = var.enable_cloudwatch_logs ? 1 : 0
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = aws_iam_policy.ecs_task_execution_logs_policy[0].arn
