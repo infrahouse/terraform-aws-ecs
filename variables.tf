@@ -311,6 +311,7 @@ variable "enable_cloudwatch_logs" {
   default     = false
 }
 
+
 variable "cloudwatch_log_group" {
   description = "CloudWatch log group to create and use. Default: /ecs/{name}-{environment}"
   type        = string

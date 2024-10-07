@@ -12,7 +12,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
 
 resource "aws_iam_policy" "ecs_task_execution_logs_policy" {
   count  = var.enable_cloudwatch_logs ? 1 : 0
-  policy = data.aws_iam_policy_document.ecs_cloudwatch_logs_policy.json
+  policy = data.aws_iam_policy_document.ecs_cloudwatch_logs_policy[0].json
   tags   = local.default_module_tags
 }
 
