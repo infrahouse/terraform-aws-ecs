@@ -64,14 +64,6 @@ resource "aws_ecs_task_definition" "ecs" {
             "interval" : 30,
             "startPeriod" : null
           }
-          logConfiguration = var.enable_cloudwatch_logs ? {
-            logDriver = "awslogs"
-            options = {
-              "awslogs-group"  = aws_cloudwatch_log_group.ecs[0].name
-              "awslogs-region" = data.aws_region.current.name
-            }
-          } : {}
-
           environment = var.task_environment_variables
           mountPoints = [
             for name, def in merge(var.task_efs_volumes, var.task_local_volumes) : {
@@ -80,6 +72,13 @@ resource "aws_ecs_task_definition" "ecs" {
             }
           ]
         },
+        var.enable_cloudwatch_logs ? {
+          logDriver = "awslogs"
+          options = {
+            "awslogs-group"  = aws_cloudwatch_log_group.ecs[0].name
+            "awslogs-region" = data.aws_region.current.name
+          }
+        } : {},
         var.container_command != null ? { command : var.container_command } : {},
         var.dockerSecurityOptions != null ? { dockerSecurityOptions : var.dockerSecurityOptions } : {}
       )
