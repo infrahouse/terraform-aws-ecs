@@ -86,6 +86,16 @@ data "aws_iam_policy_document" "instance_policy" {
     actions   = ["ecs:*"]
     resources = ["*"]
   }
+  dynamic "statement" {
+    for_each = var.enable_cloudwatch_logs ? [1] : []
+    content {
+      actions = [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+      ]
+      resources = [format("%s:*", aws_cloudwatch_log_group.ecs[0].arn)]
+    }
+  }
 }
 
 data "aws_iam_policy_document" "assume_role_policy" {
@@ -105,4 +115,26 @@ data "aws_iam_policy" "ecs-task-execution-role-policy" {
 
 data "aws_ec2_instance_type" "ecs" {
   instance_type = var.asg_instance_type
+}
+
+data "aws_iam_policy_document" "ecs_cloudwatch_logs_policy" {
+  count = var.enable_cloudwatch_logs ? 1 : 0
+  statement {
+    sid = "AllowDescribeLogGroups"
+    actions = [
+      "logs:DescribeLogGroups",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "AllowECSExecLogging"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents",
+    ]
+    resources = ["${aws_cloudwatch_log_group.ecs[0].arn}:*"]
+  }
+
 }

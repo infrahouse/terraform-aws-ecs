@@ -64,7 +64,8 @@ resource "aws_ecs_task_definition" "ecs" {
             "interval" : 30,
             "startPeriod" : null
           }
-          environment = var.task_environment_variables
+          log_configuration = local.log_configuration
+          environment       = var.task_environment_variables
           mountPoints = [
             for name, def in merge(var.task_efs_volumes, var.task_local_volumes) : {
               sourceVolume : name

@@ -9,4 +9,12 @@ locals {
     created_by_module : local.module_name
     module_version = local.module_version
   }
+  cloudwatch_group = var.cloudwatch_log_group == null ? "/ecs/${var.environment}/${var.service_name}" : var.cloudwatch_log_group
+  log_configuration = var.enable_cloudwatch_logs ? {
+    logDriver = "awslogs"
+    options = {
+      "awslogs-group"  = aws_cloudwatch_log_group.ecs[0].name
+      "awslogs-region" = data.aws_region.current.name
+    }
+  } : null
 }

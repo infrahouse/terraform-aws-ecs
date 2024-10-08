@@ -304,3 +304,21 @@ variable "zone_id" {
   description = "Zone where DNS records will be created for the service and certificate validation."
   type        = string
 }
+
+variable "enable_cloudwatch_logs" {
+  description = "Enable Cloudwatch logs. If enabled, log driver will be awslogs."
+  type        = bool
+  default     = false
+}
+
+variable "cloudwatch_log_group" {
+  description = "CloudWatch log group to create and use. Default: /ecs/{name}-{environment}"
+  type        = string
+  default     = null
+}
+
+variable "cloudwatch_log_group_retention" {
+  description = "Number of days you want to retain log events in the log group."
+  default     = 90
+  type        = number
+}
