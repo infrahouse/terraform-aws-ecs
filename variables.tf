@@ -308,7 +308,7 @@ variable "zone_id" {
 variable "enable_cloudwatch_logs" {
   description = "Enable Cloudwatch logs. If enabled, log driver will be awslogs."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "cloudwatch_log_group" {
