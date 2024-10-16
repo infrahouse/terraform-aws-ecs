@@ -322,3 +322,33 @@ variable "cloudwatch_log_group_retention" {
   default     = 90
   type        = number
 }
+
+variable "enable_cloudwatch_agent" {
+  description = "Add cloudwatch agent service to ECS cluster with DAEMON type"
+  type        = bool
+  default     = false
+}
+
+variable "cloudwatch_agent_config_path" {
+  description = "Path to cloudwatch agent config on host fs"
+  type        = string
+  default     = ""
+}
+
+variable "cloudwatch_agent_container_resources" {
+  description = "Resourcces for cloudwatch agent container"
+  type = object({
+    cpu    = number
+    memory = number
+  })
+  default = {
+    cpu    = 128
+    memory = 256
+  }
+}
+
+variable "cloudwatch_agent_image" {
+  description = "Cloudwatch agent image"
+  type        = string
+  default     = "amazon/cloudwatch-agent:1.300037.1b602"
+}
