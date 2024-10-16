@@ -59,11 +59,12 @@ resource "aws_ecs_task_definition" "cloudwatch_agent" {
 
   volume {
     name      = "config-volume"
-    host_path = "var.cloudwatch_agent_config_path"
+    host_path = var.cloudwatch_agent_config_path
   }
 }
 
 resource "aws_ecs_service" "cloudwatch_agent_service" {
+  count               = var.enable_cloudwatch_agent ? 1 : 0
   name                = "cloudwatch-agent-daemon"
   cluster             = aws_ecs_cluster.ecs.id
   task_definition     = aws_ecs_task_definition.cloudwatch_agent[0].arn
