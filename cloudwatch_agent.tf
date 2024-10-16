@@ -53,17 +53,13 @@ resource "aws_ecs_task_definition" "cloudwatch_agent" {
   }])
 
   volume {
-    name = "log-volume"
-    host_path {
-      path = "/var/log"
-    }
+    name      = "log-volume"
+    host_path = "/var/log"
   }
 
   volume {
-    name = "config-volume"
-    host_path {
-      path = var.cloudwatch_agent_config_path # Host path for config file
-    }
+    name      = "config-volume"
+    host_path = "var.cloudwatch_agent_config_path"
   }
 }
 
