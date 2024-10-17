@@ -30,7 +30,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
 
 resource "aws_ecs_task_definition" "cloudwatch_agent" {
   count              = var.enable_cloudwatch_agent ? 1 : 0
-  family             = "cloudwatch-agent-daemon"
+  family             = format("%s-cw-agent-daemon", var.service_name)
   task_role_arn      = aws_iam_role.cloudwatch_agent_task_role[0].arn
   execution_role_arn = aws_iam_role.cloudwatch_agent_task_role[0].arn
 
