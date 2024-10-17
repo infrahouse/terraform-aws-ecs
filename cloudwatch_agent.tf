@@ -46,7 +46,7 @@ resource "aws_ecs_task_definition" "cloudwatch_agent" {
       },
       {
         sourceVolume  = "config-volume"
-        containerPath = "/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json"
+        containerPath = "/etc/cwagentconfig"
         readOnly      = true
       }
     ]
