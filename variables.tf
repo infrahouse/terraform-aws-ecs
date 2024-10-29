@@ -352,3 +352,9 @@ variable "cloudwatch_agent_image" {
   type        = string
   default     = "amazon/cloudwatch-agent:1.300037.1b602"
 }
+
+variable "network_mode" {
+  description = "The network mode to use for the task. Default is bridge mode."
+  type        = string
+  default     = "bridge"
+}
