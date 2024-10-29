@@ -352,3 +352,9 @@ variable "cloudwatch_agent_image" {
   type        = string
   default     = "amazon/cloudwatch-agent:1.300037.1b602"
 }
+
+variable "enable_container_insights" {
+  description = "Enable container insights feature on ECS cluster."
+  type        = bool
+  default     = false
+}
