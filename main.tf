@@ -34,7 +34,7 @@ resource "aws_ecs_cluster" "ecs" {
   name = var.service_name
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = var.enable_container_insights ? "enabled" : "disabled"
   }
   tags = local.default_module_tags
 }
