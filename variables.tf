@@ -370,3 +370,8 @@ variable "ecs_service_security_group_ids" {
   type        = list(string)
   default     = []
 }
+variable "enable_container_insights" {
+  description = "Enable container insights feature on ECS cluster."
+  type        = bool
+  default     = false
+}
