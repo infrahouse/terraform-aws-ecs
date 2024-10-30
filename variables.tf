@@ -354,19 +354,19 @@ variable "cloudwatch_agent_image" {
 }
 
 variable "network_mode" {
-  description = "The network mode to use for the task. Default is bridge mode."
+  description = "The network mode to use for the task. The valid values are `none`, `bridge`, `awsvpc`, and `host`. Default is `bridge` mode."
   type        = string
   default     = "bridge"
 }
 
 variable "ecs_service_subnets" {
-  description = "Subnets id's which would be used if awsvpc network node enabled"
+  description = "Subnets id's which would be used if `awsvpc` network node enabled."
   type        = list(string)
   default     = []
 }
 
 variable "ecs_service_security_group_ids" {
-  description = "Security group ids which would be used if awsvpc network node enabled"
+  description = "Security group ids which would be used if `awsvpc` network node enabled."
   type        = list(string)
   default     = []
 }
