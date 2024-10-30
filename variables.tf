@@ -358,3 +358,15 @@ variable "network_mode" {
   type        = string
   default     = "bridge"
 }
+
+variable "ecs_service_subnets" {
+  description = "Subnets id's which would be used if awsvpc network node enabled"
+  type        = list(string)
+  default     = []
+}
+
+variable "ecs_service_security_group_ids" {
+  description = "Security group ids which would be used if awsvpc network node enabled"
+  type        = list(string)
+  default     = []
+}
