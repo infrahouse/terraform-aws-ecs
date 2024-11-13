@@ -215,7 +215,8 @@ variable "task_environment_variables" {
       }
     )
   )
-  default = []
+  sensitive = true
+  default   = []
 }
 
 variable "task_ipc_mode" {
