@@ -78,6 +78,7 @@ resource "aws_ecs_task_definition" "ecs" {
       )
     ]
   )
+  network_mode       = var.network_mode
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = var.task_role_arn
   ipc_mode           = var.task_ipc_mode
@@ -128,6 +129,14 @@ resource "aws_ecs_service" "ecs" {
     aws_iam_role.ecs_task_execution_role,
     aws_iam_role_policy_attachment.ecs_task_execution_role_policy,
   ]
+  dynamic "network_configuration" {
+    for_each = var.network_mode == "awsvpc" ? ["true"] : []
+    content {
+      security_groups = var.ecs_service_security_group_ids
+      subnets         = length(var.ecs_service_subnets) > 0 ? var.ecs_service_subnets : var.asg_subnets
+    }
+  }
+
   tags = merge(
     {
       # need these tags for implicit dependency

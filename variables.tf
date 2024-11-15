@@ -354,6 +354,24 @@ variable "cloudwatch_agent_image" {
   default     = "amazon/cloudwatch-agent:1.300037.1b602"
 }
 
+variable "network_mode" {
+  description = "The network mode to use for the task. The valid values are `none`, `bridge`, `awsvpc`, and `host`. Default is `bridge` mode."
+  type        = string
+  default     = "bridge"
+}
+
+variable "ecs_service_subnets" {
+  description = "Subnets id's which would be used if `awsvpc` network node enabled."
+  type        = list(string)
+  default     = []
+}
+
+variable "ecs_service_security_group_ids" {
+  description = "Security group ids which would be used if `awsvpc` network node enabled."
+  type        = list(string)
+  default     = []
+}
+
 variable "enable_container_insights" {
   description = "Enable container insights feature on ECS cluster."
   type        = bool

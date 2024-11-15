@@ -7,7 +7,6 @@ from infrahouse_toolkit.terraform import terraform_apply
 from tests.conftest import (
     LOG,
     TRACE_TERRAFORM,
-    DESTROY_AFTER,
     TEST_ZONE,
     TEST_ROLE_ARN,
     REGION,
@@ -16,7 +15,7 @@ from tests.conftest import (
 )
 
 
-def test_module(service_network, jumphost, ec2_client, route53_client):
+def test_module(service_network, jumphost, ec2_client, route53_client, keep_after):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
     internet_gateway_id = service_network["internet_gateway_id"]["value"]

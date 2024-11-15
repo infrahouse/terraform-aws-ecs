@@ -34,6 +34,7 @@ module "httpd" {
   dockerSecurityOptions = [
     "no-new-privileges",
   ]
+  network_mode = var.network_mode
   users = [
     {
       name : "aleks"
