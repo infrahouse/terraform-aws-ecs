@@ -359,3 +359,10 @@ variable "enable_container_insights" {
   type        = bool
   default     = false
 }
+
+
+variable "lb_type" {
+  description = "Load balancer type. ALB or NLB"
+  type        = string
+  default     = "alb"
+}

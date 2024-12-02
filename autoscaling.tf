@@ -6,8 +6,8 @@ resource "aws_appautoscaling_target" "ecs_target" {
   service_namespace  = "ecs"
 }
 locals {
-  lb_arn_parts = split("/", module.pod.load_balancer_arn)
-  tg_arn_parts = split("/", module.pod.target_group_arn)
+  lb_arn_parts = split("/", local.load_balancer_arn)
+  tg_arn_parts = split("/", local.target_group_arn)
 }
 resource "aws_appautoscaling_policy" "ecs_policy" {
   name               = "auto-scaling"
