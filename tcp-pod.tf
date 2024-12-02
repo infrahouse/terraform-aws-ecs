@@ -13,6 +13,7 @@ module "tcp-pod" {
   nlb_idle_timeout                      = var.alb_idle_timeout
   nlb_healthcheck_response_code_matcher = var.alb_healthcheck_response_code_matcher
   nlb_healthcheck_interval              = var.alb_healthcheck_interval
+  nlb_listener_port                     = var.container_port
   health_check_grace_period             = var.asg_health_check_grace_period
   health_check_type                     = "EC2"
   attach_target_group_to_asg            = false
