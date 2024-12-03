@@ -10,8 +10,9 @@ module "tcp-pod" {
   environment                      = var.environment
   nlb_name_prefix                  = substr(var.service_name, 0, 6)
   nlb_healthcheck_port             = "traffic-port"
-  nlb_idle_timeout                 = var.alb_idle_timeout
-  nlb_healthcheck_interval         = var.alb_healthcheck_interval
+  nlb_idle_timeout                 = var.idle_timeout
+  nlb_healthcheck_interval         = var.healthcheck_interval
+  nlb_healthcheck_timeout          = var.healthcheck_timeout
   nlb_listener_port                = var.container_port
   health_check_grace_period        = var.asg_health_check_grace_period
   health_check_type                = "EC2"
