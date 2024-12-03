@@ -7,7 +7,7 @@ variable "access_log_force_destroy" {
 variable "healthcheck_interval" {
   description = "Number of seconds between checks"
   type        = number
-  default     = 5
+  default     = 10
 }
 
 variable "healthcheck_timeout" {
