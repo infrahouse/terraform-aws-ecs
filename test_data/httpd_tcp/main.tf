@@ -29,10 +29,10 @@ module "httpd" {
   asg_max_size                  = 1
   asg_min_size                  = 1
   container_healthcheck_command = "ls"
-  healthcheck_interval =
+  healthcheck_interval          = 10
   lb_type                       = "nlb"
   task_role_arn                 = aws_iam_role.task_role.arn
-  access_log_force_destroy  = true
+  access_log_force_destroy      = true
   dockerSecurityOptions = [
     "no-new-privileges",
   ]
