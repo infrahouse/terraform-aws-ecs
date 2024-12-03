@@ -10,6 +10,7 @@ from os import path as osp
 from infrahouse_toolkit.logging import setup_logging
 from infrahouse_toolkit.terraform import terraform_apply
 from requests import get
+from socket import socket
 
 # "303467602807" is our test account
 TEST_ACCOUNT = "303467602807"
@@ -34,6 +35,23 @@ def wait_for_success(url, wait_time=300):
             response = get(url)
             assert response.status_code == 200
             assert response.text == "<html><body><h1>It works!</h1></body></html>\n"
+            return
+
+        except AssertionError as err:
+            LOG.warning(err)
+            LOG.debug("Waiting %d more seconds", end_of_wait - time.time())
+            time.sleep(1)
+
+    raise RuntimeError(f"{url} didn't become healthy after {wait_time} seconds")
+
+def wait_for_success_tcp(host, port, wait_time=300):
+    end_of_wait = time.time() + wait_time
+    while time.time() < end_of_wait:
+        try:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect((host, port))
+            assert True
+            client.close()
             return
 
         except AssertionError as err:
