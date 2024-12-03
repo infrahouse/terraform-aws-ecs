@@ -44,6 +44,7 @@ def wait_for_success(url, wait_time=300):
 
     raise RuntimeError(f"{url} didn't become healthy after {wait_time} seconds")
 
+
 def wait_for_success_tcp(host, port, wait_time=300):
     end_of_wait = time.time() + wait_time
     while time.time() < end_of_wait:

@@ -13,7 +13,7 @@ from tests.conftest import (
     REGION,
     TERRAFORM_ROOT_DIR,
     wait_for_success,
-    wait_for_success_tcp
+    wait_for_success_tcp,
 )
 
 
@@ -47,5 +47,5 @@ def test_module(service_network, jumphost, ec2_client, route53_client):
         enable_trace=TRACE_TERRAFORM,
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
-        #for url in [f"https://www.{TEST_ZONE}", f"https://{TEST_ZONE}"]:
+        # for url in [f"https://www.{TEST_ZONE}", f"https://{TEST_ZONE}"]:
         #    wait_for_success_tcp(url)
