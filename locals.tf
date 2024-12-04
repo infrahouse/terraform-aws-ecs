@@ -1,5 +1,5 @@
 locals {
-  module_version = "3.13.0"
+  module_version = "3.14.0"
 
   module_name = "infrahouse/ecs/aws"
   default_module_tags = {
