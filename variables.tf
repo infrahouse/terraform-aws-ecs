@@ -177,6 +177,12 @@ variable "managed_termination_protection" {
   default     = true
 }
 
+variable "on_demand_base_capacity" {
+  description = "If specified, the ASG will request spot instances and this will be the minimal number of on-demand instances."
+  type        = number
+  default     = null
+}
+
 variable "root_volume_size" {
   description = "Root volume size in EC2 instance in Gigabytes"
   type        = number
