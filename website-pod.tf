@@ -4,7 +4,7 @@ data "aws_key_pair" "ssh_key_pair" {
 
 module "pod" {
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "4.4.0"
+  version = "4.6.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -24,6 +24,7 @@ module "pod" {
   health_check_type                     = "EC2"
   attach_tagret_group_to_asg            = false
   instance_type                         = var.asg_instance_type
+  on_demand_base_capacity               = var.on_demand_base_capacity
   asg_min_size                          = var.asg_min_size
   asg_max_size                          = var.asg_max_size
   asg_scale_in_protected_instances      = "Refresh"
