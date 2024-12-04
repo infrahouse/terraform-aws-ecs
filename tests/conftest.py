@@ -1,6 +1,7 @@
 import json
 import time
 from textwrap import dedent
+import socket
 
 import boto3
 import pytest
@@ -10,7 +11,6 @@ from os import path as osp
 from infrahouse_toolkit.logging import setup_logging
 from infrahouse_toolkit.terraform import terraform_apply
 from requests import get
-from socket import socket
 
 # "303467602807" is our test account
 TEST_ACCOUNT = "303467602807"
