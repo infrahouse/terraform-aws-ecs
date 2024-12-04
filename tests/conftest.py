@@ -50,7 +50,7 @@ def wait_for_success_tcp(host, port, wait_time=300):
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.settimeout(wait_time)
-        client.connect((host, port))
+        client.connect(host, port)
         assert True
         client.close()
         return
