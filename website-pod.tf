@@ -3,6 +3,7 @@ data "aws_key_pair" "ssh_key_pair" {
 }
 
 module "pod" {
+  count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
   version = "4.6.0"
   providers = {
