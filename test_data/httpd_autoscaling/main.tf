@@ -30,7 +30,7 @@ module "httpd" {
   asg_min_size                  = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
-  access_log_force_destroy  = true
+  access_log_force_destroy      = true
   autoscaling_metric            = var.autoscaling_metric
   autoscaling_target            = var.autoscaling_target
 
