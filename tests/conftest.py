@@ -47,19 +47,18 @@ def wait_for_success(url, wait_time=300):
 
 def wait_for_success_tcp(host, port, wait_time=300):
     end_of_wait = time.time() + wait_time
-    while time.time() < end_of_wait:
-        try:
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect((host, port))
-            assert True
-            client.close()
-            return
+    try:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.settimeout(wait_time)
+        client.connect((host, port))
+        assert True
+        client.close()
+        return
 
-        except AssertionError as err:
-            LOG.warning(err)
-            LOG.debug("Waiting %d more seconds", end_of_wait - time.time())
-            time.sleep(1)
-
+    except AssertionError as err:
+        LOG.warning(err)
+        LOG.debug("Waiting more than %d seconds", wait_time)
+        time.sleep(1)
     raise RuntimeError(f"{url} didn't become healthy after {wait_time} seconds")
 
 
