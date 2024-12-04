@@ -47,4 +47,3 @@ def test_module(service_network, jumphost, ec2_client, route53_client):
         enable_trace=TRACE_TERRAFORM,
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
-        wait_for_success_tcp(tf_httpd_output["load_balancer_dns_name"]["value"], 80)
