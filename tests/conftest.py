@@ -46,15 +46,24 @@ def wait_for_success(url, wait_time=300):
 
 
 def wait_for_success_tcp(host, port, wait_time=300):
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.settimeout(wait_time)
-    result = client.connect_ex((host, port))
-    if result == 0:
-        LOG.debug("Socket opened.")
-        assert True
-    else:
-        LOG.debug("Waiting more than %d seconds.", wait_time)
-        assert False
+    end_time = time.time() + wait_time
+    while time.time() < end_time:
+        try:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.settimeout(1)
+            result = client.connect_ex((host, port))
+            if result == 0:
+                LOG.debug("Socket opened.")
+                assert True
+                return
+            else:
+                LOG.debug("Socket not yet available, retrying...")
+        except socket.error as e:
+            LOG.debug("Socket error: %s", e)
+            time.sleep(1)
+
+    LOG.debug("Waited more than %d seconds without success.", wait_time)
+    assert False
     return
 
 
