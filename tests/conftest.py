@@ -50,11 +50,11 @@ def wait_for_success_tcp(host, port, wait_time=300):
     client.settimeout(wait_time)
     result = client.connect_ex((host, port))
     if result == 0:
-      LOG.debug("Socket opened.")
-      assert True
+        LOG.debug("Socket opened.")
+        assert True
     else:
-      LOG.debug("Waiting more than %d seconds.", wait_time)
-      assert False
+        LOG.debug("Waiting more than %d seconds.", wait_time)
+        assert False
     return
 
 
