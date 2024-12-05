@@ -46,20 +46,16 @@ def wait_for_success(url, wait_time=300):
 
 
 def wait_for_success_tcp(host, port, wait_time=300):
-    end_of_wait = time.time() + wait_time
-    try:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.settimeout(wait_time)
-        client.connect(host, port)
-        assert True
-        client.close()
-        return
-
-    except AssertionError as err:
-        LOG.warning(err)
-        LOG.debug("Waiting more than %d seconds", wait_time)
-        time.sleep(1)
-    raise RuntimeError(f"{url} didn't become healthy after {wait_time} seconds")
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.settimeout(wait_time)
+    result = client.connect_ex((host, port))
+    if result == 0:
+      LOG.debug("Socket opened.")
+      assert True
+    else:
+      LOG.debug("Waiting more than %d seconds.", wait_time)
+      assert False
+    return
 
 
 @pytest.fixture(scope="session")
