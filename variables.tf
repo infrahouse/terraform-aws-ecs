@@ -158,6 +158,7 @@ variable "extra_files" {
 variable "internet_gateway_id" {
   description = "Internet gateway id. Usually created by 'infrahouse/service-network/aws'"
   type        = string
+  default     = null
 }
 
 variable "load_balancer_subnets" {

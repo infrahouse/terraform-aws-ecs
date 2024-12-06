@@ -17,7 +17,6 @@ TEST_ACCOUNT = "303467602807"
 TEST_ROLE_ARN = "arn:aws:iam::303467602807:role/ecs-tester"
 DEFAULT_PROGRESS_INTERVAL = 10
 TRACE_TERRAFORM = False
-DESTROY_AFTER = True
 UBUNTU_CODENAME = "jammy"
 
 LOG = logging.getLogger(__name__)
@@ -26,6 +25,20 @@ TEST_ZONE = "ci-cd.infrahouse.com"
 TERRAFORM_ROOT_DIR = "test_data"
 
 setup_logging(LOG, debug=True)
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--keep-after",
+        action="store_true",
+        default=False,
+        help="If specified, don't destroy resources",
+    )
+
+
+@pytest.fixture(scope="session")
+def keep_after(request):
+    return request.config.getoption("--keep-after")
 
 
 def wait_for_success(url, wait_time=300):
@@ -43,28 +56,6 @@ def wait_for_success(url, wait_time=300):
             time.sleep(1)
 
     raise RuntimeError(f"{url} didn't become healthy after {wait_time} seconds")
-
-
-def wait_for_success_tcp(host, port, wait_time=300):
-    end_time = time.time() + wait_time
-    while time.time() < end_time:
-        try:
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.settimeout(1)
-            result = client.connect_ex((host, port))
-            if result == 0:
-                LOG.debug("Socket opened.")
-                assert True
-                return
-            else:
-                LOG.debug("Socket not yet available, retrying...")
-        except socket.error as e:
-            LOG.debug("Socket error: %s", e)
-            time.sleep(1)
-
-    LOG.debug("Waited more than %d seconds without success.", wait_time)
-    assert False
-    return
 
 
 @pytest.fixture(scope="session")
@@ -109,7 +100,7 @@ def elbv2_client(boto3_session):
 
 
 @pytest.fixture(scope="session")
-def service_network(boto3_session):
+def service_network(boto3_session, keep_after):
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "service-network")
     # Create service network
     with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
@@ -123,7 +114,7 @@ def service_network(boto3_session):
         )
     with terraform_apply(
         terraform_module_dir,
-        destroy_after=DESTROY_AFTER,
+        destroy_after=not keep_after,
         json_output=True,
         enable_trace=TRACE_TERRAFORM,
     ) as tf_service_network_output:
@@ -131,7 +122,7 @@ def service_network(boto3_session):
 
 
 @pytest.fixture(scope="session")
-def jumphost(boto3_session, service_network):
+def jumphost(boto3_session, service_network, keep_after):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
 
@@ -152,7 +143,7 @@ def jumphost(boto3_session, service_network):
         )
     with terraform_apply(
         terraform_module_dir,
-        destroy_after=DESTROY_AFTER,
+        destroy_after=not keep_after,
         json_output=True,
         enable_trace=TRACE_TERRAFORM,
     ) as tf_output:
