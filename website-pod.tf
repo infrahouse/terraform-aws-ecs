@@ -3,6 +3,7 @@ data "aws_key_pair" "ssh_key_pair" {
 }
 
 module "pod" {
+  count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
   version = "4.6.0"
   providers = {
@@ -13,18 +14,18 @@ module "pod" {
   environment                           = var.environment
   alb_name_prefix                       = substr(var.service_name, 0, 6)
   alb_access_log_enabled                = true
-  alb_access_log_force_destroy          = var.alb_access_log_force_destroy
+  alb_access_log_force_destroy          = var.access_log_force_destroy
   alb_healthcheck_enabled               = true
   alb_healthcheck_port                  = "traffic-port"
-  alb_healthcheck_path                  = var.alb_healthcheck_path
-  alb_idle_timeout                      = var.alb_idle_timeout
-  alb_healthcheck_response_code_matcher = var.alb_healthcheck_response_code_matcher
-  alb_healthcheck_interval              = var.alb_healthcheck_interval
+  alb_healthcheck_path                  = var.healthcheck_path
+  alb_idle_timeout                      = var.idle_timeout
+  alb_healthcheck_timeout               = var.healthcheck_timeout
+  alb_healthcheck_response_code_matcher = var.healthcheck_response_code_matcher
+  alb_healthcheck_interval              = var.healthcheck_interval
   health_check_grace_period             = var.asg_health_check_grace_period
   health_check_type                     = "EC2"
   attach_tagret_group_to_asg            = false
   instance_type                         = var.asg_instance_type
-  on_demand_base_capacity               = var.on_demand_base_capacity
   asg_min_size                          = var.asg_min_size
   asg_max_size                          = var.asg_max_size
   asg_scale_in_protected_instances      = "Refresh"

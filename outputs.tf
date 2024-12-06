@@ -15,15 +15,15 @@ output "service_arn" {
 
 output "asg_arn" {
   description = "Autoscaling group ARN created for the ECS service."
-  value       = module.pod.asg_arn
+  value       = local.arg_arn
 }
 
 output "asg_name" {
   description = "Autoscaling group name created for the ECS service."
-  value       = module.pod.asg_name
+  value       = local.asg_name
 }
 
 output "load_balancer_dns_name" {
   description = "Load balancer DNS name."
-  value       = module.pod.load_balancer_dns_name
+  value       = local.load_balancer_dns_name
 }

@@ -1,28 +1,34 @@
-variable "alb_access_log_force_destroy" {
+variable "access_log_force_destroy" {
   description = "Destroy S3 bucket with access logs even if non-empty"
   type        = bool
   default     = false
 }
 
-variable "alb_healthcheck_interval" {
+variable "healthcheck_interval" {
   description = "Number of seconds between checks"
+  type        = number
+  default     = 10
+}
+
+variable "healthcheck_timeout" {
+  description = "Healthcheck timeout"
   type        = number
   default     = 5
 }
 
-variable "alb_healthcheck_path" {
+variable "healthcheck_path" {
   description = "Path on the webserver that the elb will check to determine whether the instance is healthy or not."
   type        = string
   default     = "/index.html"
 }
 
-variable "alb_idle_timeout" {
+variable "idle_timeout" {
   description = "The time in seconds that the connection is allowed to be idle."
   type        = number
   default     = 60
 }
 
-variable "alb_healthcheck_response_code_matcher" {
+variable "healthcheck_response_code_matcher" {
   description = "Range of http return codes that can match"
   type        = string
   default     = "200-299"
@@ -152,6 +158,7 @@ variable "extra_files" {
 variable "internet_gateway_id" {
   description = "Internet gateway id. Usually created by 'infrahouse/service-network/aws'"
   type        = string
+  default     = null
 }
 
 variable "load_balancer_subnets" {
@@ -364,4 +371,11 @@ variable "enable_container_insights" {
   description = "Enable container insights feature on ECS cluster."
   type        = bool
   default     = false
+}
+
+
+variable "lb_type" {
+  description = "Load balancer type. ALB or NLB"
+  type        = string
+  default     = "alb"
 }

@@ -21,7 +21,7 @@ def test_module(service_network, jumphost, ec2_client, route53_client, keep_afte
     internet_gateway_id = service_network["internet_gateway_id"]["value"]
 
     # Create ECS with httpd container
-    terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd")
+    terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd_tcp")
     with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
         fp.write(
             dedent(
@@ -45,5 +45,6 @@ def test_module(service_network, jumphost, ec2_client, route53_client, keep_afte
         enable_trace=TRACE_TERRAFORM,
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
-        for url in [f"https://www.{TEST_ZONE}", f"https://{TEST_ZONE}"]:
-            wait_for_success(url)
+        load_balancer_dns_name = tf_httpd_output["load_balancer_dns_name"]["value"]
+        wait_for_success(f"http://{load_balancer_dns_name}/")
+        wait_for_success(f"http://www.{TEST_ZONE}/")

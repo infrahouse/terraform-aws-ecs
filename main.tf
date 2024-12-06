@@ -2,7 +2,7 @@ resource "aws_ecs_capacity_provider" "ecs" {
   name = var.service_name
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn         = module.pod.asg_arn
+    auto_scaling_group_arn         = local.arg_arn
     managed_termination_protection = var.managed_termination_protection ? "ENABLED" : "DISABLED"
     managed_draining               = var.managed_draining ? "ENABLED" : "DISABLED"
 
@@ -113,7 +113,7 @@ resource "aws_ecs_service" "ecs" {
   }
 
   load_balancer {
-    target_group_arn = module.pod.target_group_arn
+    target_group_arn = local.target_group_arn
     container_name   = var.service_name
     container_port   = var.container_port
   }
@@ -132,17 +132,17 @@ resource "aws_ecs_service" "ecs" {
     {
       # need these tags for implicit dependency
       execution_role_arn : aws_ecs_task_definition.ecs.execution_role_arn
-      target_group_arn : module.pod.target_group_arn
-      load_balancer_arn : module.pod.load_balancer_arn
+      target_group_arn : local.target_group_arn
+      load_balancer_arn : local.load_balancer_arn
       backend_security_group : substr(
         base64encode(
           jsonencode(
-            module.pod.backend_security_group
+            local.backend_security_group
           )
         ), 0, 256
       )
-      instance_role_policy_name : module.pod.instance_role_policy_name
-      instance_role_policy_attachment : module.pod.instance_role_policy_attachment
+      instance_role_policy_name : local.instance_role_policy_name
+      instance_role_policy_attachment : local.instance_role_policy_attachment
     },
     local.default_module_tags
   )

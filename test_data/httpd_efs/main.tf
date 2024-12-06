@@ -30,7 +30,7 @@ module "httpd" {
   task_desired_count            = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
-  alb_access_log_force_destroy  = true
+  access_log_force_destroy      = true
   task_efs_volumes = {
     "volume1" : {
       file_system_id : aws_efs_file_system.volume1.id
