@@ -27,3 +27,8 @@ output "load_balancer_dns_name" {
   description = "Load balancer DNS name."
   value       = local.load_balancer_dns_name
 }
+
+output "dns_hostnames" {
+  description = "DNS hostnames where the ECS service is available."
+  value       = [for h in var.dns_names : trimprefix(join(".", [h, data.aws_route53_zone.this.name]), ".")]
+}
