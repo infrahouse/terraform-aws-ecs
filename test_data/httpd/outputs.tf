@@ -5,3 +5,7 @@ output "zone_id" {
 output "jumphost_hostname" {
   value = random_pet.hostname.id
 }
+
+output "dns_hostnames" {
+  value = module.httpd.dns_hostnames
+}

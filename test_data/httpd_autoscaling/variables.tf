@@ -2,11 +2,16 @@ variable "environment" {
   default = "development"
 }
 variable "region" {}
-variable "role_arn" {}
+variable "role_arn" {
+  default = null
+}
+
 variable "service_name" {
   default = "test-terraform-aws-ecs"
 }
-variable "task_role_arn" {}
+variable "task_role_arn" {
+  default = null
+}
 variable "test_zone" {}
 variable "ubuntu_codename" {
   default = "jammy"
