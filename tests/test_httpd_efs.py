@@ -8,13 +8,11 @@ from tests.conftest import (
     LOG,
     TRACE_TERRAFORM,
     TEST_ZONE,
-    TEST_ROLE_ARN,
-    REGION,
     TERRAFORM_ROOT_DIR,
 )
 
 
-def test_module(service_network, jumphost, ec2_client, route53_client, keep_after):
+def test_module(service_network, keep_after, test_zone_name, test_role_arn, aws_region):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
     internet_gateway_id = service_network["internet_gateway_id"]["value"]
@@ -25,10 +23,8 @@ def test_module(service_network, jumphost, ec2_client, route53_client, keep_afte
         fp.write(
             dedent(
                 f"""
-                role_arn      = "{TEST_ROLE_ARN}"
-                task_role_arn = "{TEST_ROLE_ARN}"
-                test_zone     = "{TEST_ZONE}"
-                region        = "{REGION}"
+                test_zone     = "{test_zone_name}"
+                region        = "{aws_region}"
 
                 subnet_public_ids   = {json.dumps(subnet_public_ids)}
                 subnet_private_ids  = {json.dumps(subnet_private_ids)}
@@ -36,6 +32,15 @@ def test_module(service_network, jumphost, ec2_client, route53_client, keep_afte
                 """
             )
         )
+        if test_role_arn:
+            fp.write(
+                dedent(
+                    f"""
+                    role_arn      = "{test_role_arn}"
+                    task_role_arn = "{test_role_arn}"
+                    """
+                )
+            )
 
     with terraform_apply(
         terraform_module_dir,

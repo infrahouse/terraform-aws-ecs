@@ -9,8 +9,6 @@ from tests.conftest import (
     LOG,
     TRACE_TERRAFORM,
     TEST_ZONE,
-    TEST_ROLE_ARN,
-    REGION,
     TERRAFORM_ROOT_DIR,
     wait_for_success,
 )
@@ -28,10 +26,10 @@ def test_module(
     autoscaling_metric,
     autoscaling_target,
     service_network,
-    jumphost,
-    ec2_client,
-    route53_client,
     keep_after,
+    test_zone_name,
+    test_role_arn,
+    aws_region,
 ):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
@@ -43,15 +41,27 @@ def test_module(
         fp.write(
             dedent(
                 f"""
-                role_arn      = "{TEST_ROLE_ARN}"
-                task_role_arn = "{TEST_ROLE_ARN}"
-                test_zone     = "{TEST_ZONE}"
-                region        = "{REGION}"
+                test_zone     = "{test_zone_name}"
+                region        = "{aws_region}"
 
                 subnet_public_ids   = {json.dumps(subnet_public_ids)}
                 subnet_private_ids  = {json.dumps(subnet_private_ids)}
                 internet_gateway_id = "{internet_gateway_id}"
-
+                """
+            )
+        )
+        if test_role_arn:
+            fp.write(
+                dedent(
+                    f"""
+                    role_arn      = "{test_role_arn}"
+                    task_role_arn = "{test_role_arn}"
+                    """
+                )
+            )
+        fp.write(
+            dedent(
+                f"""
                 autoscaling_metric = "{autoscaling_metric}"
                 autoscaling_target = {autoscaling_target}
                 """
