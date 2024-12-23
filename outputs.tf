@@ -32,3 +32,13 @@ output "dns_hostnames" {
   description = "DNS hostnames where the ECS service is available."
   value       = [for h in var.dns_names : trimprefix(join(".", [h, data.aws_route53_zone.this.name]), ".")]
 }
+
+output "task_execution_role_name" {
+  description = "Task execution role is a role that ECS agent gets."
+  value       = aws_iam_role.ecs_task_execution_role.name
+}
+
+output "task_execution_role_arn" {
+  description = "Task execution role is a role that ECS agent gets."
+  value       = aws_iam_role.ecs_task_execution_role.arn
+}

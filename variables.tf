@@ -212,6 +212,20 @@ variable "ssh_cidr_block" {
   default     = null
 }
 
+variable "task_secrets" {
+  description = "Secrets to pass to a container. A `name` will be the environment variable. valueFrom is a secret ARN."
+  type = list(
+    object(
+      {
+        name : string
+        valueFrom : string
+      }
+    )
+  )
+  sensitive = true
+  default   = []
+}
+
 variable "task_desired_count" {
   description = "Number of containers the ECS service will maintain."
   type        = number

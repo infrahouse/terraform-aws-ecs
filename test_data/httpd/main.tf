@@ -10,6 +10,16 @@ resource "random_pet" "hostname" {
 
 }
 
+module "some-secret" {
+  source             = "registry.infrahouse.com/infrahouse/secret/aws"
+  version            = "~> 0.7"
+  secret_description = "Test secret"
+  secret_name_prefix = "some-secret"
+  secret_value       = "qwerty"
+  readers = [
+    module.httpd.task_execution_role_arn
+  ]
+}
 module "httpd" {
   source = "../../"
   providers = {
@@ -30,7 +40,13 @@ module "httpd" {
   asg_min_size                  = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
-  access_log_force_destroy      = true
+  task_secrets = [
+    {
+      name : "FAKE_API_KEY"
+      valueFrom : module.some-secret.secret_arn
+    }
+  ]
+  access_log_force_destroy = true
   dockerSecurityOptions = [
     "no-new-privileges",
   ]
