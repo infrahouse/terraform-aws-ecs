@@ -66,6 +66,7 @@ resource "aws_ecs_task_definition" "ecs" {
           }
           logConfiguration = local.log_configuration
           environment      = var.task_environment_variables
+          secrets          = var.task_secrets
           mountPoints = [
             for name, def in merge(var.task_efs_volumes, var.task_local_volumes) : {
               sourceVolume : name
