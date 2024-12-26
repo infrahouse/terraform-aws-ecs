@@ -140,5 +140,6 @@ data "aws_iam_policy_document" "ecs_cloudwatch_logs_policy" {
 }
 
 data "aws_route53_zone" "this" {
-  zone_id = var.zone_id
+  zone_id  = var.zone_id
+  provider = aws.dns
 }
