@@ -5,7 +5,7 @@ data "aws_key_pair" "ssh_key_pair" {
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "4.6.0"
+  version = "4.8.2"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -44,10 +44,21 @@ module "pod" {
   autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
   root_volume_size                      = var.root_volume_size
   ssh_cidr_block                        = var.ssh_cidr_block
-  tags = {
-    Name : var.service_name
-    AmazonECSManaged : true
-    parent_module : local.module_name
-    parent_module_version : local.module_version
-  }
+  upstream_module                       = local.module_name
+  tags = merge(
+    {
+      Name : var.service_name
+      AmazonECSManaged : true
+      parent_module : local.module_name
+      parent_module_version : local.module_version
+    },
+    local.vanta_tags
+  )
+  vanta_contains_ephi           = var.vanta_contains_ephi
+  vanta_contains_user_data      = var.vanta_contains_user_data
+  vanta_description             = var.vanta_description
+  vanta_no_alert                = var.vanta_no_alert
+  vanta_owner                   = var.vanta_owner
+  vanta_production_environments = var.vanta_production_environments
+  vanta_user_data_stored        = var.vanta_user_data_stored
 }

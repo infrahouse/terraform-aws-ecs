@@ -93,14 +93,15 @@ module "httpd" {
 | Name | Version |
 |------|---------|
 | <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 5.56 |
+| <a name="provider_aws.dns"></a> [aws.dns](#provider\_aws.dns) | ~> 5.56 |
 | <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | ~> 2.3 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 4.6.0 |
-| <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.1.2 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 4.8.2 |
+| <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.2.0 |
 
 ## Resources
 
@@ -152,7 +153,7 @@ module "httpd" {
 | <a name="input_autoscaling_target"></a> [autoscaling\_target](#input\_autoscaling\_target) | Target value for autoscaling\_metric. | `number` | `null` | no |
 | <a name="input_autoscaling_target_cpu_usage"></a> [autoscaling\_target\_cpu\_usage](#input\_autoscaling\_target\_cpu\_usage) | If autoscaling\_metric is ECSServiceAverageCPUUtilization, how much CPU an ECS service aims to use. | `number` | `80` | no |
 | <a name="input_cloudwatch_agent_config_path"></a> [cloudwatch\_agent\_config\_path](#input\_cloudwatch\_agent\_config\_path) | Path to cloudwatch agent config on host fs | `string` | `""` | no |
-| <a name="input_cloudwatch_agent_container_resources"></a> [cloudwatch\_agent\_container\_resources](#input\_cloudwatch\_agent\_container\_resources) | Resourcces for cloudwatch agent container | <pre>object({<br/>    cpu    = number<br/>    memory = number<br/>  })</pre> | <pre>{<br/>  "cpu": 128,<br/>  "memory": 256<br/>}</pre> | no |
+| <a name="input_cloudwatch_agent_container_resources"></a> [cloudwatch\_agent\_container\_resources](#input\_cloudwatch\_agent\_container\_resources) | Resources for cloudwatch agent container | <pre>object({<br/>    cpu    = number<br/>    memory = number<br/>  })</pre> | <pre>{<br/>  "cpu": 128,<br/>  "memory": 256<br/>}</pre> | no |
 | <a name="input_cloudwatch_agent_image"></a> [cloudwatch\_agent\_image](#input\_cloudwatch\_agent\_image) | Cloudwatch agent image | `string` | `"amazon/cloudwatch-agent:1.300037.1b602"` | no |
 | <a name="input_cloudwatch_log_group"></a> [cloudwatch\_log\_group](#input\_cloudwatch\_log\_group) | CloudWatch log group to create and use. Default: /ecs/{name}-{environment} | `string` | `null` | no |
 | <a name="input_cloudwatch_log_group_retention"></a> [cloudwatch\_log\_group\_retention](#input\_cloudwatch\_log\_group\_retention) | Number of days you want to retain log events in the log group. | `number` | `90` | no |
@@ -168,7 +169,7 @@ module "httpd" {
 | <a name="input_enable_cloudwatch_logs"></a> [enable\_cloudwatch\_logs](#input\_enable\_cloudwatch\_logs) | Enable Cloudwatch logs. If enabled, log driver will be awslogs. | `bool` | `false` | no |
 | <a name="input_enable_container_insights"></a> [enable\_container\_insights](#input\_enable\_container\_insights) | Enable container insights feature on ECS cluster. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | Name of environment. | `string` | `"development"` | no |
-| <a name="input_extra_files"></a> [extra\_files](#input\_extra\_files) | Additional files to create on a host EC2 instance. | <pre>list(object({<br/>    content     = string<br/>    path        = string<br/>    permissions = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_extra_files"></a> [extra\_files](#input\_extra\_files) | Additional files to create on a host EC2 instance. | <pre>list(<br/>    object(<br/>      {<br/>        content     = string<br/>        path        = string<br/>        permissions = string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |
 | <a name="input_healthcheck_interval"></a> [healthcheck\_interval](#input\_healthcheck\_interval) | Number of seconds between checks | `number` | `10` | no |
 | <a name="input_healthcheck_path"></a> [healthcheck\_path](#input\_healthcheck\_path) | Path on the webserver that the elb will check to determine whether the instance is healthy or not. | `string` | `"/index.html"` | no |
 | <a name="input_healthcheck_response_code_matcher"></a> [healthcheck\_response\_code\_matcher](#input\_healthcheck\_response\_code\_matcher) | Range of http return codes that can match | `string` | `"200-299"` | no |
@@ -182,9 +183,10 @@ module "httpd" {
 | <a name="input_on_demand_base_capacity"></a> [on\_demand\_base\_capacity](#input\_on\_demand\_base\_capacity) | If specified, the ASG will request spot instances and this will be the minimal number of on-demand instances. | `number` | `null` | no |
 | <a name="input_root_volume_size"></a> [root\_volume\_size](#input\_root\_volume\_size) | Root volume size in EC2 instance in Gigabytes | `number` | `30` | no |
 | <a name="input_service_health_check_grace_period_seconds"></a> [service\_health\_check\_grace\_period\_seconds](#input\_service\_health\_check\_grace\_period\_seconds) | Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647. | `number` | `null` | no |
-| <a name="input_service_name"></a> [service\_name](#input\_service\_name) | Service name. | `string` | n/a | yes |
+| <a name="input_service_name"></a> [service\_name](#input\_service\_name) | Service name | `string` | n/a | yes |
 | <a name="input_ssh_cidr_block"></a> [ssh\_cidr\_block](#input\_ssh\_cidr\_block) | CIDR range that is allowed to SSH into the backend instances | `string` | `null` | no |
 | <a name="input_ssh_key_name"></a> [ssh\_key\_name](#input\_ssh\_key\_name) | ssh key name installed in ECS host instances. | `string` | n/a | yes |
+| <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to resources creatded by the module. | `map(string)` | `{}` | no |
 | <a name="input_task_desired_count"></a> [task\_desired\_count](#input\_task\_desired\_count) | Number of containers the ECS service will maintain. | `number` | `1` | no |
 | <a name="input_task_efs_volumes"></a> [task\_efs\_volumes](#input\_task\_efs\_volumes) | Map name->{file\_system\_id, container\_path} of EFS volumes defined in task and available for containers to mount. | <pre>map(<br/>    object(<br/>      {<br/>        file_system_id : string<br/>        container_path : string<br/>      }<br/>    )<br/>  )</pre> | `{}` | no |
 | <a name="input_task_environment_variables"></a> [task\_environment\_variables](#input\_task\_environment\_variables) | Environment variables passed down to a task. | <pre>list(<br/>    object(<br/>      {<br/>        name : string<br/>        value : string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |
@@ -194,7 +196,15 @@ module "httpd" {
 | <a name="input_task_min_count"></a> [task\_min\_count](#input\_task\_min\_count) | Lowest number of tasks to run | `number` | `1` | no |
 | <a name="input_task_role_arn"></a> [task\_role\_arn](#input\_task\_role\_arn) | Task Role ARN. The role will be assumed by a container. | `string` | `null` | no |
 | <a name="input_task_secrets"></a> [task\_secrets](#input\_task\_secrets) | Secrets to pass to a container. A `name` will be the environment variable. valueFrom is a secret ARN. | <pre>list(<br/>    object(<br/>      {<br/>        name : string<br/>        valueFrom : string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |
+| <a name="input_upstream_module"></a> [upstream\_module](#input\_upstream\_module) | Module that called this module. | `string` | `null` | no |
 | <a name="input_users"></a> [users](#input\_users) | A list of maps with user definitions according to the cloud-init format | `any` | `null` | no |
+| <a name="input_vanta_contains_ephi"></a> [vanta\_contains\_ephi](#input\_vanta\_contains\_ephi) | This tag allows administrators to define whether or not a resource contains electronically Protected Health Information (ePHI). It can be set to either (true) or if they do not have ephi data (false). | `bool` | `false` | no |
+| <a name="input_vanta_contains_user_data"></a> [vanta\_contains\_user\_data](#input\_vanta\_contains\_user\_data) | his tag allows administrators to define whether or not a resource contains user data (true) or if they do not contain user data (false). | `bool` | `false` | no |
+| <a name="input_vanta_description"></a> [vanta\_description](#input\_vanta\_description) | This tag allows administrators to set a description, for instance, or add any other descriptive information. | `string` | `null` | no |
+| <a name="input_vanta_no_alert"></a> [vanta\_no\_alert](#input\_vanta\_no\_alert) | Administrators can add this tag to mark a resource as out of scope for their audit. If this tag is added, the administrator will need to set a reason for why it's not relevant to their audit. | `string` | `null` | no |
+| <a name="input_vanta_owner"></a> [vanta\_owner](#input\_vanta\_owner) | The email address of the instance's owner, and it should be set to the email address of a user in Vanta. An owner will not be assigned if there is no user in Vanta with the email specified. | `string` | `null` | no |
+| <a name="input_vanta_production_environments"></a> [vanta\_production\_environments](#input\_vanta\_production\_environments) | Environment names to consider production grade in Vanta. | `list(string)` | <pre>[<br/>  "production",<br/>  "prod"<br/>]</pre> | no |
+| <a name="input_vanta_user_data_stored"></a> [vanta\_user\_data\_stored](#input\_vanta\_user\_data\_stored) | This tag allows administrators to describe the type of user data the instance contains. | `string` | `null` | no |
 | <a name="input_zone_id"></a> [zone\_id](#input\_zone\_id) | Zone where DNS records will be created for the service and certificate validation. | `string` | n/a | yes |
 
 ## Outputs

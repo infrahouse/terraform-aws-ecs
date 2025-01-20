@@ -15,7 +15,13 @@ resource "aws_ecs_capacity_provider" "ecs" {
       instance_warmup_period = 300
     }
   }
-  tags = local.default_module_tags
+  tags = merge(
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
+  )
 }
 
 resource "aws_ecs_cluster_capacity_providers" "ecs" {
@@ -36,7 +42,13 @@ resource "aws_ecs_cluster" "ecs" {
     name  = "containerInsights"
     value = var.enable_container_insights ? "enabled" : "disabled"
   }
-  tags = local.default_module_tags
+  tags = merge(
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
+  )
 }
 
 resource "aws_ecs_task_definition" "ecs" {
@@ -99,7 +111,13 @@ resource "aws_ecs_task_definition" "ecs" {
       host_path = volume.value.host_path
     }
   }
-  tags = local.default_module_tags
+  tags = merge(
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
+  )
 }
 
 resource "aws_ecs_service" "ecs" {
@@ -145,7 +163,11 @@ resource "aws_ecs_service" "ecs" {
       instance_role_policy_name : local.instance_role_policy_name
       instance_role_policy_attachment : local.instance_role_policy_attachment
     },
-    local.default_module_tags
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
   )
   timeouts {
     delete = "10m"

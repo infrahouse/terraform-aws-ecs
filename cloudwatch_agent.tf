@@ -13,7 +13,13 @@ resource "aws_iam_role" "cloudwatch_agent_task_role" {
       }
     ]
   })
-  tags = local.default_module_tags
+  tags = merge(
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "cloudwatch_policy_attachment" {
@@ -61,7 +67,13 @@ resource "aws_ecs_task_definition" "cloudwatch_agent" {
     name      = "config-volume"
     host_path = var.cloudwatch_agent_config_path
   }
-  tags = local.default_module_tags
+  tags = merge(
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
+  )
 }
 
 resource "aws_ecs_service" "cloudwatch_agent_service" {
@@ -71,5 +83,11 @@ resource "aws_ecs_service" "cloudwatch_agent_service" {
   task_definition     = aws_ecs_task_definition.cloudwatch_agent[0].arn
   launch_type         = "EC2"
   scheduling_strategy = "DAEMON"
-  tags                = local.default_module_tags
+  tags = merge(
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
+  )
 }
