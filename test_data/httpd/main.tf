@@ -40,6 +40,7 @@ module "httpd" {
   asg_min_size                  = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
+  vanta_contains_user_data      = true
   task_secrets = [
     {
       name : "FAKE_API_KEY"

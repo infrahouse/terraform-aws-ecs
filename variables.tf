@@ -4,36 +4,6 @@ variable "access_log_force_destroy" {
   default     = false
 }
 
-variable "healthcheck_interval" {
-  description = "Number of seconds between checks"
-  type        = number
-  default     = 10
-}
-
-variable "healthcheck_timeout" {
-  description = "Healthcheck timeout"
-  type        = number
-  default     = 5
-}
-
-variable "healthcheck_path" {
-  description = "Path on the webserver that the elb will check to determine whether the instance is healthy or not."
-  type        = string
-  default     = "/index.html"
-}
-
-variable "idle_timeout" {
-  description = "The time in seconds that the connection is allowed to be idle."
-  type        = number
-  default     = 60
-}
-
-variable "healthcheck_response_code_matcher" {
-  description = "Range of http return codes that can match"
-  type        = string
-  default     = "200-299"
-}
-
 variable "ami_id" {
   description = "Image for host EC2 instances. If not specified, the latest Amazon image will be used."
   type        = string
@@ -93,6 +63,90 @@ variable "autoscaling_target" {
   default     = null
 }
 
+variable "cloudwatch_agent_config_path" {
+  description = "Path to cloudwatch agent config on host fs"
+  type        = string
+  default     = ""
+}
+
+variable "cloudwatch_agent_image" {
+  description = "Cloudwatch agent image"
+  type        = string
+  default     = "amazon/cloudwatch-agent:1.300037.1b602"
+}
+
+variable "cloudwatch_agent_container_resources" {
+  description = "Resources for cloudwatch agent container"
+  type = object({
+    cpu    = number
+    memory = number
+  })
+  default = {
+    cpu    = 128
+    memory = 256
+  }
+}
+
+variable "cloudwatch_log_group" {
+  description = "CloudWatch log group to create and use. Default: /ecs/{name}-{environment}"
+  type        = string
+  default     = null
+}
+
+variable "cloudwatch_log_group_retention" {
+  description = "Number of days you want to retain log events in the log group."
+  default     = 90
+  type        = number
+}
+
+variable "enable_cloudwatch_agent" {
+  description = "Add cloudwatch agent service to ECS cluster with DAEMON type"
+  type        = bool
+  default     = false
+}
+
+variable "enable_cloudwatch_logs" {
+  description = "Enable Cloudwatch logs. If enabled, log driver will be awslogs."
+  type        = bool
+  default     = false
+}
+
+variable "enable_container_insights" {
+  description = "Enable container insights feature on ECS cluster."
+  type        = bool
+  default     = false
+}
+
+variable "healthcheck_interval" {
+  description = "Number of seconds between checks"
+  type        = number
+  default     = 10
+}
+
+variable "healthcheck_timeout" {
+  description = "Healthcheck timeout"
+  type        = number
+  default     = 5
+}
+
+variable "healthcheck_path" {
+  description = "Path on the webserver that the elb will check to determine whether the instance is healthy or not."
+  type        = string
+  default     = "/index.html"
+}
+
+variable "idle_timeout" {
+  description = "The time in seconds that the connection is allowed to be idle."
+  type        = number
+  default     = 60
+}
+
+variable "healthcheck_response_code_matcher" {
+  description = "Range of http return codes that can match"
+  type        = string
+  default     = "200-299"
+}
+
 variable "container_command" {
   description = "If specified, use this list of strings as a docker command."
   type        = list(string)
@@ -147,11 +201,15 @@ variable "environment" {
 
 variable "extra_files" {
   description = "Additional files to create on a host EC2 instance."
-  type = list(object({
-    content     = string
-    path        = string
-    permissions = string
-  }))
+  type = list(
+    object(
+      {
+        content     = string
+        path        = string
+        permissions = string
+      }
+    )
+  )
   default = []
 }
 
@@ -161,13 +219,19 @@ variable "internet_gateway_id" {
   default     = null
 }
 
+variable "lb_type" {
+  description = "Load balancer type. ALB or NLB"
+  type        = string
+  default     = "alb"
+}
+
 variable "load_balancer_subnets" {
   description = "Load Balancer Subnets."
   type        = list(string)
 }
 
 variable "managed_draining" {
-  description = " Enables or disables a graceful shutdown of instances without disturbing workloads."
+  description = "Enables or disables a graceful shutdown of instances without disturbing workloads."
   type        = bool
   default     = true
 }
@@ -191,7 +255,7 @@ variable "root_volume_size" {
 }
 
 variable "service_name" {
-  description = "Service name."
+  description = "Service name"
   type        = string
 }
 
@@ -210,6 +274,12 @@ variable "ssh_cidr_block" {
   description = "CIDR range that is allowed to SSH into the backend instances"
   type        = string
   default     = null
+}
+
+variable "tags" {
+  description = "Tags to apply to resources creatded by the module."
+  type        = map(string)
+  default     = {}
 }
 
 variable "task_secrets" {
@@ -296,6 +366,12 @@ variable "task_local_volumes" {
   default = {}
 }
 
+variable "upstream_module" {
+  description = "Module that called this module."
+  type        = string
+  default     = null
+}
+
 variable "users" {
   description = "A list of maps with user definitions according to the cloud-init format"
   default     = null
@@ -328,68 +404,52 @@ variable "users" {
   #   )
 }
 
-variable "zone_id" {
-  description = "Zone where DNS records will be created for the service and certificate validation."
-  type        = string
-}
-
-variable "enable_cloudwatch_logs" {
-  description = "Enable Cloudwatch logs. If enabled, log driver will be awslogs."
-  type        = bool
-  default     = false
-}
-
-variable "cloudwatch_log_group" {
-  description = "CloudWatch log group to create and use. Default: /ecs/{name}-{environment}"
+variable "vanta_owner" {
+  description = "The email address of the instance's owner, and it should be set to the email address of a user in Vanta. An owner will not be assigned if there is no user in Vanta with the email specified."
   type        = string
   default     = null
 }
 
-variable "cloudwatch_log_group_retention" {
-  description = "Number of days you want to retain log events in the log group."
-  default     = 90
-  type        = number
+variable "vanta_production_environments" {
+  description = "Environment names to consider production grade in Vanta."
+  type        = list(string)
+  default = [
+    "production",
+    "prod"
+  ]
 }
 
-variable "enable_cloudwatch_agent" {
-  description = "Add cloudwatch agent service to ECS cluster with DAEMON type"
+variable "vanta_description" {
+  description = "This tag allows administrators to set a description, for instance, or add any other descriptive information."
+  type        = string
+  default     = null
+}
+
+variable "vanta_contains_user_data" {
+  description = "his tag allows administrators to define whether or not a resource contains user data (true) or if they do not contain user data (false)."
   type        = bool
   default     = false
 }
 
-variable "cloudwatch_agent_config_path" {
-  description = "Path to cloudwatch agent config on host fs"
-  type        = string
-  default     = ""
-}
-
-variable "cloudwatch_agent_container_resources" {
-  description = "Resourcces for cloudwatch agent container"
-  type = object({
-    cpu    = number
-    memory = number
-  })
-  default = {
-    cpu    = 128
-    memory = 256
-  }
-}
-
-variable "cloudwatch_agent_image" {
-  description = "Cloudwatch agent image"
-  type        = string
-  default     = "amazon/cloudwatch-agent:1.300037.1b602"
-}
-
-variable "enable_container_insights" {
-  description = "Enable container insights feature on ECS cluster."
+variable "vanta_contains_ephi" {
+  description = "This tag allows administrators to define whether or not a resource contains electronically Protected Health Information (ePHI). It can be set to either (true) or if they do not have ephi data (false)."
   type        = bool
   default     = false
 }
 
-
-variable "lb_type" {
-  description = "Load balancer type. ALB or NLB"
+variable "vanta_user_data_stored" {
+  description = "This tag allows administrators to describe the type of user data the instance contains."
   type        = string
-  default     = "alb"
+  default     = null
+}
+
+variable "vanta_no_alert" {
+  description = "Administrators can add this tag to mark a resource as out of scope for their audit. If this tag is added, the administrator will need to set a reason for why it's not relevant to their audit."
+  type        = string
+  default     = null
+}
+
+variable "zone_id" {
+  description = "Zone where DNS records will be created for the service and certificate validation."
+  type        = string
 }
