@@ -32,15 +32,14 @@ module "httpd" {
   docker_image                  = "httpd"
   container_port                = 80
   service_name                  = var.service_name
-  ssh_key_name                  = aws_key_pair.black-mbp.key_name
   zone_id                       = data.aws_route53_zone.cicd.zone_id
   internet_gateway_id           = var.internet_gateway_id
-  task_desired_count            = 1
-  asg_max_size                  = 1
-  asg_min_size                  = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
+  enable_cloudwatch_logs        = true
   vanta_contains_user_data      = true
+  task_min_count                = 20
+  task_max_count                = 40
   task_secrets = [
     {
       name : "FAKE_API_KEY"

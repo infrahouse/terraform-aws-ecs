@@ -1,0 +1,24 @@
+{
+  "agent": {
+    "logfile": "/var/log/amazon-cloudwatch-agent.log",
+    "debug": false
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/messages",
+            "log_group_name": "${syslog_group_name}",
+            "log_stream_name": "{local_hostname}"
+          },
+          {
+            "file_path": "/var/log/dmesg",
+            "log_group_name": "${dmesg_group_name}",
+            "log_stream_name": "{local_hostname}"
+          }
+        ]
+      }
+    }
+  }
+}

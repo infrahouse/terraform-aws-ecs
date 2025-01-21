@@ -1,11 +1,7 @@
-data "aws_key_pair" "ssh_key_pair" {
-  key_name = var.ssh_key_name
-}
-
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "4.8.2"
+  version = "4.8.3"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -26,8 +22,8 @@ module "pod" {
   health_check_type                     = "EC2"
   attach_tagret_group_to_asg            = false
   instance_type                         = var.asg_instance_type
-  asg_min_size                          = var.asg_min_size
-  asg_max_size                          = var.asg_max_size
+  asg_min_size                          = local.asg_min_size
+  asg_max_size                          = local.asg_max_size
   asg_scale_in_protected_instances      = "Refresh"
   subnets                               = var.load_balancer_subnets
   backend_subnets                       = var.asg_subnets
@@ -35,7 +31,7 @@ module "pod" {
   dns_a_records                         = var.dns_names
   assume_dns                            = var.assume_dns
   ami                                   = var.ami_id == null ? data.aws_ami.ecs.image_id : var.ami_id
-  key_pair_name                         = data.aws_key_pair.ssh_key_pair.key_name
+  key_pair_name                         = var.ssh_key_name != null ? var.ssh_key_name : aws_key_pair.ecs.key_name
   target_group_port                     = var.container_port
   userdata                              = data.cloudinit_config.ecs.rendered
   instance_profile_permissions          = data.aws_iam_policy_document.instance_policy.json
