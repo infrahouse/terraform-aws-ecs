@@ -23,15 +23,15 @@ variable "asg_health_check_grace_period" {
 }
 
 variable "asg_min_size" {
-  description = "Minimum number of instances in ASG."
+  description = "Minimum number of instances in ASG. By default, the number of subnets."
   type        = number
-  default     = 2
+  default     = null
 }
 
 variable "asg_max_size" {
-  description = "Maximum number of instances in ASG."
+  description = "Maximum number of instances in ASG. By default, it's calculated based on number of tasks and their memory requirements."
   type        = number
-  default     = 10
+  default     = null
 }
 
 variable "asg_subnets" {
@@ -63,32 +63,14 @@ variable "autoscaling_target" {
   default     = null
 }
 
-variable "cloudwatch_agent_config_path" {
-  description = "Path to cloudwatch agent config on host fs"
-  type        = string
-  default     = ""
-}
-
 variable "cloudwatch_agent_image" {
   description = "Cloudwatch agent image"
   type        = string
-  default     = "amazon/cloudwatch-agent:1.300037.1b602"
-}
-
-variable "cloudwatch_agent_container_resources" {
-  description = "Resources for cloudwatch agent container"
-  type = object({
-    cpu    = number
-    memory = number
-  })
-  default = {
-    cpu    = 128
-    memory = 256
-  }
+  default     = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest"
 }
 
 variable "cloudwatch_log_group" {
-  description = "CloudWatch log group to create and use. Default: /ecs/{name}-{environment}"
+  description = "CloudWatch log group to create and use. Default: /ecs/{var.environment}/{var.service_name}"
   type        = string
   default     = null
 }
@@ -97,12 +79,6 @@ variable "cloudwatch_log_group_retention" {
   description = "Number of days you want to retain log events in the log group."
   default     = 90
   type        = number
-}
-
-variable "enable_cloudwatch_agent" {
-  description = "Add cloudwatch agent service to ECS cluster with DAEMON type"
-  type        = bool
-  default     = false
 }
 
 variable "enable_cloudwatch_logs" {
@@ -268,6 +244,7 @@ variable "service_health_check_grace_period_seconds" {
 variable "ssh_key_name" {
   description = "ssh key name installed in ECS host instances."
   type        = string
+  default     = null
 }
 
 variable "ssh_cidr_block" {

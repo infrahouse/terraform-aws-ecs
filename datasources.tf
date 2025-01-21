@@ -58,6 +58,19 @@ data "cloudinit_config" "ecs" {
                     )
                   }
                 ],
+                var.enable_cloudwatch_logs == true ? [
+                  {
+                    path : local.cloudwatch_agent_config_path
+                    permissions : "0644"
+                    content : templatefile(
+                      "${path.module}/assets/cloudwatch_agent_config.tftmpl",
+                      {
+                        syslog_group_name : aws_cloudwatch_log_group.ecs_ec2_syslog[0].name
+                        dmesg_group_name : aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
+                      }
+                    )
+                  }
+                ] : [],
                 var.extra_files
               )
             },
@@ -142,4 +155,8 @@ data "aws_iam_policy_document" "ecs_cloudwatch_logs_policy" {
 data "aws_route53_zone" "this" {
   zone_id  = var.zone_id
   provider = aws.dns
+}
+
+data "aws_ec2_instance_type" "backend" {
+  instance_type = var.asg_instance_type
 }

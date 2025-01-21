@@ -53,5 +53,26 @@ locals {
   instance_role_policy_name       = var.lb_type == "alb" ? module.pod[0].instance_role_policy_name : module.tcp-pod[0].instance_role_policy_name
   instance_role_policy_attachment = var.lb_type == "alb" ? module.pod[0].instance_role_policy_attachment : module.tcp-pod[0].instance_role_policy_attachment
 
+  cloudwatch_agent_config_path = "/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json"
+  cloudwatch_agent_container_resources = {
+    cpu    = 128
+    memory = 256
+  }
+
+
+  asg_min_size = var.asg_min_size != null ? var.asg_min_size : length(var.asg_subnets)
+  asg_max_size = max(
+    # How many EC2 instances we need to host task_max_count assuming memory consumption
+    ceil(
+      var.task_max_count / ((data.aws_ec2_instance_type.backend.memory_size - 1024 - local.cloudwatch_agent_container_resources.memory) / var.container_memory)
+    ),
+    # How many EC2 instances we need to host task_max_count assuming CPU consumption
+    ceil(
+      var.task_max_count / ((data.aws_ec2_instance_type.backend.default_vcpus * 1024 - local.cloudwatch_agent_container_resources.cpu) / var.container_cpu)
+    ),
+    # Or at least one more than min size.
+    local.asg_min_size + 1
+  )
+
 }
 
