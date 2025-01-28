@@ -42,3 +42,8 @@ output "task_execution_role_arn" {
   description = "Task execution role is a role that ECS agent gets."
   value       = aws_iam_role.ecs_task_execution_role.arn
 }
+
+output "backend_security_group" {
+  description = "Security group of backend."
+  value       = local.backend_security_group
+}
