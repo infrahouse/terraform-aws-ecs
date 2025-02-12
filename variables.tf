@@ -430,3 +430,9 @@ variable "zone_id" {
   description = "Zone where DNS records will be created for the service and certificate validation."
   type        = string
 }
+
+variable "execution_task_role_policy_arn" {
+  description = "Extra policy for execution task role"
+  type        = string
+  default     = ""
+}
