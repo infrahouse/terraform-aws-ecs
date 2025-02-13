@@ -1,7 +1,7 @@
 module "tcp-pod" {
   count   = var.lb_type == "nlb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/tcp-pod/aws"
-  version = "0.2.0"
+  version = "0.3.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
