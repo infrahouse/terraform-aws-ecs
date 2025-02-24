@@ -77,7 +77,7 @@ variable "cloudwatch_log_group" {
 
 variable "cloudwatch_log_group_retention" {
   description = "Number of days you want to retain log events in the log group."
-  default     = 90
+  default     = 365
   type        = number
 }
 
