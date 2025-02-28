@@ -23,6 +23,11 @@ output "asg_name" {
   value       = local.asg_name
 }
 
+output "load_balancer_arn" {
+  description = "Load balancer ARN."
+  value       = local.load_balancer_arn
+}
+
 output "load_balancer_dns_name" {
   description = "Load balancer DNS name."
   value       = local.load_balancer_dns_name
