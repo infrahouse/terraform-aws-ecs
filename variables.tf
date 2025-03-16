@@ -93,6 +93,16 @@ variable "enable_container_insights" {
   default     = false
 }
 
+variable "execution_extra_policy" {
+  description = "A map of extra policies attached to the task execution role. The key is an arbitrary string, the value is the policy ARN."
+  type = object(
+    {
+      name : string
+      policy_arn : string
+    }
+  )
+}
+
 variable "healthcheck_interval" {
   description = "Number of seconds between checks"
   type        = number

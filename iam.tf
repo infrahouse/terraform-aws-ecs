@@ -39,3 +39,9 @@ resource "aws_iam_role_policy_attachment" "extra_policy_attachment" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = var.execution_task_role_policy_arn
 }
+
+resource "aws_iam_role_policy_attachment" "execution_extra_policy" {
+  for_each   = var.execution_extra_policy
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = each.value
+}
