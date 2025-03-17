@@ -47,6 +47,9 @@ resource "aws_ecs_cluster" "ecs" {
     {
       VantaContainsUserData : false
       VantaContainsEPHI : false
+    },
+    {
+      module_version : local.module_version
     }
   )
 }
