@@ -8,7 +8,6 @@ locals {
       service : var.service_name
       account : data.aws_caller_identity.current.account_id
       created_by_module : local.module_name
-      module_version = local.module_version
     },
     var.upstream_module != null ? {
       upstream_module : var.upstream_module
