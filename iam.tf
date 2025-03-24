@@ -35,7 +35,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_logs_policy" 
 }
 
 resource "aws_iam_role_policy_attachment" "extra_policy_attachment" {
-  count      = var.execution_task_role_policy_arn != "" ? 1 : 0
+  count      = var.execution_task_role_policy_arn != null ? 1 : 0
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = var.execution_task_role_policy_arn
 }

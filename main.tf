@@ -146,6 +146,14 @@ resource "aws_ecs_service" "ecs" {
     weight            = 100
   }
 
+  dynamic "deployment_circuit_breaker" {
+    for_each = var.enable_deployment_circuit_breaker ? [1] : []
+    content {
+      enable   = true
+      rollback = true
+    }
+  }
+
   depends_on = [
     aws_iam_role.ecs_task_execution_role,
     aws_iam_role_policy_attachment.ecs_task_execution_role_policy,
