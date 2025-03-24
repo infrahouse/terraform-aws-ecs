@@ -438,7 +438,20 @@ variable "zone_id" {
 }
 
 variable "execution_task_role_policy_arn" {
-  description = "Extra policy for execution task role"
+  description = "Extra policy for execution task role."
   type        = string
-  default     = ""
+  default     = null
 }
+
+variable "enable_deployment_circuit_breaker" {
+  description = "Enable ECS deployment circuit breaker."
+  type        = bool
+  default     = true
+}
+
+variable "sns_topic_arn" {
+  description = "SNS topic arn for sending alerts on failed deployments."
+  type        = string
+  default     = null
+}
+
