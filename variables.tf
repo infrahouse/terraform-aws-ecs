@@ -454,3 +454,15 @@ variable "sns_topic_arn" {
   type        = string
   default     = null
 }
+
+variable "cloudinit_extra_commands" {
+  description = "Extra commands for run on ASG."
+  type        = list(string)
+  default     = []
+}
+
+variable "extra_instance_profile_permissions" {
+  description = "A JSON with a permissions policy document. The policy will be attached to the ASG instance profile."
+  type        = string
+  default     = null
+}

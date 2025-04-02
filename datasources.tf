@@ -75,12 +75,12 @@ data "cloudinit_config" "ecs" {
               )
             },
             {
-              "runcmd" : [
+              "runcmd" : concat([
                 "fallocate -l ${data.aws_ec2_instance_type.ecs.memory_size * 2}M /swapfile",
                 "chmod 600 /swapfile",
                 "mkswap /swapfile",
                 "swapon /swapfile"
-              ]
+              ], var.cloudinit_extra_commands)
             }
           )
 
@@ -91,6 +91,7 @@ data "cloudinit_config" "ecs" {
 }
 
 data "aws_iam_policy_document" "instance_policy" {
+  source_policy_documents = var.extra_instance_profile_permissions != null ? [var.extra_instance_profile_permissions] : []
   statement {
     actions   = ["ec2:Describe*"]
     resources = ["*"]
