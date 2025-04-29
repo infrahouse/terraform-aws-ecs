@@ -1,7 +1,7 @@
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "4.10.0"
+  version = "5.2.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -56,4 +56,5 @@ module "pod" {
   vanta_owner                   = var.vanta_owner
   vanta_production_environments = var.vanta_production_environments
   vanta_user_data_stored        = var.vanta_user_data_stored
+  on_demand_base_capacity       = var.on_demand_base_capacity
 }
