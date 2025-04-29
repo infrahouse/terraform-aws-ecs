@@ -56,4 +56,5 @@ module "pod" {
   vanta_owner                   = var.vanta_owner
   vanta_production_environments = var.vanta_production_environments
   vanta_user_data_stored        = var.vanta_user_data_stored
+  on_demand_base_capacity       = var.on_demand_base_capacity
 }

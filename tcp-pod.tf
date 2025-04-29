@@ -1,7 +1,7 @@
 module "tcp-pod" {
   count   = var.lb_type == "nlb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/tcp-pod/aws"
-  version = "0.3.0"
+  version = "0.5.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -32,6 +32,7 @@ module "tcp-pod" {
   instance_profile_permissions     = data.aws_iam_policy_document.instance_policy.json
   protect_from_scale_in            = true # this is to allow ECS manage ASG instances
   autoscaling_target_cpu_load      = var.autoscaling_target_cpu_usage
+  on_demand_base_capacity          = var.on_demand_base_capacity
   root_volume_size                 = var.root_volume_size
   ssh_cidr_block                   = var.ssh_cidr_block
   upstream_module                  = local.module_name
