@@ -275,8 +275,7 @@ variable "task_secrets" {
       }
     )
   )
-  sensitive = true
-  default   = []
+  default = []
 }
 
 variable "task_desired_count" {
@@ -295,8 +294,7 @@ variable "task_environment_variables" {
       }
     )
   )
-  sensitive = true
-  default   = []
+  default = []
 }
 
 variable "task_ipc_mode" {
