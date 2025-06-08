@@ -12,7 +12,7 @@ resource "random_pet" "hostname" {
 
 module "some-secret" {
   source             = "registry.infrahouse.com/infrahouse/secret/aws"
-  version            = "~> 0.7"
+  version            = "~> 1.0"
   secret_description = "Test secret"
   secret_name_prefix = "some-secret"
   secret_value       = "qwerty"
