@@ -19,6 +19,7 @@ module "some-secret" {
   readers = [
     module.httpd.task_execution_role_arn
   ]
+  environment = var.environment
 }
 module "httpd" {
   source = "../../"
