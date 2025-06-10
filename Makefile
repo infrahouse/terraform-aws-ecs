@@ -21,6 +21,18 @@ install-hooks:  ## Install repo hooks
 	@test -L .git/hooks/pre-commit || ln -fs ../../hooks/pre-commit .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
 
+.PHONY: test-keep
+test-keep:  ## Run a test and keep resources
+	pytest -xvvs \
+		--test-role-arn="arn:aws:iam::303467602807:role/ecs-tester" \
+		--keep-after \
+		tests/test_httpd.py
+
+.PHONY: test-clean
+test-clean:  ## Run a test and destroy resources
+	pytest -xvvs \
+		--test-role-arn="arn:aws:iam::303467602807:role/ecs-tester" \
+		tests/test_httpd.py
 
 .PHONY: test
 test:  ## Run tests on the module
