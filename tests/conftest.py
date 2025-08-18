@@ -1,15 +1,12 @@
 import time
 import logging
 
-from infrahouse_toolkit.logging import setup_logging
+from infrahouse_core.logging import setup_logging
 from requests import get
 
 DEFAULT_PROGRESS_INTERVAL = 10
-TRACE_TERRAFORM = False
-UBUNTU_CODENAME = "jammy"
 
 LOG = logging.getLogger(__name__)
-TEST_ZONE = "ci-cd.infrahouse.com"
 TERRAFORM_ROOT_DIR = "test_data"
 
 setup_logging(LOG, debug=True)
