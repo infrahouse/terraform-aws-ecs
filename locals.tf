@@ -1,5 +1,5 @@
 locals {
-  module_version = "5.8.3"
+  module_version = "5.9.0"
 
   module_name = "infrahouse/ecs/aws"
   default_module_tags = merge(
