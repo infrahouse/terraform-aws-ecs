@@ -2,12 +2,10 @@ import json
 from os import path as osp
 from textwrap import dedent
 
-from infrahouse_toolkit.terraform import terraform_apply
+from pytest_infrahouse import terraform_apply
 
 from tests.conftest import (
     LOG,
-    TRACE_TERRAFORM,
-    TEST_ZONE,
     TERRAFORM_ROOT_DIR,
     wait_for_success,
 )
@@ -46,9 +44,8 @@ def test_module(service_network, keep_after, test_zone_name, test_role_arn, aws_
         terraform_module_dir,
         destroy_after=not keep_after,
         json_output=True,
-        enable_trace=TRACE_TERRAFORM,
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
         load_balancer_dns_name = tf_httpd_output["load_balancer_dns_name"]["value"]
         wait_for_success(f"http://{load_balancer_dns_name}/")
-        wait_for_success(f"http://www.{TEST_ZONE}/")
+        wait_for_success(f"http://www.{test_zone_name}/")

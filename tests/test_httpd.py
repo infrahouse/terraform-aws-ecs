@@ -6,7 +6,6 @@ from pytest_infrahouse import terraform_apply
 
 from tests.conftest import (
     LOG,
-    TRACE_TERRAFORM,
     wait_for_success,
     TERRAFORM_ROOT_DIR,
 )
@@ -46,7 +45,6 @@ def test_module(service_network, keep_after, test_role_arn, aws_region, test_zon
         terraform_module_dir,
         destroy_after=not keep_after,
         json_output=True,
-        enable_trace=TRACE_TERRAFORM,
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
         for url in [f"https://www.{test_zone_name}", f"https://{test_zone_name}"]:
