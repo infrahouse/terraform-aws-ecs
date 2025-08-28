@@ -52,3 +52,18 @@ output "backend_security_group" {
   description = "Security group of backend."
   value       = local.backend_security_group
 }
+
+output "ssl_listener_arn" {
+  description = "SSL listener ARN"
+  value       = var.lb_type == "alb" ? module.pod[0].ssl_listener_arn : null
+}
+
+output "load_balancer_security_groups" {
+  description = "Security groups associated with the load balancer"
+  value       = var.lb_type == "alb" ? module.pod[0].load_balancer_security_groups : null
+}
+
+output "acm_certificate_arn" {
+  description = "ARN of the ACM certificate used by the load balancer"
+  value       = var.lb_type == "alb" ? module.pod[0].acm_certificate_arn : null
+}
