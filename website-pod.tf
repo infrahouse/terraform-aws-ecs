@@ -1,7 +1,7 @@
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "5.7.0"
+  version = "5.8.2"
   providers = {
     aws     = aws
     aws.dns = aws.dns
