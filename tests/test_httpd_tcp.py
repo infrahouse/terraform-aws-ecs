@@ -16,7 +16,14 @@ from tests.conftest import (
 @pytest.mark.parametrize(
     "aws_provider_version", [">= 5.11, < 7.0", "~> 6.0"], ids=["aws-5", "aws-6"]
 )
-def test_module(service_network, keep_after, test_zone_name, test_role_arn, aws_region, aws_provider_version):
+def test_module(
+    service_network,
+    keep_after,
+    test_zone_name,
+    test_role_arn,
+    aws_region,
+    aws_provider_version,
+):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
     internet_gateway_id = service_network["internet_gateway_id"]["value"]

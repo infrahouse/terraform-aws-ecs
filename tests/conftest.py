@@ -36,7 +36,7 @@ def update_terraform_tf(terraform_module_dir, aws_provider_version):
     with open(terraform_tf_path, "w") as fp:
         fp.write(
             dedent(
-                f'''terraform {{
+                f"""terraform {{
   //noinspection HILUnresolvedReference
   required_providers {{
     aws = {{
@@ -49,6 +49,6 @@ def update_terraform_tf(terraform_module_dir, aws_provider_version):
     }}
   }}
 }}
-'''
+"""
             )
         )
