@@ -13,7 +13,7 @@ from tests.conftest import (
 
 
 @pytest.mark.parametrize(
-    "aws_provider_version", [">= 5.11, < 7.0", "~> 6.0"], ids=["aws-5", "aws-6"]
+    "aws_provider_version", ["~> 5.56", "~> 6.0"], ids=["aws-5", "aws-6"]
 )
 def test_module(
     service_network,
@@ -29,6 +29,24 @@ def test_module(
 
     # Create ECS with httpd container
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd_efs")
+    # Clean up any existing Terraform state to ensure clean test
+    import shutil
+
+    state_files = [
+        osp.join(terraform_module_dir, ".terraform"),
+        osp.join(terraform_module_dir, ".terraform.lock.hcl"),
+    ]
+
+    for state_file in state_files:
+        try:
+            if osp.isdir(state_file):
+                shutil.rmtree(state_file)
+            elif osp.isfile(state_file):
+                remove(state_file)
+        except FileNotFoundError:
+            # File was already removed by another process
+            pass
+
     update_terraform_tf(terraform_module_dir, aws_provider_version)
     with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
         fp.write(
