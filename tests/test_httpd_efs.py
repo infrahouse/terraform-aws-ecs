@@ -1,5 +1,5 @@
 import json
-from os import path as osp
+from os import path as osp, remove
 from textwrap import dedent
 
 import pytest
