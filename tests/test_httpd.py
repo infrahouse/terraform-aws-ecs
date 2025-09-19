@@ -2,22 +2,28 @@ import json
 from os import path as osp
 from textwrap import dedent
 
+import pytest
 from pytest_infrahouse import terraform_apply
 
 from tests.conftest import (
     LOG,
     wait_for_success,
     TERRAFORM_ROOT_DIR,
+    update_terraform_tf,
 )
 
 
-def test_module(service_network, keep_after, test_role_arn, aws_region, test_zone_name):
+@pytest.mark.parametrize(
+    "aws_provider_version", [">= 5.11, < 7.0", "~> 6.0"], ids=["aws-5", "aws-6"]
+)
+def test_module(service_network, keep_after, test_role_arn, aws_region, test_zone_name, aws_provider_version):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
     internet_gateway_id = service_network["internet_gateway_id"]["value"]
 
     # Create ECS with httpd container
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd")
+    update_terraform_tf(terraform_module_dir, aws_provider_version)
     with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
         fp.write(
             dedent(
