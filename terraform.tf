@@ -9,10 +9,5 @@ terraform {
         aws.dns # AWS provider for DNS
       ]
     }
-    cloudinit = {
-
-      source  = "hashicorp/cloudinit"
-      version = "~> 2.3"
-    }
   }
 }

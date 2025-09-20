@@ -10,6 +10,7 @@ from tests.conftest import (
     wait_for_success,
     TERRAFORM_ROOT_DIR,
     update_terraform_tf,
+    cleanup_dot_terraform,
 )
 
 
@@ -30,23 +31,7 @@ def test_module(
 
     # Create ECS with httpd container
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd")
-    # Clean up any existing Terraform state to ensure clean test
-    import shutil
-
-    state_files = [
-        osp.join(terraform_module_dir, ".terraform"),
-        osp.join(terraform_module_dir, ".terraform.lock.hcl"),
-    ]
-
-    for state_file in state_files:
-        try:
-            if osp.isdir(state_file):
-                shutil.rmtree(state_file)
-            elif osp.isfile(state_file):
-                remove(state_file)
-        except FileNotFoundError:
-            # File was already removed by another process
-            pass
+    cleanup_dot_terraform(terraform_module_dir)
     update_terraform_tf(terraform_module_dir, aws_provider_version)
     with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
         fp.write(

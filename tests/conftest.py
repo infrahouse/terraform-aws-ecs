@@ -1,6 +1,7 @@
+import shutil
 import time
 import logging
-from os import path as osp
+from os import path as osp, remove
 from textwrap import dedent
 
 from infrahouse_core.logging import setup_logging
@@ -36,19 +37,32 @@ def update_terraform_tf(terraform_module_dir, aws_provider_version):
     with open(terraform_tf_path, "w") as fp:
         fp.write(
             dedent(
-                f"""terraform {{
-  //noinspection HILUnresolvedReference
-  required_providers {{
-    aws = {{
-      source  = "hashicorp/aws"
-      version = "{aws_provider_version}"
-    }}
-    cloudinit = {{
-      source  = "hashicorp/cloudinit"
-      version = "~> 2.3"
-    }}
-  }}
-}}
-"""
+                f"""
+                terraform {{
+                  required_providers {{
+                    aws = {{
+                      source  = "hashicorp/aws"
+                      version = "{aws_provider_version}"
+                    }}
+                  }}
+                }}
+                """
             )
         )
+
+
+def cleanup_dot_terraform(terraform_module_dir):
+    state_files = [
+        osp.join(terraform_module_dir, ".terraform"),
+        osp.join(terraform_module_dir, ".terraform.lock.hcl"),
+    ]
+
+    for state_file in state_files:
+        try:
+            if osp.isdir(state_file):
+                shutil.rmtree(state_file)
+            elif osp.isfile(state_file):
+                remove(state_file)
+        except FileNotFoundError:
+            # File was already removed by another process
+            pass
