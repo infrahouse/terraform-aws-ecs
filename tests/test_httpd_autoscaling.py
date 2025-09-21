@@ -1,5 +1,5 @@
 import json
-from os import path as osp
+from os import path as osp, remove
 from textwrap import dedent
 
 import pytest
@@ -9,9 +9,14 @@ from tests.conftest import (
     LOG,
     TERRAFORM_ROOT_DIR,
     wait_for_success,
+    update_terraform_tf,
+    cleanup_dot_terraform,
 )
 
 
+@pytest.mark.parametrize(
+    "aws_provider_version", ["~> 5.56", "~> 6.0"], ids=["aws-5", "aws-6"]
+)
 @pytest.mark.parametrize(
     "autoscaling_metric, autoscaling_target",
     [
@@ -28,6 +33,7 @@ def test_module(
     test_zone_name,
     test_role_arn,
     aws_region,
+    aws_provider_version,
 ):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
@@ -35,6 +41,8 @@ def test_module(
 
     # Create ECS with httpd container
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd_autoscaling")
+    cleanup_dot_terraform(terraform_module_dir)
+    update_terraform_tf(terraform_module_dir, aws_provider_version)
     with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
         fp.write(
             dedent(
