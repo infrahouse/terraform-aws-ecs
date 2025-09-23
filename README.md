@@ -26,7 +26,7 @@ For usage see how the module is used in the using tests in `test_data/test_modul
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "5.11.0"
+  version = "5.12.0"
   providers = {
     aws     = aws
     aws.dns = aws
@@ -67,7 +67,7 @@ Pass the volumes to the ECS module:
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "5.11.0"
+  version = "5.12.0"
   providers = {
     aws     = aws
     aws.dns = aws
@@ -92,8 +92,8 @@ module "httpd" {
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 5.56 |
-| <a name="provider_aws.dns"></a> [aws.dns](#provider\_aws.dns) | ~> 5.56 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.56, < 7.0 |
+| <a name="provider_aws.dns"></a> [aws.dns](#provider\_aws.dns) | >= 5.56, < 7.0 |
 | <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | ~> 2.3 |
 | <a name="provider_tls"></a> [tls](#provider\_tls) | n/a |
 
