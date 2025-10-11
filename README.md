@@ -85,8 +85,7 @@ module "httpd" {
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.5 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 5.56 |
-| <a name="requirement_cloudinit"></a> [cloudinit](#requirement\_cloudinit) | ~> 2.3 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.56, < 7.0 |
 
 ## Providers
 
@@ -94,15 +93,15 @@ module "httpd" {
 |------|---------|
 | <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.56, < 7.0 |
 | <a name="provider_aws.dns"></a> [aws.dns](#provider\_aws.dns) | >= 5.56, < 7.0 |
-| <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | ~> 2.3 |
+| <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | n/a |
 | <a name="provider_tls"></a> [tls](#provider\_tls) | n/a |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 4.10.0 |
-| <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.3.0 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.8.2 |
+| <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.6.0 |
 
 ## Resources
 
@@ -224,12 +223,15 @@ module "httpd" {
 
 | Name | Description |
 |------|-------------|
+| <a name="output_acm_certificate_arn"></a> [acm\_certificate\_arn](#output\_acm\_certificate\_arn) | ARN of the ACM certificate used by the load balancer |
 | <a name="output_asg_arn"></a> [asg\_arn](#output\_asg\_arn) | Autoscaling group ARN created for the ECS service. |
 | <a name="output_asg_name"></a> [asg\_name](#output\_asg\_name) | Autoscaling group name created for the ECS service. |
 | <a name="output_backend_security_group"></a> [backend\_security\_group](#output\_backend\_security\_group) | Security group of backend. |
 | <a name="output_dns_hostnames"></a> [dns\_hostnames](#output\_dns\_hostnames) | DNS hostnames where the ECS service is available. |
 | <a name="output_load_balancer_arn"></a> [load\_balancer\_arn](#output\_load\_balancer\_arn) | Load balancer ARN. |
 | <a name="output_load_balancer_dns_name"></a> [load\_balancer\_dns\_name](#output\_load\_balancer\_dns\_name) | Load balancer DNS name. |
+| <a name="output_load_balancer_security_groups"></a> [load\_balancer\_security\_groups](#output\_load\_balancer\_security\_groups) | Security groups associated with the load balancer |
 | <a name="output_service_arn"></a> [service\_arn](#output\_service\_arn) | ECS service ARN. |
+| <a name="output_ssl_listener_arn"></a> [ssl\_listener\_arn](#output\_ssl\_listener\_arn) | SSL listener ARN |
 | <a name="output_task_execution_role_arn"></a> [task\_execution\_role\_arn](#output\_task\_execution\_role\_arn) | Task execution role is a role that ECS agent gets. |
 | <a name="output_task_execution_role_name"></a> [task\_execution\_role\_name](#output\_task\_execution\_role\_name) | Task execution role is a role that ECS agent gets. |

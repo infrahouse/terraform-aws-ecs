@@ -24,6 +24,7 @@ def test_module(
     aws_region,
     test_zone_name,
     aws_provider_version,
+    cleanup_ecs_task_definitions,
 ):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
@@ -62,5 +63,6 @@ def test_module(
         json_output=True,
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
+        cleanup_ecs_task_definitions(tf_httpd_output["service_name"]["value"])
         for url in [f"https://www.{test_zone_name}", f"https://{test_zone_name}"]:
             wait_for_success(url)
