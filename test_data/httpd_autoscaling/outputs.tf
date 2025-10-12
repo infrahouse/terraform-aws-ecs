@@ -5,3 +5,7 @@ output "zone_id" {
 output "jumphost_hostname" {
   value = random_pet.hostname.id
 }
+
+output "service_name" {
+  value = var.service_name
+}

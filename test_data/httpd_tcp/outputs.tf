@@ -9,3 +9,7 @@ output "jumphost_hostname" {
 output "load_balancer_dns_name" {
   value = module.httpd.load_balancer_dns_name
 }
+
+output "service_name" {
+  value = var.service_name
+}

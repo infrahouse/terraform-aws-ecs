@@ -24,6 +24,7 @@ def test_module(
     test_role_arn,
     aws_region,
     aws_provider_version,
+    cleanup_ecs_task_definitions,
 ):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
@@ -32,8 +33,6 @@ def test_module(
     # Create ECS with httpd container
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd_tcp")
     # Clean up any existing Terraform state to ensure clean test
-    import shutil
-
     cleanup_dot_terraform(terraform_module_dir)
     update_terraform_tf(terraform_module_dir, aws_provider_version)
     with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
@@ -64,6 +63,7 @@ def test_module(
         json_output=True,
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
+        cleanup_ecs_task_definitions(tf_httpd_output["service_name"]["value"])
         load_balancer_dns_name = tf_httpd_output["load_balancer_dns_name"]["value"]
         wait_for_success(f"http://{load_balancer_dns_name}/")
         wait_for_success(f"http://www.{test_zone_name}/")
