@@ -23,6 +23,44 @@ if you want a popular setup https://domain.com + https://www.domain.com/.
 
 For usage see how the module is used in the using tests in `test_data/test_module`.
 
+## Migration from Amazon Linux 2 to Amazon Linux 2023
+
+**Breaking Change (v6.0.0+):** This module now defaults to Amazon Linux 2023 (AL2023) ECS-optimized AMIs instead of Amazon Linux 2.
+
+### What Changed
+- Default AMI filter changed from `amzn2-ami-ecs-hvm-*` to `al2023-ami-ecs-hvm-*`
+- This affects all new ECS instances launched by the autoscaling group
+
+### Migration Path
+
+**Option 1: Stay on Amazon Linux 2 (Recommended for existing deployments)**
+If you want to continue using Amazon Linux 2, explicitly set the `ami_id` variable:
+```hcl
+module "httpd" {
+  source  = "infrahouse/ecs/aws"
+  version = "6.0.0"
+  ami_id  = "<your-al2-ami-id>"  # Lock to Amazon Linux 2
+  # ... other configuration
+}
+```
+
+**Option 2: Migrate to Amazon Linux 2023**
+To adopt AL2023, simply upgrade the module version. Note that existing instances will need to be replaced:
+1. The autoscaling group will gradually replace instances with AL2023-based ones
+2. During replacement, ECS tasks will be migrated to new instances
+3. Test thoroughly in a non-production environment first
+
+### Key Differences
+- AL2023 uses systemd-based initialization (cloud-init still supported)
+- Different default package versions
+- Improved security posture and longer support lifecycle
+- See [AWS AL2023 documentation](https://docs.aws.amazon.com/linux/al2023/ug/compare-with-al2.html) for detailed differences
+
+### Custom AMIs
+If you use custom AMIs based on Amazon Linux 2, you must:
+- Rebuild your AMIs based on AL2023, OR
+- Explicitly set the `ami_id` variable to your custom AL2 AMI
+
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
@@ -151,7 +189,7 @@ module "httpd" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_access_log_force_destroy"></a> [access\_log\_force\_destroy](#input\_access\_log\_force\_destroy) | Destroy S3 bucket with access logs even if non-empty | `bool` | `false` | no |
-| <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances. If not specified, the latest Amazon image will be used. | `string` | `null` | no |
+| <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances. If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used. | `string` | `null` | no |
 | <a name="input_asg_health_check_grace_period"></a> [asg\_health\_check\_grace\_period](#input\_asg\_health\_check\_grace\_period) | ASG will wait up to this number of seconds for instance to become healthy | `number` | `300` | no |
 | <a name="input_asg_instance_type"></a> [asg\_instance\_type](#input\_asg\_instance\_type) | EC2 instances type | `string` | `"t3.micro"` | no |
 | <a name="input_asg_max_size"></a> [asg\_max\_size](#input\_asg\_max\_size) | Maximum number of instances in ASG. By default, it's calculated based on number of tasks and their memory requirements. | `number` | `null` | no |

@@ -5,7 +5,7 @@ variable "access_log_force_destroy" {
 }
 
 variable "ami_id" {
-  description = "Image for host EC2 instances. If not specified, the latest Amazon image will be used."
+  description = "Image for host EC2 instances. If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used."
   type        = string
   default     = null
 }
