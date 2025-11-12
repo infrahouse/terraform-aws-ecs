@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for custom CAA (Certificate Authority Authorization) records via new `certificate_issuers` variable
+- Upgraded website-pod module from 5.8.2 to 5.9.0 to enable CAA record support
+
 ## [6.0.0] - TBD
 
 ### Changed

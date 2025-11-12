@@ -464,3 +464,12 @@ variable "extra_instance_profile_permissions" {
   type        = string
   default     = null
 }
+
+variable "certificate_issuers" {
+  description = <<-EOT
+    List of certificate authority domains allowed to issue certificates for this domain (e.g., ["amazon.com", "letsencrypt.org"]).
+    The module will format these as CAA records.
+  EOT
+  type        = list(string)
+  default     = ["amazon.com"]
+}
