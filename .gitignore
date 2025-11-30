@@ -35,5 +35,10 @@ tf.plan
 /docs/_build/
 /plan.stderr
 /plan.stdout
+pytest-*-output.log
 __pycache__
 .pytest_cache
+
+# Claude Code local settings
+.claude/*.local.json
+.claude/reviews/
