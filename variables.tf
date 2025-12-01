@@ -87,6 +87,12 @@ variable "enable_cloudwatch_logs" {
   default     = false
 }
 
+variable "cloudwatch_log_kms_key_id" {
+  description = "KMS key ID to encrypt CloudWatch logs. If not specified, logs will use AWS managed encryption."
+  type        = string
+  default     = null
+}
+
 variable "enable_container_insights" {
   description = "Enable container insights feature on ECS cluster."
   type        = bool
@@ -193,12 +199,6 @@ variable "extra_files" {
     )
   )
   default = []
-}
-
-variable "internet_gateway_id" {
-  description = "Internet gateway id. Usually created by 'infrahouse/service-network/aws'"
-  type        = string
-  default     = null
 }
 
 variable "lb_type" {

@@ -35,7 +35,7 @@ module "pod" {
   target_group_port                     = var.container_port
   userdata                              = data.cloudinit_config.ecs.rendered
   instance_profile_permissions          = data.aws_iam_policy_document.instance_policy.json
-  internet_gateway_id                   = var.internet_gateway_id
+  internet_gateway_id                   = data.aws_internet_gateway.default.id
   protect_from_scale_in                 = true # this is to allow ECS manage ASG instances
   autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
   root_volume_size                      = var.root_volume_size

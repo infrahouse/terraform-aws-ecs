@@ -5,6 +5,17 @@ data "aws_subnet" "selected" {
   id = var.asg_subnets[0]
 }
 
+data "aws_subnet" "load_balancer" {
+  id = var.load_balancer_subnets[0]
+}
+
+data "aws_internet_gateway" "default" {
+  filter {
+    name   = "attachment.vpc-id"
+    values = [data.aws_subnet.load_balancer.vpc_id]
+  }
+}
+
 data "aws_ami" "ecs" {
   most_recent = true
 

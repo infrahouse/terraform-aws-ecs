@@ -22,13 +22,14 @@ def test_module(
     keep_after,
     test_role_arn,
     aws_region,
-    test_zone_name,
+    subzone,
     aws_provider_version,
     cleanup_ecs_task_definitions,
+    boto3_session,
 ):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
-    internet_gateway_id = service_network["internet_gateway_id"]["value"]
+    zone_id = subzone["subzone_id"]["value"]
 
     # Create ECS with httpd container
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd")
@@ -38,12 +39,11 @@ def test_module(
         fp.write(
             dedent(
                 f"""
-                test_zone     = "{test_zone_name}"
+                zone_id       = "{zone_id}"
                 region        = "{aws_region}"
 
                 subnet_public_ids   = {json.dumps(subnet_public_ids)}
                 subnet_private_ids  = {json.dumps(subnet_private_ids)}
-                internet_gateway_id = "{internet_gateway_id}"
                 """
             )
         )
@@ -64,5 +64,48 @@ def test_module(
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
         cleanup_ecs_task_definitions(tf_httpd_output["service_name"]["value"])
-        for url in [f"https://www.{test_zone_name}", f"https://{test_zone_name}"]:
+
+        # Use dns_hostnames from output instead of constructing URLs
+        dns_hostnames = tf_httpd_output["dns_hostnames"]["value"]
+        for hostname in dns_hostnames:
+            url = f"https://{hostname}"
             wait_for_success(url)
+
+        # Validate CloudWatch log group encryption
+        LOG.info("Validating CloudWatch log group encryption...")
+        cloudwatch_log_group_names = tf_httpd_output["cloudwatch_log_group_names"][
+            "value"
+        ]
+        assert (
+            len(cloudwatch_log_group_names) == 3
+        ), "Expected 3 CloudWatch log groups (ecs, syslog, dmesg)"
+        assert "ecs" in cloudwatch_log_group_names, "Missing 'ecs' log group"
+        assert "syslog" in cloudwatch_log_group_names, "Missing 'syslog' log group"
+        assert "dmesg" in cloudwatch_log_group_names, "Missing 'dmesg' log group"
+
+        cloudwatch_client = boto3_session.client("logs", region_name=aws_region)
+
+        for log_type, log_group_name in cloudwatch_log_group_names.items():
+            LOG.info(f"Checking {log_type} log group: {log_group_name}")
+            response = cloudwatch_client.describe_log_groups(
+                logGroupNamePrefix=log_group_name, limit=1
+            )
+
+            assert (
+                len(response["logGroups"]) == 1
+            ), f"Log group {log_group_name} not found"
+            log_group = response["logGroups"][0]
+
+            # Log the encryption status
+            kms_key_id = log_group.get("kmsKeyId")
+            if kms_key_id:
+                LOG.info(
+                    f"✓ {log_type} log group is encrypted with KMS key: {kms_key_id}"
+                )
+            else:
+                LOG.info(
+                    f"⚠ {log_type} log group is using AWS managed encryption (no custom KMS key)"
+                )
+
+            # For now we just log the encryption status
+            # In the future, when KMS key is provided via tfvars, we can assert kms_key_id is not None
