@@ -38,7 +38,6 @@ def test_module(
 ):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
-    internet_gateway_id = service_network["internet_gateway_id"]["value"]
 
     # Create ECS with httpd container
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd_autoscaling")
@@ -53,7 +52,6 @@ def test_module(
 
                 subnet_public_ids   = {json.dumps(subnet_public_ids)}
                 subnet_private_ids  = {json.dumps(subnet_private_ids)}
-                internet_gateway_id = "{internet_gateway_id}"
                 """
             )
         )

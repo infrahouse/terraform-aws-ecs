@@ -26,7 +26,6 @@ module "httpd" {
   service_name                  = var.service_name
   ssh_key_name                  = aws_key_pair.black-mbp.key_name
   zone_id                       = data.aws_route53_zone.cicd.zone_id
-  internet_gateway_id           = var.internet_gateway_id
   task_desired_count            = 1
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn

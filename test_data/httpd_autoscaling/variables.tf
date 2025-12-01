@@ -20,7 +20,6 @@ variable "ubuntu_codename" {
 
 variable "subnet_public_ids" {}
 variable "subnet_private_ids" {}
-variable "internet_gateway_id" {}
 
 variable "autoscaling_metric" {}
 variable "autoscaling_target" {}

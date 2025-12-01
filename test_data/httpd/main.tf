@@ -33,8 +33,7 @@ module "httpd" {
   docker_image                  = "httpd"
   container_port                = 80
   service_name                  = var.service_name
-  zone_id                       = data.aws_route53_zone.cicd.zone_id
-  internet_gateway_id           = var.internet_gateway_id
+  zone_id                       = var.zone_id
   container_healthcheck_command = "ls"
   task_role_arn                 = aws_iam_role.task_role.arn
   enable_cloudwatch_logs        = true

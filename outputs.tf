@@ -67,3 +67,17 @@ output "acm_certificate_arn" {
   description = "ARN of the ACM certificate used by the load balancer"
   value       = var.lb_type == "alb" ? module.pod[0].acm_certificate_arn : null
 }
+
+output "cloudwatch_log_group_name" {
+  description = "Name of the main CloudWatch log group for ECS tasks"
+  value       = var.enable_cloudwatch_logs ? aws_cloudwatch_log_group.ecs[0].name : null
+}
+
+output "cloudwatch_log_group_names" {
+  description = "Names of all CloudWatch log groups created by this module"
+  value = var.enable_cloudwatch_logs ? {
+    ecs    = aws_cloudwatch_log_group.ecs[0].name
+    syslog = aws_cloudwatch_log_group.ecs_ec2_syslog[0].name
+    dmesg  = aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
+  } : {}
+}
