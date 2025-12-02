@@ -56,7 +56,7 @@ check "kms_key_region_match" {
 
       Current configuration:
         - CloudWatch logs region: ${data.aws_region.current.name}
-        - KMS key ARN:            ${var.cloudwatch_log_kms_key_id}
+        - KMS key ARN:            ${coalesce(var.cloudwatch_log_kms_key_id, "(not provided)")}
 
       Problem:
         AWS KMS keys are regional resources. CloudWatch Logs can only use KMS keys
