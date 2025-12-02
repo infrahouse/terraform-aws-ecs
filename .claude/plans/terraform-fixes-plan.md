@@ -144,6 +144,151 @@
 
 **Status:** ✅ Completed & Documented
 
+---
+
+#### Issue #17: Complete Migration Guide with Behavioral Changes
+- [x] Add "Behavioral Changes" section to README.md migration guide
+- [x] Document CloudWatch logs now enabled by default (cost impact: ~$15-20/month per service)
+- [x] Document CPU autoscaling target changed from 80% to 60% (earlier scaling, potentially higher costs)
+- [x] Document output format change: cloudwatch_log_group_names list → map
+- [x] Document internet_gateway_id parameter removed (now auto-detected)
+- [x] Add examples for maintaining previous behavior (disable logs, 80% CPU target, etc.)
+- [x] Add guidance on choosing autoscaling targets (50-60% vs 70% vs 80%)
+- [x] Test documentation clarity with fresh eyes
+
+**Priority:** CRITICAL (Blocking Release)
+**Estimated Time:** 45 minutes
+**Source:** PR Review (.claude/reviews/pr-review.md)
+
+**Current Gap:** Migration guide only documents alarm_emails requirement but misses 4 behavioral changes:
+1. CloudWatch logs enabled by default (was false) → cost impact
+2. CPU autoscaling target lowered to 60% (was 80%) → scaling behavior change
+3. cloudwatch_log_group_names output changed from list to map → breaking for downstream code
+4. internet_gateway_id parameter removed → simplification
+
+**Files to Modify:**
+- `README.md` - Add comprehensive behavioral changes section to migration guide (lines 26-87)
+
+**Status:** ✅ Completed & Tested
+
+---
+
+#### Issue #18: Add KMS Encryption Documentation and Examples
+- [x] Add KMS encryption setup section to README.md
+- [x] Document required KMS key policy for CloudWatch Logs service
+- [x] Add complete example showing KMS key creation and module usage
+- [x] Document region matching requirement (KMS key must be in same region)
+- [x] Add security comparison: AWS-managed vs customer-managed encryption
+- [x] Test example code for correctness
+
+**Priority:** HIGH (Should Address Before Release)
+**Estimated Time:** 30 minutes
+**Source:** PR Review (.claude/reviews/pr-review.md)
+
+**Current Gap:** cloudwatch_log_kms_key_id variable exists and works, but no documentation on:
+- How to create KMS key for CloudWatch
+- Required key policy statements
+- Permissions needed for CloudWatch Logs service
+
+**Files to Modify:**
+- `README.md` - Add KMS encryption section with complete example
+
+**Implementation Example:**
+```markdown
+### Using KMS Encryption for CloudWatch Logs
+
+To enable KMS encryption for CloudWatch logs, create a KMS key with proper permissions:
+
+```hcl
+resource "aws_kms_key" "cloudwatch" {
+  description = "KMS key for CloudWatch Logs encryption"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = { AWS = "arn:aws:iam::ACCOUNT_ID:root" }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow CloudWatch Logs"
+        Effect = "Allow"
+        Principal = { Service = "logs.amazonaws.com" }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:CreateGrant",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+        Condition = {
+          ArnLike = {
+            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:REGION:ACCOUNT_ID:log-group:*"
+          }
+        }
+      }
+    ]
+  })
+}
+
+module "ecs_service" {
+  cloudwatch_log_kms_key_id = aws_kms_key.cloudwatch.arn
+  # ...
+}
+```
+
+**Note:** KMS key must be in the same region as the CloudWatch log groups.
+
+**Status:** ✅ Completed & Documented
+
+---
+
+#### Issue #19: Document Terraform Version Requirements
+- [ ] Add Terraform version constraint to module or document check block requirements
+- [ ] Document that check blocks require Terraform 1.5+
+- [ ] Test with Terraform 1.4 to verify error message is clear
+- [ ] Add to README.md "Requirements" section
+
+**Priority:** HIGH (Should Address Before Release)
+**Estimated Time:** 15 minutes
+**Source:** PR Review (.claude/reviews/pr-review.md)
+
+**Current Gap:** validations.tf uses check blocks (Terraform 1.5+) but no version constraint documented
+
+**Files to Modify:**
+- `versions.tf` - Add terraform required_version block OR
+- `README.md` - Document minimum Terraform version in requirements
+
+**Implementation Option 1 (Recommended):**
+```terraform
+# versions.tf (create if doesn't exist)
+terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0"
+    }
+  }
+}
+```
+
+**Implementation Option 2:**
+```markdown
+# README.md - Add to requirements section
+## Requirements
+
+- Terraform >= 1.5.0 (required for validation check blocks)
+- AWS Provider >= 5.0
+```
+
+**Status:** ⬜ Not Started
+
 **Priority:** CRITICAL (Breaking Change)
 **Estimated Time:** 45 minutes
 
@@ -407,24 +552,24 @@ module "pod" {
 
 ## Progress Summary
 
-**Last Updated:** 2025-12-01
+**Last Updated:** 2025-12-02
 
 ### Overall Progress
-- **Total Issues:** 16
-- **Completed:** 5 (31%)
+- **Total Issues:** 19
+- **Completed:** 7 (37%)
 - **In Progress:** 0 (0%)
-- **Not Started:** 11 (69%)
+- **Not Started:** 12 (63%)
 
 ### By Phase
 - **Phase 1 (Critical):** 4/4 issues (100%) ✅✅✅✅ **COMPLETE**
-- **Phase 1.5 (Breaking Changes):** 1/1 issue (100%) ✅ **COMPLETE**
+- **Phase 1.5 (Breaking Changes):** 3/4 issues (75%) ✅✅✅⬜ **Issue #19 remaining**
 - **Phase 2 (Important):** 0/4 issues (0%)
 - **Phase 3 (Enhancements):** 0/4 issues (0%)
 - **Phase 4 (Polish):** 0/3 issues (0%)
 
 ### By Priority
-- **CRITICAL:** 3/3 (Issues #1-2, #16 - Breaking Change) ✅✅✅ **ALL COMPLETE**
-- **HIGH:** 2/2 (Issues #3-4) ✅✅ **ALL COMPLETE**
+- **CRITICAL:** 4/4 (Issues #1-2, #16-17) ✅✅✅✅ **ALL COMPLETE**
+- **HIGH:** 3/4 (Issues #3-4, #18) ✅✅✅ - Issue #19 remaining
 - **MEDIUM:** 0/4 (Issues #5-8)
 - **LOW:** 0/7 (Issues #9-15)
 

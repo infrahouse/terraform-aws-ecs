@@ -86,6 +86,330 @@ These alerts help ensure your ECS service maintains high availability and perfor
 
 ---
 
+## Behavioral Changes in v7.0
+
+In addition to the required `alarm_emails` parameter, 
+v7.0.0 includes several behavioral changes that may affect costs and scaling behavior. 
+**Review these carefully before upgrading.**
+
+### 1. CloudWatch Logs Now Enabled by Default
+
+**Change:** The `enable_cloudwatch_logs` variable default changed from `false` to `true`.
+
+**Impact:**
+- CloudWatch log groups will be created automatically
+- Container logs will be sent to CloudWatch (incurs costs)
+- **Estimated Costs:** ~$0.50/GB ingested + $0.03/GB stored per month
+- For a typical service logging 1GB/day: ~$15-20/month
+
+**What Logs Are Collected:**
+- Container application logs (stdout/stderr)
+- EC2 instance system logs (syslog)
+- EC2 instance kernel logs (dmesg)
+
+**Migration Actions:**
+
+**Option 1 - Keep logging enabled (recommended):**
+```hcl
+# No action needed - logging will be enabled automatically
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 7.0"
+
+  alarm_emails = ["devops@example.com"]
+  # enable_cloudwatch_logs defaults to true
+  # ... other parameters
+}
+```
+
+**Option 2 - Disable logging to maintain v6.x behavior:**
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 7.0"
+
+  alarm_emails            = ["devops@example.com"]
+  enable_cloudwatch_logs  = false  # Disable logging
+  # ... other parameters
+}
+```
+
+**Option 3 - Reduce retention to control costs:**
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 7.0"
+
+  alarm_emails                   = ["devops@example.com"]
+  cloudwatch_log_group_retention = 7  # Keep logs for 7 days instead of 90
+  # ... other parameters
+}
+```
+
+### 2. CPU Autoscaling Target Lowered to 60%
+
+**Change:** The `autoscaling_target_cpu_usage` default changed from 80% to 60%.
+
+**Impact:**
+- ECS services will scale out earlier when CPU usage increases
+- More instances may run to maintain lower CPU usage
+- Better performance headroom, but potentially higher costs
+- Aligns with `website-pod` module default for consistency
+
+**When This Matters:**
+- If you rely on the default value (didn't explicitly set it)
+- For CPU-based autoscaling configurations
+
+**Migration Actions:**
+
+**Option 1 - Keep new 60% target (recommended):**
+```hcl
+# No action needed - 60% provides better performance headroom
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 7.0"
+
+  alarm_emails            = ["devops@example.com"]
+  autoscaling_metric      = "ECSServiceAverageCPUUtilization"
+  # autoscaling_target_cpu_usage defaults to 60
+  # ... other parameters
+}
+```
+
+**Option 2 - Maintain previous 80% target:**
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 7.0"
+
+  alarm_emails                 = ["devops@example.com"]
+  autoscaling_metric           = "ECSServiceAverageCPUUtilization"
+  autoscaling_target_cpu_usage = 80  # Use previous default
+  # ... other parameters
+}
+```
+
+**Choosing the Right Target:**
+- **50-60%:** Better performance, higher cost, more headroom for traffic spikes
+- **70%:** Balanced approach
+- **80%:** More cost-efficient, less headroom for sudden load increases
+
+### 3. Output Format Change: cloudwatch_log_group_names
+
+**Change:** The `cloudwatch_log_group_names` output changed from a list to a map for better usability.
+
+**Impact:** If you reference this output in downstream Terraform code, you must update the access pattern.
+
+**Before (v6.x):**
+```hcl
+# Access by numeric index (brittle - order-dependent)
+locals {
+  ecs_log_group    = module.ecs.cloudwatch_log_group_names[0]
+  syslog_log_group = module.ecs.cloudwatch_log_group_names[1]
+  dmesg_log_group  = module.ecs.cloudwatch_log_group_names[2]
+}
+```
+
+**After (v7.0):**
+```hcl
+# Access by descriptive name (more intuitive)
+locals {
+  ecs_log_group    = module.ecs.cloudwatch_log_group_names["ecs"]
+  syslog_log_group = module.ecs.cloudwatch_log_group_names["syslog"]
+  dmesg_log_group  = module.ecs.cloudwatch_log_group_names["dmesg"]
+}
+
+# Or use the new singular output for the main log group:
+locals {
+  ecs_log_group = module.ecs.cloudwatch_log_group_name
+}
+```
+
+**Migration Action:** Update any downstream Terraform code that references `cloudwatch_log_group_names`.
+
+### 4. Internet Gateway Auto-Detection
+
+**Change:** The `internet_gateway_id` parameter has been removed. The module now automatically detects the Internet Gateway from your VPC.
+
+**Impact:** Configurations with explicit `internet_gateway_id` will get an "unknown variable" error.
+
+**Before (v6.x):**
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 6.0"
+
+  internet_gateway_id = data.aws_internet_gateway.main.id  # Explicit parameter
+  # ... other parameters
+}
+```
+
+**After (v7.0):**
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 7.0"
+
+  # internet_gateway_id removed - auto-discovered from VPC
+  # ... other parameters
+}
+```
+
+**Migration Action:** Simply remove the `internet_gateway_id` parameter from your configuration.
+The module will automatically discover it.
+
+---
+
+## CloudWatch Logs KMS Encryption
+
+The module supports encrypting CloudWatch logs with a customer-managed KMS key for enhanced security and compliance.
+By default, CloudWatch uses AWS-managed encryption, but you can provide your own KMS key for additional control.
+
+### Why Use KMS Encryption?
+
+**AWS-Managed Encryption (default):**
+- ✅ No additional configuration required
+- ✅ No cost for key management
+- ❌ No control over key rotation or access policies
+- ❌ Cannot meet compliance requirements for customer-managed keys
+
+**Customer-Managed KMS Key:**
+- ✅ Full control over key policies and access
+- ✅ Custom key rotation schedules
+- ✅ Detailed CloudTrail audit logs of key usage
+- ✅ Meets compliance requirements (HIPAA, PCI-DSS, etc.)
+- ❌ Additional AWS KMS costs (~$1/month per key + usage)
+
+### Creating a KMS Key for CloudWatch Logs
+
+To enable KMS encryption, you must create a KMS key with proper permissions for the CloudWatch Logs service:
+
+```hcl
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+data "aws_iam_policy_document" "cloudwatch_logs_kms" {
+  statement {
+    sid    = "Enable IAM User Permissions"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "Allow CloudWatch Logs"
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${data.aws_region.current.name}.amazonaws.com"]
+    }
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:CreateGrant",
+      "kms:DescribeKey"
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "ArnLike"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*"]
+    }
+  }
+}
+
+resource "aws_kms_key" "cloudwatch_logs" {
+  description             = "KMS key for ECS CloudWatch Logs encryption"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.cloudwatch_logs_kms.json
+
+  tags = {
+    Name        = "ecs-cloudwatch-logs-key"
+    Environment = "production"
+  }
+}
+
+resource "aws_kms_alias" "cloudwatch_logs" {
+  name          = "alias/ecs-cloudwatch-logs"
+  target_key_id = aws_kms_key.cloudwatch_logs.key_id
+}
+```
+
+### Using the KMS Key with the ECS Module
+
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 7.0"
+
+  service_name              = "my-service"
+  environment               = "production"
+  alarm_emails              = ["devops@example.com"]
+
+  # Enable KMS encryption for CloudWatch logs
+  cloudwatch_log_kms_key_id = aws_kms_key.cloudwatch_logs.arn
+
+  # CloudWatch logs configuration
+  enable_cloudwatch_logs         = true
+  cloudwatch_log_group_retention = 90  # Keep encrypted logs for 90 days
+
+  # ... other parameters
+}
+```
+
+### Important Requirements
+
+1. **Region Matching**: The KMS key MUST be in the same AWS region as the CloudWatch log groups
+2. **Service Principal**: Use the regional service principal format: `logs.REGION.amazonaws.com`
+3. **Encryption Context**: The condition must include the proper encryption context for log groups
+4. **Permissions**: The CloudWatch Logs service needs `kms:GenerateDataKey*` and `kms:CreateGrant` permissions
+
+### Troubleshooting KMS Encryption
+
+**Error: "User is not authorized to perform: kms:CreateGrant"**
+- **Cause**: KMS key policy doesn't allow CloudWatch Logs service
+- **Solution**: Verify the key policy includes the CloudWatch Logs service principal with required permissions
+
+**Error: "Invalid KMS key"**
+- **Cause**: KMS key is in a different region than the log groups
+- **Solution**: Create the KMS key in the same region as your ECS service
+
+**Error: "Access denied"**
+- **Cause**: Missing encryption context condition in key policy
+- **Solution**: Ensure the key policy includes the `kms:EncryptionContext:aws:logs:arn` condition
+
+### Cost Considerations
+
+**KMS Key Costs:**
+- Customer-managed key: $1/month
+- KMS API requests: $0.03 per 10,000 requests
+- Typical cost for ECS logging: $1-2/month additional
+
+**Example Monthly Costs:**
+- KMS key: $1.00
+- Log ingestion (1GB/day): $15.00
+- Log storage (30GB): $1.50
+- KMS API requests: $0.10
+- **Total: ~$17.60/month with KMS encryption** (vs $16.50 without)
+
+### Security Best Practices
+
+1. **Enable Key Rotation**: Set `enable_key_rotation = true` for automatic annual rotation
+2. **Restrict Key Access**: Use key policies to limit who can use or manage the key
+3. **Monitor Key Usage**: Enable CloudTrail to log all KMS key operations
+4. **Use Separate Keys**: Consider separate KMS keys for different environments (dev/staging/prod)
+5. **Backup Key Policy**: Document your key policy configuration for disaster recovery
+
+---
+
 ## Migration from Amazon Linux 2 to Amazon Linux 2023
 
 **Breaking Change (v6.0.0+):** This module now defaults to Amazon Linux 2023 (AL2023) ECS-optimized AMIs instead of Amazon Linux 2.

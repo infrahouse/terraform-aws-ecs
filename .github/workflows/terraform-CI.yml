@@ -38,7 +38,7 @@ jobs:
           role-to-assume: ${{ env.ROLE_ARN }}
           role-session-name: "terraform-ci"
           aws-region: "us-west-1"
-          role-duration-seconds: 7200
+          role-duration-seconds: 43200 # 12 hours
 
       # Install the latest version of Terraform CLI
       - name: Setup Terraform
