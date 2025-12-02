@@ -5,7 +5,10 @@ variable "access_log_force_destroy" {
 }
 
 variable "ami_id" {
-  description = "Image for host EC2 instances. If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used."
+  description = <<-EOT
+    Image for host EC2 instances.
+    If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used.
+  EOT
   type        = string
   default     = null
 }
@@ -17,19 +20,28 @@ variable "asg_instance_type" {
 }
 
 variable "asg_health_check_grace_period" {
-  description = "ASG will wait up to this number of seconds for instance to become healthy"
+  description = <<-EOT
+    ASG will wait up to this number of seconds for instance to become healthy.
+    Default: 300 seconds (5 minutes)
+  EOT
   type        = number
   default     = 300
 }
 
 variable "asg_min_size" {
-  description = "Minimum number of instances in ASG. By default, the number of subnets."
+  description = <<-EOT
+    Minimum number of instances in ASG.
+    Default: The number of subnets (one instance per subnet for high availability).
+  EOT
   type        = number
   default     = null
 }
 
 variable "asg_max_size" {
-  description = "Maximum number of instances in ASG. By default, it's calculated based on number of tasks and their memory requirements."
+  description = <<-EOT
+    Maximum number of instances in ASG.
+    Default: Automatically calculated based on number of tasks and their memory requirements.
+  EOT
   type        = number
   default     = null
 }
@@ -40,21 +52,46 @@ variable "asg_subnets" {
 }
 
 variable "assume_dns" {
-  description = "If True, create DNS records provided by var.dns_a_records."
+  description = <<-EOT
+    If true, create DNS records provided by var.dns_names.
+    Set to false if DNS records are managed externally.
+  EOT
   type        = bool
   default     = true
 }
 
 variable "autoscaling_metric" {
-  description = "Metric to base autoscaling on. Can be ECSServiceAverageCPUUtilization, ECSServiceAverageMemoryUtilization, ALBRequestCountPerTarget"
+  description = <<-EOT
+    Metric to base autoscaling on.
+
+    Valid values:
+    - "ECSServiceAverageCPUUtilization" (default) - Scale based on CPU usage
+    - "ECSServiceAverageMemoryUtilization" - Scale based on memory usage
+    - "ALBRequestCountPerTarget" - Scale based on ALB requests per target
+  EOT
   type        = string
   default     = "ECSServiceAverageCPUUtilization"
+
+  validation {
+    condition = contains([
+      "ECSServiceAverageCPUUtilization",
+      "ECSServiceAverageMemoryUtilization",
+      "ALBRequestCountPerTarget"
+    ], var.autoscaling_metric)
+    error_message = "autoscaling_metric must be one of: ECSServiceAverageCPUUtilization, ECSServiceAverageMemoryUtilization, or ALBRequestCountPerTarget."
+  }
 }
 
 variable "autoscaling_target_cpu_usage" {
-  description = "If autoscaling_metric is ECSServiceAverageCPUUtilization, how much CPU an ECS service aims to use."
+  description = <<-EOT
+    Target CPU utilization percentage for autoscaling.
+    Only used when autoscaling_metric is "ECSServiceAverageCPUUtilization".
+
+    ECS will scale in/out to maintain this CPU usage level.
+    Default: 60% (matches website-pod default for consistency)
+  EOT
   type        = number
-  default     = 80
+  default     = 60
 }
 
 variable "autoscaling_target" {
@@ -64,13 +101,29 @@ variable "autoscaling_target" {
 }
 
 variable "cloudwatch_agent_image" {
-  description = "Cloudwatch agent image"
+  description = <<-EOT
+    CloudWatch agent container image.
+
+    Default is pinned to a specific version for stability and reproducibility.
+    Pinned versions prevent unexpected breaking changes when AWS updates the agent.
+
+    You can override this to use ":latest" if you want automatic updates,
+    though this is not recommended for production environments.
+
+    Check available versions: https://gallery.ecr.aws/cloudwatch-agent/cloudwatch-agent
+  EOT
   type        = string
-  default     = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest"
+  default     = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300062.0b1304"
 }
 
 variable "cloudwatch_log_group" {
-  description = "CloudWatch log group to create and use. Default: /ecs/{var.environment}/{var.service_name}"
+  description = <<-EOT
+    CloudWatch log group name to create and use.
+    Default: /ecs/{var.environment}/{var.service_name}
+
+    Example: If environment="production" and service_name="api",
+    the log group will be "/ecs/production/api"
+  EOT
   type        = string
   default     = null
 }
@@ -79,16 +132,35 @@ variable "cloudwatch_log_group_retention" {
   description = "Number of days you want to retain log events in the log group."
   default     = 365
   type        = number
+
+  validation {
+    condition = contains([
+      0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653
+    ], var.cloudwatch_log_group_retention)
+    error_message = "cloudwatch_log_group_retention must be one of the valid CloudWatch retention periods: 0 (never expire), 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, or 3653 days."
+  }
 }
 
 variable "enable_cloudwatch_logs" {
-  description = "Enable Cloudwatch logs. If enabled, log driver will be awslogs."
+  description = <<-EOT
+    Enable CloudWatch Logs for ECS tasks.
+    If enabled, containers will use "awslogs" log driver.
+
+    Default: true (recommended for production environments)
+  EOT
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "cloudwatch_log_kms_key_id" {
-  description = "KMS key ID to encrypt CloudWatch logs. If not specified, logs will use AWS managed encryption."
+  description = <<-EOT
+    KMS key ID (ARN) to encrypt CloudWatch logs.
+
+    If not specified, logs will use AWS managed encryption.
+    For enhanced security and compliance, provide a customer-managed KMS key.
+
+    Example: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+  EOT
   type        = string
   default     = null
 }
@@ -100,7 +172,19 @@ variable "enable_container_insights" {
 }
 
 variable "execution_extra_policy" {
-  description = "A map of extra policies attached to the task execution role. The key is an arbitrary string, the value is the policy ARN."
+  description = <<-EOT
+    A map of extra policies attached to the task execution role.
+    The task execution role is used by the ECS agent to pull images, write logs, and access secrets.
+
+    Key: Arbitrary identifier (e.g., "secrets_access")
+    Value: IAM policy ARN
+
+    Example:
+      execution_extra_policy = {
+        "secrets_access" = "arn:aws:iam::123456789012:policy/ECSSecretsAccess"
+        "ecr_pull"       = "arn:aws:iam::123456789012:policy/ECRPullPolicy"
+      }
+  EOT
   type        = map(string)
   default     = {}
 }
@@ -163,6 +247,11 @@ variable "container_port" {
   description = "TCP port that a container serves client requests on."
   type        = number
   default     = 8080
+
+  validation {
+    condition     = var.container_port >= 1 && var.container_port <= 65535
+    error_message = "container_port must be between 1 and 65535."
+  }
 }
 
 variable "dns_names" {
@@ -176,7 +265,21 @@ variable "docker_image" {
 }
 
 variable "dockerSecurityOptions" {
-  description = "A list of strings to provide custom configuration for multiple security systems. Supported prefixes are 'label:', 'apparmor:', and 'credentialspec:' or you can specify 'no-new-privileges'"
+  description = <<-EOT
+    A list of strings to provide custom configuration for multiple security systems.
+
+    Supported options:
+    - "no-new-privileges" - Prevent privilege escalation
+    - "label:<value>" - SELinux labels
+    - "apparmor:<value>" - AppArmor profile
+    - "credentialspec:<value>" - Credential specifications (Windows)
+
+    Example:
+      dockerSecurityOptions = [
+        "no-new-privileges",
+        "label:type:container_runtime_t"
+      ]
+  EOT
   type        = list(string)
   default     = null
 }
@@ -205,6 +308,11 @@ variable "lb_type" {
   description = "Load balancer type. ALB or NLB"
   type        = string
   default     = "alb"
+
+  validation {
+    condition     = contains(["alb", "nlb"], lower(var.lb_type))
+    error_message = "lb_type must be either 'alb' or 'nlb' (case-insensitive)."
+  }
 }
 
 variable "load_balancer_subnets" {
@@ -242,7 +350,20 @@ variable "service_name" {
 }
 
 variable "service_health_check_grace_period_seconds" {
-  description = "Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647."
+  description = <<-EOT
+    Seconds to ignore failing load balancer health checks on newly instantiated tasks.
+    This prevents ECS from killing tasks that are still starting up.
+
+    Use this when:
+    - Your application takes time to initialize (e.g., loading data, warming caches)
+    - Health checks fail during the startup period
+    - You see tasks being killed and restarted repeatedly
+
+    Default: null (uses ECS default behavior)
+    Range: 0 to 2147483647 seconds
+
+    Example: 300 (5 minutes grace period for slow-starting applications)
+  EOT
   type        = number
   default     = null
 }
@@ -298,7 +419,22 @@ variable "task_environment_variables" {
 }
 
 variable "task_ipc_mode" {
-  description = "The IPC resource namespace to use for the containers in the task. See https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskDefinition.html"
+  description = <<-EOT
+    The IPC resource namespace to use for the containers in the task.
+    Controls how containers share inter-process communication resources.
+
+    Valid values:
+    - null (default) - Each container has its own private IPC namespace
+    - "host" - Containers use the host's IPC namespace (use with caution)
+    - "task" - All containers in the task share the same IPC namespace
+    - "none" - IPC namespace is disabled
+
+    Use "task" when:
+    - Containers need to communicate via shared memory
+    - Running multi-container applications that use IPC (e.g., sidecars with shared memory)
+
+    Reference: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskDefinition.html
+  EOT
   type        = string
   default     = null
 }
@@ -386,7 +522,12 @@ variable "users" {
 }
 
 variable "vanta_owner" {
-  description = "The email address of the instance's owner, and it should be set to the email address of a user in Vanta. An owner will not be assigned if there is no user in Vanta with the email specified."
+  description = <<-EOT
+    The email address of the instance's owner for Vanta tracking.
+
+    Must be set to the email address of an existing user in Vanta.
+    If the email doesn't match a Vanta user, no owner will be assigned.
+  EOT
   type        = string
   default     = null
 }
@@ -407,13 +548,24 @@ variable "vanta_description" {
 }
 
 variable "vanta_contains_user_data" {
-  description = "his tag allows administrators to define whether or not a resource contains user data (true) or if they do not contain user data (false)."
+  description = <<-EOT
+    This tag allows administrators to define whether or not a resource contains user data.
+
+    Set to true if the resource contains user data, false otherwise.
+    Used for Vanta compliance tracking.
+  EOT
   type        = bool
   default     = false
 }
 
 variable "vanta_contains_ephi" {
-  description = "This tag allows administrators to define whether or not a resource contains electronically Protected Health Information (ePHI). It can be set to either (true) or if they do not have ephi data (false)."
+  description = <<-EOT
+    This tag allows administrators to define whether or not a resource contains
+    electronically Protected Health Information (ePHI).
+
+    Set to true if the resource contains ePHI, false otherwise.
+    Used for HIPAA compliance tracking in Vanta.
+  EOT
   type        = bool
   default     = false
 }
@@ -425,7 +577,12 @@ variable "vanta_user_data_stored" {
 }
 
 variable "vanta_no_alert" {
-  description = "Administrators can add this tag to mark a resource as out of scope for their audit. If this tag is added, the administrator will need to set a reason for why it's not relevant to their audit."
+  description = <<-EOT
+    Mark a resource as out of scope for Vanta audit.
+
+    If set, you must provide a reason explaining why the resource
+    is not relevant to the audit.
+  EOT
   type        = string
   default     = null
 }

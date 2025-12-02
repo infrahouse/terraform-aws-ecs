@@ -119,6 +119,28 @@ module "httpd" {
 }
 ```
 
+## Variable Validations
+
+This module includes built-in validations to catch configuration errors early:
+
+### Input Variable Validations
+
+- **`lb_type`**: Must be either `"alb"` or `"nlb"` (case-insensitive)
+- **`container_port`**: Must be between 1 and 65535
+- **`autoscaling_metric`**: Must be one of:
+  - `ECSServiceAverageCPUUtilization`
+  - `ECSServiceAverageMemoryUtilization`
+  - `ALBRequestCountPerTarget`
+- **`cloudwatch_log_group_retention`**: Must be a valid CloudWatch retention period (0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, or 3653 days)
+
+### Cross-Variable Validations
+
+The module uses Terraform check blocks (in `validations.tf`) to validate relationships between variables:
+
+- **Health Check Configuration**: `healthcheck_interval` must be greater than or equal to `healthcheck_timeout`
+
+If you encounter validation errors during `terraform plan`, the error message will guide you to fix the configuration issue.
+
 <!-- BEGIN_TF_DOCS -->
 
 ## Requirements
@@ -163,10 +185,12 @@ module "httpd" {
 | [aws_ecs_task_definition.cloudwatch_agent](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
 | [aws_ecs_task_definition.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
 | [aws_iam_policy.ecs_task_execution_logs_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
+| [aws_iam_role.cloudwatch_agent_execution_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.cloudwatch_agent_task_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.ecs_task_execution_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
-| [aws_iam_role_policy_attachment.cloudwatch_policy_attachment](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
-| [aws_iam_role_policy_attachment.ecs_task_execution_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.cloudwatch_agent_execution_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.cloudwatch_agent_task_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.ecs_instance_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.ecs_task_execution_role_logs_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.ecs_task_execution_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.execution_extra_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
@@ -177,6 +201,7 @@ module "httpd" {
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_ec2_instance_type.backend](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ec2_instance_type) | data source |
 | [aws_ec2_instance_type.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ec2_instance_type) | data source |
+| [aws_iam_instance_profile.tcp_pod](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_instance_profile) | data source |
 | [aws_iam_policy.ecs-task-execution-role-policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy) | data source |
 | [aws_iam_policy_document.assume_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.cloudwatch_agent_task_role_assume_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -194,35 +219,35 @@ module "httpd" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_access_log_force_destroy"></a> [access\_log\_force\_destroy](#input\_access\_log\_force\_destroy) | Destroy S3 bucket with access logs even if non-empty | `bool` | `false` | no |
-| <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances. If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used. | `string` | `null` | no |
-| <a name="input_asg_health_check_grace_period"></a> [asg\_health\_check\_grace\_period](#input\_asg\_health\_check\_grace\_period) | ASG will wait up to this number of seconds for instance to become healthy | `number` | `300` | no |
+| <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances.<br/>If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used. | `string` | `null` | no |
+| <a name="input_asg_health_check_grace_period"></a> [asg\_health\_check\_grace\_period](#input\_asg\_health\_check\_grace\_period) | ASG will wait up to this number of seconds for instance to become healthy.<br/>Default: 300 seconds (5 minutes) | `number` | `300` | no |
 | <a name="input_asg_instance_type"></a> [asg\_instance\_type](#input\_asg\_instance\_type) | EC2 instances type | `string` | `"t3.micro"` | no |
-| <a name="input_asg_max_size"></a> [asg\_max\_size](#input\_asg\_max\_size) | Maximum number of instances in ASG. By default, it's calculated based on number of tasks and their memory requirements. | `number` | `null` | no |
-| <a name="input_asg_min_size"></a> [asg\_min\_size](#input\_asg\_min\_size) | Minimum number of instances in ASG. By default, the number of subnets. | `number` | `null` | no |
+| <a name="input_asg_max_size"></a> [asg\_max\_size](#input\_asg\_max\_size) | Maximum number of instances in ASG.<br/>Default: Automatically calculated based on number of tasks and their memory requirements. | `number` | `null` | no |
+| <a name="input_asg_min_size"></a> [asg\_min\_size](#input\_asg\_min\_size) | Minimum number of instances in ASG.<br/>Default: The number of subnets (one instance per subnet for high availability). | `number` | `null` | no |
 | <a name="input_asg_subnets"></a> [asg\_subnets](#input\_asg\_subnets) | Auto Scaling Group Subnets. | `list(string)` | n/a | yes |
-| <a name="input_assume_dns"></a> [assume\_dns](#input\_assume\_dns) | If True, create DNS records provided by var.dns\_a\_records. | `bool` | `true` | no |
-| <a name="input_autoscaling_metric"></a> [autoscaling\_metric](#input\_autoscaling\_metric) | Metric to base autoscaling on. Can be ECSServiceAverageCPUUtilization, ECSServiceAverageMemoryUtilization, ALBRequestCountPerTarget | `string` | `"ECSServiceAverageCPUUtilization"` | no |
+| <a name="input_assume_dns"></a> [assume\_dns](#input\_assume\_dns) | If true, create DNS records provided by var.dns\_names.<br/>Set to false if DNS records are managed externally. | `bool` | `true` | no |
+| <a name="input_autoscaling_metric"></a> [autoscaling\_metric](#input\_autoscaling\_metric) | Metric to base autoscaling on.<br/><br/>Valid values:<br/>- "ECSServiceAverageCPUUtilization" (default) - Scale based on CPU usage<br/>- "ECSServiceAverageMemoryUtilization" - Scale based on memory usage<br/>- "ALBRequestCountPerTarget" - Scale based on ALB requests per target | `string` | `"ECSServiceAverageCPUUtilization"` | no |
 | <a name="input_autoscaling_target"></a> [autoscaling\_target](#input\_autoscaling\_target) | Target value for autoscaling\_metric. | `number` | `null` | no |
-| <a name="input_autoscaling_target_cpu_usage"></a> [autoscaling\_target\_cpu\_usage](#input\_autoscaling\_target\_cpu\_usage) | If autoscaling\_metric is ECSServiceAverageCPUUtilization, how much CPU an ECS service aims to use. | `number` | `80` | no |
+| <a name="input_autoscaling_target_cpu_usage"></a> [autoscaling\_target\_cpu\_usage](#input\_autoscaling\_target\_cpu\_usage) | Target CPU utilization percentage for autoscaling.<br/>Only used when autoscaling\_metric is "ECSServiceAverageCPUUtilization".<br/><br/>ECS will scale in/out to maintain this CPU usage level.<br/>Default: 60% (matches website-pod default for consistency) | `number` | `60` | no |
 | <a name="input_certificate_issuers"></a> [certificate\_issuers](#input\_certificate\_issuers) | List of certificate authority domains allowed to issue certificates for this domain (e.g., ["amazon.com", "letsencrypt.org"]).<br/>The module will format these as CAA records. | `list(string)` | <pre>[<br/>  "amazon.com"<br/>]</pre> | no |
 | <a name="input_cloudinit_extra_commands"></a> [cloudinit\_extra\_commands](#input\_cloudinit\_extra\_commands) | Extra commands for run on ASG. | `list(string)` | `[]` | no |
-| <a name="input_cloudwatch_agent_image"></a> [cloudwatch\_agent\_image](#input\_cloudwatch\_agent\_image) | Cloudwatch agent image | `string` | `"public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest"` | no |
-| <a name="input_cloudwatch_log_group"></a> [cloudwatch\_log\_group](#input\_cloudwatch\_log\_group) | CloudWatch log group to create and use. Default: /ecs/{var.environment}/{var.service\_name} | `string` | `null` | no |
+| <a name="input_cloudwatch_agent_image"></a> [cloudwatch\_agent\_image](#input\_cloudwatch\_agent\_image) | CloudWatch agent container image.<br/><br/>Default is pinned to a specific version for stability and reproducibility.<br/>Pinned versions prevent unexpected breaking changes when AWS updates the agent.<br/><br/>You can override this to use ":latest" if you want automatic updates,<br/>though this is not recommended for production environments.<br/><br/>Check available versions: https://gallery.ecr.aws/cloudwatch-agent/cloudwatch-agent | `string` | `"public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300062.0b1304"` | no |
+| <a name="input_cloudwatch_log_group"></a> [cloudwatch\_log\_group](#input\_cloudwatch\_log\_group) | CloudWatch log group name to create and use.<br/>Default: /ecs/{var.environment}/{var.service\_name}<br/><br/>Example: If environment="production" and service\_name="api",<br/>the log group will be "/ecs/production/api" | `string` | `null` | no |
 | <a name="input_cloudwatch_log_group_retention"></a> [cloudwatch\_log\_group\_retention](#input\_cloudwatch\_log\_group\_retention) | Number of days you want to retain log events in the log group. | `number` | `365` | no |
-| <a name="input_cloudwatch_log_kms_key_id"></a> [cloudwatch\_log\_kms\_key\_id](#input\_cloudwatch\_log\_kms\_key\_id) | KMS key ID to encrypt CloudWatch logs. If not specified, logs will use AWS managed encryption. | `string` | `null` | no |
+| <a name="input_cloudwatch_log_kms_key_id"></a> [cloudwatch\_log\_kms\_key\_id](#input\_cloudwatch\_log\_kms\_key\_id) | KMS key ID (ARN) to encrypt CloudWatch logs.<br/><br/>If not specified, logs will use AWS managed encryption.<br/>For enhanced security and compliance, provide a customer-managed KMS key.<br/><br/>Example: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012" | `string` | `null` | no |
 | <a name="input_container_command"></a> [container\_command](#input\_container\_command) | If specified, use this list of strings as a docker command. | `list(string)` | `null` | no |
 | <a name="input_container_cpu"></a> [container\_cpu](#input\_container\_cpu) | Number of CPU units that a container is going to use. | `number` | `200` | no |
 | <a name="input_container_healthcheck_command"></a> [container\_healthcheck\_command](#input\_container\_healthcheck\_command) | A shell command that a container runs to check if it's healthy. Exit code 0 means healthy, non-zero - unhealthy. | `string` | `"curl -f http://localhost/ || exit 1"` | no |
 | <a name="input_container_memory"></a> [container\_memory](#input\_container\_memory) | Amount of RAM in megabytes the container is going to use. | `number` | `128` | no |
 | <a name="input_container_port"></a> [container\_port](#input\_container\_port) | TCP port that a container serves client requests on. | `number` | `8080` | no |
 | <a name="input_dns_names"></a> [dns\_names](#input\_dns\_names) | List of hostnames the module will create in var.zone\_id. | `list(string)` | n/a | yes |
-| <a name="input_dockerSecurityOptions"></a> [dockerSecurityOptions](#input\_dockerSecurityOptions) | A list of strings to provide custom configuration for multiple security systems. Supported prefixes are 'label:', 'apparmor:', and 'credentialspec:' or you can specify 'no-new-privileges' | `list(string)` | `null` | no |
+| <a name="input_dockerSecurityOptions"></a> [dockerSecurityOptions](#input\_dockerSecurityOptions) | A list of strings to provide custom configuration for multiple security systems.<br/><br/>Supported options:<br/>- "no-new-privileges" - Prevent privilege escalation<br/>- "label:<value>" - SELinux labels<br/>- "apparmor:<value>" - AppArmor profile<br/>- "credentialspec:<value>" - Credential specifications (Windows)<br/><br/>Example:<br/>  dockerSecurityOptions = [<br/>    "no-new-privileges",<br/>    "label:type:container\_runtime\_t"<br/>  ] | `list(string)` | `null` | no |
 | <a name="input_docker_image"></a> [docker\_image](#input\_docker\_image) | A container image that will run the service. | `string` | n/a | yes |
-| <a name="input_enable_cloudwatch_logs"></a> [enable\_cloudwatch\_logs](#input\_enable\_cloudwatch\_logs) | Enable Cloudwatch logs. If enabled, log driver will be awslogs. | `bool` | `false` | no |
+| <a name="input_enable_cloudwatch_logs"></a> [enable\_cloudwatch\_logs](#input\_enable\_cloudwatch\_logs) | Enable CloudWatch Logs for ECS tasks.<br/>If enabled, containers will use "awslogs" log driver.<br/><br/>Default: true (recommended for production environments) | `bool` | `true` | no |
 | <a name="input_enable_container_insights"></a> [enable\_container\_insights](#input\_enable\_container\_insights) | Enable container insights feature on ECS cluster. | `bool` | `false` | no |
 | <a name="input_enable_deployment_circuit_breaker"></a> [enable\_deployment\_circuit\_breaker](#input\_enable\_deployment\_circuit\_breaker) | Enable ECS deployment circuit breaker. | `bool` | `true` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | Name of environment. | `string` | `"development"` | no |
-| <a name="input_execution_extra_policy"></a> [execution\_extra\_policy](#input\_execution\_extra\_policy) | A map of extra policies attached to the task execution role. The key is an arbitrary string, the value is the policy ARN. | `map(string)` | `{}` | no |
+| <a name="input_execution_extra_policy"></a> [execution\_extra\_policy](#input\_execution\_extra\_policy) | A map of extra policies attached to the task execution role.<br/>The task execution role is used by the ECS agent to pull images, write logs, and access secrets.<br/><br/>Key: Arbitrary identifier (e.g., "secrets\_access")<br/>Value: IAM policy ARN<br/><br/>Example:<br/>  execution\_extra\_policy = {<br/>    "secrets\_access" = "arn:aws:iam::123456789012:policy/ECSSecretsAccess"<br/>    "ecr\_pull"       = "arn:aws:iam::123456789012:policy/ECRPullPolicy"<br/>  } | `map(string)` | `{}` | no |
 | <a name="input_execution_task_role_policy_arn"></a> [execution\_task\_role\_policy\_arn](#input\_execution\_task\_role\_policy\_arn) | Extra policy for execution task role. | `string` | `null` | no |
 | <a name="input_extra_files"></a> [extra\_files](#input\_extra\_files) | Additional files to create on a host EC2 instance. | <pre>list(<br/>    object(<br/>      {<br/>        content     = string<br/>        path        = string<br/>        permissions = string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |
 | <a name="input_extra_instance_profile_permissions"></a> [extra\_instance\_profile\_permissions](#input\_extra\_instance\_profile\_permissions) | A JSON with a permissions policy document. The policy will be attached to the ASG instance profile. | `string` | `null` | no |
@@ -237,7 +262,7 @@ module "httpd" {
 | <a name="input_managed_termination_protection"></a> [managed\_termination\_protection](#input\_managed\_termination\_protection) | Enables or disables container-aware termination of instances in the auto scaling group when scale-in happens. | `bool` | `true` | no |
 | <a name="input_on_demand_base_capacity"></a> [on\_demand\_base\_capacity](#input\_on\_demand\_base\_capacity) | If specified, the ASG will request spot instances and this will be the minimal number of on-demand instances. | `number` | `null` | no |
 | <a name="input_root_volume_size"></a> [root\_volume\_size](#input\_root\_volume\_size) | Root volume size in EC2 instance in Gigabytes | `number` | `30` | no |
-| <a name="input_service_health_check_grace_period_seconds"></a> [service\_health\_check\_grace\_period\_seconds](#input\_service\_health\_check\_grace\_period\_seconds) | Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647. | `number` | `null` | no |
+| <a name="input_service_health_check_grace_period_seconds"></a> [service\_health\_check\_grace\_period\_seconds](#input\_service\_health\_check\_grace\_period\_seconds) | Seconds to ignore failing load balancer health checks on newly instantiated tasks.<br/>This prevents ECS from killing tasks that are still starting up.<br/><br/>Use this when:<br/>- Your application takes time to initialize (e.g., loading data, warming caches)<br/>- Health checks fail during the startup period<br/>- You see tasks being killed and restarted repeatedly<br/><br/>Default: null (uses ECS default behavior)<br/>Range: 0 to 2147483647 seconds<br/><br/>Example: 300 (5 minutes grace period for slow-starting applications) | `number` | `null` | no |
 | <a name="input_service_name"></a> [service\_name](#input\_service\_name) | Service name | `string` | n/a | yes |
 | <a name="input_sns_topic_arn"></a> [sns\_topic\_arn](#input\_sns\_topic\_arn) | SNS topic arn for sending alerts on failed deployments. | `string` | `null` | no |
 | <a name="input_ssh_cidr_block"></a> [ssh\_cidr\_block](#input\_ssh\_cidr\_block) | CIDR range that is allowed to SSH into the backend instances | `string` | `null` | no |
@@ -246,7 +271,7 @@ module "httpd" {
 | <a name="input_task_desired_count"></a> [task\_desired\_count](#input\_task\_desired\_count) | Number of containers the ECS service will maintain. | `number` | `1` | no |
 | <a name="input_task_efs_volumes"></a> [task\_efs\_volumes](#input\_task\_efs\_volumes) | Map name->{file\_system\_id, container\_path} of EFS volumes defined in task and available for containers to mount. | <pre>map(<br/>    object(<br/>      {<br/>        file_system_id : string<br/>        container_path : string<br/>      }<br/>    )<br/>  )</pre> | `{}` | no |
 | <a name="input_task_environment_variables"></a> [task\_environment\_variables](#input\_task\_environment\_variables) | Environment variables passed down to a task. | <pre>list(<br/>    object(<br/>      {<br/>        name : string<br/>        value : string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |
-| <a name="input_task_ipc_mode"></a> [task\_ipc\_mode](#input\_task\_ipc\_mode) | The IPC resource namespace to use for the containers in the task. See https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskDefinition.html | `string` | `null` | no |
+| <a name="input_task_ipc_mode"></a> [task\_ipc\_mode](#input\_task\_ipc\_mode) | The IPC resource namespace to use for the containers in the task.<br/>Controls how containers share inter-process communication resources.<br/><br/>Valid values:<br/>- null (default) - Each container has its own private IPC namespace<br/>- "host" - Containers use the host's IPC namespace (use with caution)<br/>- "task" - All containers in the task share the same IPC namespace<br/>- "none" - IPC namespace is disabled<br/><br/>Use "task" when:<br/>- Containers need to communicate via shared memory<br/>- Running multi-container applications that use IPC (e.g., sidecars with shared memory)<br/><br/>Reference: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskDefinition.html | `string` | `null` | no |
 | <a name="input_task_local_volumes"></a> [task\_local\_volumes](#input\_task\_local\_volumes) | Map name->{host\_path, container\_path} of local volumes defined in task and available for containers to mount. | <pre>map(<br/>    object(<br/>      {<br/>        host_path : string<br/>        container_path : string<br/>      }<br/>    )<br/>  )</pre> | `{}` | no |
 | <a name="input_task_max_count"></a> [task\_max\_count](#input\_task\_max\_count) | Highest number of tasks to run | `number` | `10` | no |
 | <a name="input_task_min_count"></a> [task\_min\_count](#input\_task\_min\_count) | Lowest number of tasks to run | `number` | `1` | no |
@@ -254,11 +279,11 @@ module "httpd" {
 | <a name="input_task_secrets"></a> [task\_secrets](#input\_task\_secrets) | Secrets to pass to a container. A `name` will be the environment variable. valueFrom is a secret ARN. | <pre>list(<br/>    object(<br/>      {<br/>        name : string<br/>        valueFrom : string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |
 | <a name="input_upstream_module"></a> [upstream\_module](#input\_upstream\_module) | Module that called this module. | `string` | `null` | no |
 | <a name="input_users"></a> [users](#input\_users) | A list of maps with user definitions according to the cloud-init format | `any` | `null` | no |
-| <a name="input_vanta_contains_ephi"></a> [vanta\_contains\_ephi](#input\_vanta\_contains\_ephi) | This tag allows administrators to define whether or not a resource contains electronically Protected Health Information (ePHI). It can be set to either (true) or if they do not have ephi data (false). | `bool` | `false` | no |
-| <a name="input_vanta_contains_user_data"></a> [vanta\_contains\_user\_data](#input\_vanta\_contains\_user\_data) | his tag allows administrators to define whether or not a resource contains user data (true) or if they do not contain user data (false). | `bool` | `false` | no |
+| <a name="input_vanta_contains_ephi"></a> [vanta\_contains\_ephi](#input\_vanta\_contains\_ephi) | This tag allows administrators to define whether or not a resource contains<br/>electronically Protected Health Information (ePHI).<br/><br/>Set to true if the resource contains ePHI, false otherwise.<br/>Used for HIPAA compliance tracking in Vanta. | `bool` | `false` | no |
+| <a name="input_vanta_contains_user_data"></a> [vanta\_contains\_user\_data](#input\_vanta\_contains\_user\_data) | This tag allows administrators to define whether or not a resource contains user data.<br/><br/>Set to true if the resource contains user data, false otherwise.<br/>Used for Vanta compliance tracking. | `bool` | `false` | no |
 | <a name="input_vanta_description"></a> [vanta\_description](#input\_vanta\_description) | This tag allows administrators to set a description, for instance, or add any other descriptive information. | `string` | `null` | no |
-| <a name="input_vanta_no_alert"></a> [vanta\_no\_alert](#input\_vanta\_no\_alert) | Administrators can add this tag to mark a resource as out of scope for their audit. If this tag is added, the administrator will need to set a reason for why it's not relevant to their audit. | `string` | `null` | no |
-| <a name="input_vanta_owner"></a> [vanta\_owner](#input\_vanta\_owner) | The email address of the instance's owner, and it should be set to the email address of a user in Vanta. An owner will not be assigned if there is no user in Vanta with the email specified. | `string` | `null` | no |
+| <a name="input_vanta_no_alert"></a> [vanta\_no\_alert](#input\_vanta\_no\_alert) | Mark a resource as out of scope for Vanta audit.<br/><br/>If set, you must provide a reason explaining why the resource<br/>is not relevant to the audit. | `string` | `null` | no |
+| <a name="input_vanta_owner"></a> [vanta\_owner](#input\_vanta\_owner) | The email address of the instance's owner for Vanta tracking.<br/><br/>Must be set to the email address of an existing user in Vanta.<br/>If the email doesn't match a Vanta user, no owner will be assigned. | `string` | `null` | no |
 | <a name="input_vanta_production_environments"></a> [vanta\_production\_environments](#input\_vanta\_production\_environments) | Environment names to consider production grade in Vanta. | `list(string)` | <pre>[<br/>  "production",<br/>  "prod"<br/>]</pre> | no |
 | <a name="input_vanta_user_data_stored"></a> [vanta\_user\_data\_stored](#input\_vanta\_user\_data\_stored) | This tag allows administrators to describe the type of user data the instance contains. | `string` | `null` | no |
 | <a name="input_zone_id"></a> [zone\_id](#input\_zone\_id) | Zone where DNS records will be created for the service and certificate validation. | `string` | n/a | yes |

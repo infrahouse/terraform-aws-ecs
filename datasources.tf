@@ -16,6 +16,12 @@ data "aws_internet_gateway" "default" {
   }
 }
 
+# Get IAM role name from instance profile (for tcp-pod which only returns instance_profile_name)
+data "aws_iam_instance_profile" "tcp_pod" {
+  count = var.lb_type == "nlb" ? 1 : 0
+  name  = var.lb_type == "nlb" ? module.tcp-pod[0].instance_profile_name : null
+}
+
 data "aws_ami" "ecs" {
   most_recent = true
 
@@ -103,14 +109,11 @@ data "cloudinit_config" "ecs" {
 
 data "aws_iam_policy_document" "instance_policy" {
   source_policy_documents = var.extra_instance_profile_permissions != null ? [var.extra_instance_profile_permissions] : []
-  statement {
-    actions   = ["ec2:Describe*"]
-    resources = ["*"]
-  }
-  statement {
-    actions   = ["ecs:*"]
-    resources = ["*"]
-  }
+
+  # Note: ECS instance permissions (ecs:*, ec2:Describe*) are now provided by
+  # AWS managed policy AmazonEC2ContainerServiceforEC2Role attached in iam.tf
+  # This inline policy only contains module-specific permissions
+
   dynamic "statement" {
     for_each = var.enable_cloudwatch_logs ? [1] : []
     content {
