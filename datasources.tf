@@ -9,6 +9,11 @@ data "aws_subnet" "load_balancer" {
   id = var.load_balancer_subnets[0]
 }
 
+# Auto-discover Internet Gateway attached to the VPC
+# Notes:
+# - AWS allows exactly ONE Internet Gateway per VPC
+# - The IGW is discovered in the same AWS account/region as the provider
+# - If no IGW is found, the vpc_has_internet_gateway check will fail with a helpful error
 data "aws_internet_gateway" "default" {
   filter {
     name   = "attachment.vpc-id"
