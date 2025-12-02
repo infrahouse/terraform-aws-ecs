@@ -4,6 +4,28 @@ variable "access_log_force_destroy" {
   default     = false
 }
 
+variable "alarm_emails" {
+  description = <<-EOT
+    List of email addresses to receive CloudWatch alarm notifications.
+    Required for monitoring ECS service health and performance issues.
+
+    Example: ["devops@example.com", "oncall@example.com"]
+  EOT
+  type        = list(string)
+
+  validation {
+    condition     = length(var.alarm_emails) > 0
+    error_message = "At least one email address must be provided for alarm notifications."
+  }
+
+  validation {
+    condition = alltrue([
+      for email in var.alarm_emails : can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email))
+    ])
+    error_message = "All alarm_emails must be valid email addresses."
+  }
+}
+
 variable "ami_id" {
   description = <<-EOT
     Image for host EC2 instances.

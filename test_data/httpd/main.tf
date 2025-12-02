@@ -47,6 +47,7 @@ module "httpd" {
     }
   ]
   access_log_force_destroy = true
+  alarm_emails             = ["test@example.com"]
   dockerSecurityOptions = [
     "no-new-privileges",
   ]
