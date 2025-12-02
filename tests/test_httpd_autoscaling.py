@@ -30,7 +30,7 @@ def test_module(
     autoscaling_target,
     service_network,
     keep_after,
-    test_zone_name,
+    subzone,
     test_role_arn,
     aws_region,
     aws_provider_version,
@@ -38,6 +38,7 @@ def test_module(
 ):
     subnet_public_ids = service_network["subnet_public_ids"]["value"]
     subnet_private_ids = service_network["subnet_private_ids"]["value"]
+    zone_id = subzone["subzone_id"]["value"]
 
     # Create ECS with httpd container
     terraform_module_dir = osp.join(TERRAFORM_ROOT_DIR, "httpd_autoscaling")
@@ -47,7 +48,7 @@ def test_module(
         fp.write(
             dedent(
                 f"""
-                test_zone     = "{test_zone_name}"
+                zone_id       = "{zone_id}"
                 region        = "{aws_region}"
 
                 subnet_public_ids   = {json.dumps(subnet_public_ids)}
@@ -80,5 +81,9 @@ def test_module(
     ) as tf_httpd_output:
         LOG.info(json.dumps(tf_httpd_output, indent=4))
         cleanup_ecs_task_definitions(tf_httpd_output["service_name"]["value"])
-        for url in [f"https://www.{test_zone_name}", f"https://{test_zone_name}"]:
+
+        # Use dns_hostnames from output instead of constructing URLs
+        dns_hostnames = tf_httpd_output["dns_hostnames"]["value"]
+        for hostname in dns_hostnames:
+            url = f"https://{hostname}"
             wait_for_success(url)

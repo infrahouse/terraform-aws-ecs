@@ -1,5 +1,5 @@
 output "zone_id" {
-  value = data.aws_route53_zone.cicd.zone_id
+  value = var.zone_id
 }
 
 output "jumphost_hostname" {
@@ -8,4 +8,8 @@ output "jumphost_hostname" {
 
 output "service_name" {
   value = var.service_name
+}
+
+output "dns_hostnames" {
+  value = module.httpd.dns_hostnames
 }

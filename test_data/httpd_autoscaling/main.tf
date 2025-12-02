@@ -23,7 +23,7 @@ module "httpd" {
   container_port                = 80
   service_name                  = var.service_name
   ssh_key_name                  = aws_key_pair.black-mbp.key_name
-  zone_id                       = data.aws_route53_zone.cicd.zone_id
+  zone_id                       = var.zone_id
   task_desired_count            = 1
   asg_max_size                  = 1
   asg_min_size                  = 1
