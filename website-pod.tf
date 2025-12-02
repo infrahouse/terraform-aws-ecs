@@ -1,7 +1,7 @@
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "5.9.0"
+  version = "5.12.1"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -20,7 +20,7 @@ module "pod" {
   alb_healthcheck_interval              = var.healthcheck_interval
   health_check_grace_period             = var.asg_health_check_grace_period
   health_check_type                     = "EC2"
-  attach_tagret_group_to_asg            = false
+  attach_target_group_to_asg            = false
   instance_type                         = var.asg_instance_type
   asg_min_size                          = local.asg_min_size
   asg_max_size                          = local.asg_max_size
@@ -58,4 +58,5 @@ module "pod" {
   vanta_user_data_stored        = var.vanta_user_data_stored
   on_demand_base_capacity       = var.on_demand_base_capacity
   certificate_issuers           = var.certificate_issuers
+  alarm_emails                  = var.alarm_emails
 }

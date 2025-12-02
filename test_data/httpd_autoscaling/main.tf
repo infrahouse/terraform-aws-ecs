@@ -32,6 +32,7 @@ module "httpd" {
   access_log_force_destroy      = true
   autoscaling_metric            = var.autoscaling_metric
   autoscaling_target            = var.autoscaling_target
+  alarm_emails                  = ["test@example.com"]
 
   users = [
     {

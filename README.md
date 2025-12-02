@@ -23,6 +23,69 @@ if you want a popular setup https://domain.com + https://www.domain.com/.
 
 For usage see how the module is used in the using tests in `test_data/test_module`.
 
+## Migration from v6.x to v7.0
+
+**Breaking Change (v7.0.0):** The `alarm_emails` variable is now required for CloudWatch alerting.
+
+### What Changed
+- **New Required Variable:** `alarm_emails` must be provided
+- **Module Dependency Update:** `infrahouse/website-pod/aws` upgraded from 5.9.0 to 5.12.1
+- This enables CloudWatch alerts for service health monitoring (high latency, low success rate, unhealthy hosts)
+
+### Why This Change
+Starting with v7.0.0, the module requires email addresses for CloudWatch alarm notifications. This ensures that critical service health issues are immediately reported to the appropriate team members.
+
+### Migration Steps
+
+**Before (v6.x):**
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 6.0"
+
+  service_name       = "my-service"
+  environment        = "production"
+  # ... other parameters
+}
+```
+
+**After (v7.0):**
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "~> 7.0"
+
+  service_name       = "my-service"
+  environment        = "production"
+  alarm_emails       = ["devops@example.com", "oncall@example.com"]  # REQUIRED
+  # ... other parameters
+}
+```
+
+### Email Validation
+The `alarm_emails` variable includes validation to ensure:
+- At least one email address is provided
+- All email addresses are in valid format
+
+Example with multiple emails:
+```hcl
+alarm_emails = [
+  "devops-team@example.com",
+  "oncall@example.com",
+  "infrastructure-alerts@example.com"
+]
+```
+
+### What Alerts Are Sent
+With `alarm_emails` configured, you'll receive CloudWatch alerts for:
+- **High Latency:** Target response time exceeds threshold
+- **Low Success Rate:** HTTP error rate is too high
+- **Unhealthy Hosts:** Target health checks are failing
+
+These alerts help ensure your ECS service maintains high availability and performance.
+
+---
+
 ## Migration from Amazon Linux 2 to Amazon Linux 2023
 
 **Breaking Change (v6.0.0+):** This module now defaults to Amazon Linux 2023 (AL2023) ECS-optimized AMIs instead of Amazon Linux 2.
@@ -163,7 +226,7 @@ If you encounter validation errors during `terraform plan`, the error message wi
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.9.0 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.12.1 |
 | <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.6.0 |
 
 ## Resources
@@ -219,6 +282,7 @@ If you encounter validation errors during `terraform plan`, the error message wi
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_access_log_force_destroy"></a> [access\_log\_force\_destroy](#input\_access\_log\_force\_destroy) | Destroy S3 bucket with access logs even if non-empty | `bool` | `false` | no |
+| <a name="input_alarm_emails"></a> [alarm\_emails](#input\_alarm\_emails) | List of email addresses to receive CloudWatch alarm notifications.<br/>Required for monitoring ECS service health and performance issues.<br/><br/>Example: ["devops@example.com", "oncall@example.com"] | `list(string)` | n/a | yes |
 | <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances.<br/>If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used. | `string` | `null` | no |
 | <a name="input_asg_health_check_grace_period"></a> [asg\_health\_check\_grace\_period](#input\_asg\_health\_check\_grace\_period) | ASG will wait up to this number of seconds for instance to become healthy.<br/>Default: 300 seconds (5 minutes) | `number` | `300` | no |
 | <a name="input_asg_instance_type"></a> [asg\_instance\_type](#input\_asg\_instance\_type) | EC2 instances type | `string` | `"t3.micro"` | no |
