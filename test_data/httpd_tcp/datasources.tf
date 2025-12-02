@@ -5,7 +5,7 @@ data "aws_availability_zones" "available" {
 }
 
 data "aws_route53_zone" "cicd" {
-  name = var.test_zone
+  zone_id = var.zone_id
 }
 
 data "aws_ami" "ubuntu" {

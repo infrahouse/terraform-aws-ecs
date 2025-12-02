@@ -13,3 +13,7 @@ output "load_balancer_dns_name" {
 output "service_name" {
   value = var.service_name
 }
+
+output "dns_hostnames" {
+  value = module.httpd.dns_hostnames
+}
