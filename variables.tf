@@ -132,7 +132,22 @@ variable "cloudwatch_agent_image" {
     You can override this to use ":latest" if you want automatic updates,
     though this is not recommended for production environments.
 
-    Check available versions: https://gallery.ecr.aws/cloudwatch-agent/cloudwatch-agent
+    Version Selection:
+    - Current version (1.300062.0b1304) was the latest stable release at time of pinning
+    - Verified to work with Amazon Linux 2023 and ECS
+    - No known security vulnerabilities at time of selection
+
+    Updating the Version:
+    1. Check available versions: https://gallery.ecr.aws/cloudwatch-agent/cloudwatch-agent
+    2. Review AWS CloudWatch Agent release notes for breaking changes
+    3. Test in non-production environment first
+    4. Override this variable with the new version:
+       cloudwatch_agent_image = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:NEW_VERSION"
+
+    Security Monitoring:
+    - Monitor AWS security bulletins: https://aws.amazon.com/security/security-bulletins/
+    - Subscribe to CloudWatch Agent GitHub releases: https://github.com/aws/amazon-cloudwatch-agent
+    - Consider automated container vulnerability scanning (e.g., AWS ECR scanning, Trivy)
   EOT
   type        = string
   default     = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300062.0b1304"
@@ -221,6 +236,11 @@ variable "healthcheck_timeout" {
   description = "Healthcheck timeout"
   type        = number
   default     = 5
+
+  validation {
+    condition     = var.healthcheck_timeout > 0
+    error_message = "healthcheck_timeout must be greater than 0."
+  }
 }
 
 variable "healthcheck_path" {
@@ -471,6 +491,11 @@ variable "task_min_count" {
   description = "Lowest number of tasks to run"
   type        = number
   default     = 1
+
+  validation {
+    condition     = var.task_min_count >= 1
+    error_message = "task_min_count must be at least 1."
+  }
 }
 
 variable "task_role_arn" {

@@ -84,6 +84,9 @@ With `alarm_emails` configured, you'll receive CloudWatch alerts for:
 
 These alerts help ensure your ECS service maintains high availability and performance.
 
+**Important:** After first deployment, check your inbox for SNS subscription confirmation emails.
+You must click "Confirm subscription" in each email to start receiving alerts.
+
 ---
 
 ## Behavioral Changes in v7.0
@@ -410,6 +413,35 @@ module "ecs_service" {
 
 ---
 
+## IAM Permissions and Security
+
+### ECS Instance Permissions
+
+This module uses the AWS-managed policy **`AmazonEC2ContainerServiceforEC2Role`** for ECS instance permissions. This policy is automatically maintained by AWS and includes all necessary permissions for ECS container instances to function properly.
+
+**Benefits:**
+- ✅ **Automatically updated** - AWS maintains the policy when ECS requirements change
+- ✅ **Best practices** - Follows AWS recommendations for ECS instance roles
+- ✅ **No maintenance needed** - No action required when AWS updates ECS features
+- ✅ **Minimal permissions** - Only includes necessary ECS and EC2 describe permissions
+
+**What's Included:**
+The AWS-managed policy grants permissions for:
+- ECS cluster registration and deregistration
+- ECS task lifecycle management
+- EC2 instance metadata access
+- CloudWatch metrics and logs (when enabled)
+
+**Additional Permissions:**
+The module adds a minimal custom policy on top of the AWS-managed policy for:
+- CloudWatch Logs write permissions (when `enable_cloudwatch_logs = true`)
+- Any extra policies specified via `execution_extra_policy` variable
+
+**Security Note:**
+The module follows the principle of least privilege. No wildcard permissions (like `ecs:*` or `ec2:Describe*`) are used in custom policies. All broad permissions are delegated to the AWS-managed policy, which AWS maintains responsibly.
+
+---
+
 ## Migration from Amazon Linux 2 to Amazon Linux 2023
 
 **Breaking Change (v6.0.0+):** This module now defaults to Amazon Linux 2023 (AL2023) ECS-optimized AMIs instead of Amazon Linux 2.
@@ -621,7 +653,7 @@ If you encounter validation errors during `terraform plan`, the error message wi
 | <a name="input_autoscaling_target_cpu_usage"></a> [autoscaling\_target\_cpu\_usage](#input\_autoscaling\_target\_cpu\_usage) | Target CPU utilization percentage for autoscaling.<br/>Only used when autoscaling\_metric is "ECSServiceAverageCPUUtilization".<br/><br/>ECS will scale in/out to maintain this CPU usage level.<br/>Default: 60% (matches website-pod default for consistency) | `number` | `60` | no |
 | <a name="input_certificate_issuers"></a> [certificate\_issuers](#input\_certificate\_issuers) | List of certificate authority domains allowed to issue certificates for this domain (e.g., ["amazon.com", "letsencrypt.org"]).<br/>The module will format these as CAA records. | `list(string)` | <pre>[<br/>  "amazon.com"<br/>]</pre> | no |
 | <a name="input_cloudinit_extra_commands"></a> [cloudinit\_extra\_commands](#input\_cloudinit\_extra\_commands) | Extra commands for run on ASG. | `list(string)` | `[]` | no |
-| <a name="input_cloudwatch_agent_image"></a> [cloudwatch\_agent\_image](#input\_cloudwatch\_agent\_image) | CloudWatch agent container image.<br/><br/>Default is pinned to a specific version for stability and reproducibility.<br/>Pinned versions prevent unexpected breaking changes when AWS updates the agent.<br/><br/>You can override this to use ":latest" if you want automatic updates,<br/>though this is not recommended for production environments.<br/><br/>Check available versions: https://gallery.ecr.aws/cloudwatch-agent/cloudwatch-agent | `string` | `"public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300062.0b1304"` | no |
+| <a name="input_cloudwatch_agent_image"></a> [cloudwatch\_agent\_image](#input\_cloudwatch\_agent\_image) | CloudWatch agent container image.<br/><br/>Default is pinned to a specific version for stability and reproducibility.<br/>Pinned versions prevent unexpected breaking changes when AWS updates the agent.<br/><br/>You can override this to use ":latest" if you want automatic updates,<br/>though this is not recommended for production environments.<br/><br/>Version Selection:<br/>- Current version (1.300062.0b1304) was the latest stable release at time of pinning<br/>- Verified to work with Amazon Linux 2023 and ECS<br/>- No known security vulnerabilities at time of selection<br/><br/>Updating the Version:<br/>1. Check available versions: https://gallery.ecr.aws/cloudwatch-agent/cloudwatch-agent<br/>2. Review AWS CloudWatch Agent release notes for breaking changes<br/>3. Test in non-production environment first<br/>4. Override this variable with the new version:<br/>   cloudwatch\_agent\_image = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:NEW\_VERSION"<br/><br/>Security Monitoring:<br/>- Monitor AWS security bulletins: https://aws.amazon.com/security/security-bulletins/<br/>- Subscribe to CloudWatch Agent GitHub releases: https://github.com/aws/amazon-cloudwatch-agent<br/>- Consider automated container vulnerability scanning (e.g., AWS ECR scanning, Trivy) | `string` | `"public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300062.0b1304"` | no |
 | <a name="input_cloudwatch_log_group"></a> [cloudwatch\_log\_group](#input\_cloudwatch\_log\_group) | CloudWatch log group name to create and use.<br/>Default: /ecs/{var.environment}/{var.service\_name}<br/><br/>Example: If environment="production" and service\_name="api",<br/>the log group will be "/ecs/production/api" | `string` | `null` | no |
 | <a name="input_cloudwatch_log_group_retention"></a> [cloudwatch\_log\_group\_retention](#input\_cloudwatch\_log\_group\_retention) | Number of days you want to retain log events in the log group. | `number` | `365` | no |
 | <a name="input_cloudwatch_log_kms_key_id"></a> [cloudwatch\_log\_kms\_key\_id](#input\_cloudwatch\_log\_kms\_key\_id) | KMS key ID (ARN) to encrypt CloudWatch logs.<br/><br/>If not specified, logs will use AWS managed encryption.<br/>For enhanced security and compliance, provide a customer-managed KMS key.<br/><br/>Example: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012" | `string` | `null` | no |
