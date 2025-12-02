@@ -45,3 +45,10 @@ resource "aws_iam_role_policy_attachment" "execution_extra_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = each.value
 }
+
+# Attach AWS managed policy for ECS container instance permissions
+# This replaces the wildcards (ecs:*, ec2:Describe*) in the inline policy
+resource "aws_iam_role_policy_attachment" "ecs_instance_role" {
+  role       = local.instance_role_name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}

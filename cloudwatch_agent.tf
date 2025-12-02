@@ -12,9 +12,11 @@ data "aws_iam_policy_document" "cloudwatch_agent_task_role_assume_policy" {
     }
   }
 }
+
+# Task role - Runtime permissions for CloudWatch agent
 resource "aws_iam_role" "cloudwatch_agent_task_role" {
   count              = var.enable_cloudwatch_logs ? 1 : 0
-  name_prefix        = format("%s-cw-agent-", var.service_name)
+  name_prefix        = format("%s-cw-task-", var.service_name)
   assume_role_policy = data.aws_iam_policy_document.cloudwatch_agent_task_role_assume_policy.json
   tags = merge(
     local.default_module_tags,
@@ -25,15 +27,31 @@ resource "aws_iam_role" "cloudwatch_agent_task_role" {
   )
 }
 
-resource "aws_iam_role_policy_attachment" "cloudwatch_policy_attachment" {
+# Execution role - Permissions for ECS to start the task
+resource "aws_iam_role" "cloudwatch_agent_execution_role" {
+  count              = var.enable_cloudwatch_logs ? 1 : 0
+  name_prefix        = format("%s-cw-exec-", var.service_name)
+  assume_role_policy = data.aws_iam_policy_document.cloudwatch_agent_task_role_assume_policy.json
+  tags = merge(
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
+  )
+}
+
+# Task role policy - CloudWatch agent needs this at runtime
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent_task_policy" {
   count      = var.enable_cloudwatch_logs ? 1 : 0
   role       = aws_iam_role.cloudwatch_agent_task_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
+# Execution role policy - ECS needs this to start the task
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent_execution_policy" {
   count      = var.enable_cloudwatch_logs ? 1 : 0
-  role       = aws_iam_role.cloudwatch_agent_task_role[0].name
+  role       = aws_iam_role.cloudwatch_agent_execution_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
@@ -41,7 +59,7 @@ resource "aws_ecs_task_definition" "cloudwatch_agent" {
   count              = var.enable_cloudwatch_logs ? 1 : 0
   family             = format("%s-cw-agent-daemon", var.service_name)
   task_role_arn      = aws_iam_role.cloudwatch_agent_task_role[0].arn
-  execution_role_arn = aws_iam_role.cloudwatch_agent_task_role[0].arn
+  execution_role_arn = aws_iam_role.cloudwatch_agent_execution_role[0].arn
 
   container_definitions = jsonencode(
     [
