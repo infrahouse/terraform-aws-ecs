@@ -508,7 +508,9 @@ module "httpd" {
 
 ## Variable Validations
 
-This module includes built-in validations to catch configuration errors early:
+This module includes built-in validations to catch configuration errors early.
+
+**Note:** This module requires **Terraform >= 1.5.0** due to the use of `check` blocks for cross-variable validation. If you're using an older version of Terraform, you'll see an error during `terraform init`.
 
 ### Input Variable Validations
 
