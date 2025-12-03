@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.0.0] - 2025-12-03
+
+### Bug Fixes
+
+- Handle null KMS key ARN in validation error message
+
+### Documentation
+
+- Update planning documents and add v7.0.0 release summary
+- Add comprehensive v7.0.0 migration and KMS encryption documentation
+- Add comprehensive v7.0.0 migration and KMS encryption documentation
+- Address PR review recommendations and add validations
+
+### Features
+
+- Add CloudWatch KMS encryption and improve module infrastructure
+- Add variable validation blocks for input parameters
+- Upgrade to website-pod 5.12.1 and add required alarm_emails
+
+### Miscellaneous Tasks
+
+- Improve development tooling and repository configuration
+
+### Testing
+
+- Migrate remaining tests to use subzone for DNS isolation
+
+### Ci
+
+- Increase Terraform CI timeout to 240 minutes
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
