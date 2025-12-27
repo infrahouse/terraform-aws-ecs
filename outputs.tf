@@ -81,3 +81,52 @@ output "cloudwatch_log_group_names" {
     dmesg  = aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
   } : {}
 }
+
+# Used as ServiceName dimension for CloudWatch ECS Container Insights metrics
+# See: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cloudwatch-metrics.html
+output "service_name" {
+  description = "ECS service name. Required for CloudWatch Container Insights metrics."
+  value       = aws_ecs_service.ecs.name
+}
+
+# Used as ClusterName dimension for CloudWatch ECS Container Insights metrics
+# See: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cloudwatch-metrics.html
+output "cluster_name" {
+  description = "ECS cluster name. Required for CloudWatch Container Insights metrics."
+  value       = aws_ecs_cluster.ecs.name
+}
+
+# Used as LoadBalancer dimension for CloudWatch ALB metrics
+# See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html
+output "load_balancer_arn_suffix" {
+  description = "Load balancer ARN suffix. Required for CloudWatch ALB metrics as dimension."
+  value = join(
+    "/",
+    slice(
+      split(
+        "/",
+        local.load_balancer_arn
+      ),
+      1, # Start from index 1 to skip the ARN prefix
+      length(
+        split(
+          "/",
+          local.load_balancer_arn
+        )
+      )
+    )
+  )
+}
+
+# Used as TargetGroup dimension for CloudWatch ALB target group metrics
+# See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html
+output "target_group_arn_suffix" {
+  description = "Target group ARN suffix. Required for CloudWatch ALB target group metrics as dimension."
+  value = element(
+    split(
+      ":",
+      local.target_group_arn
+    ),
+    5
+  )
+}

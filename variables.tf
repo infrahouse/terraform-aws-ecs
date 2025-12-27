@@ -285,6 +285,22 @@ variable "container_memory" {
   default     = 128
 }
 
+variable "container_memory_reservation" {
+  description = <<-EOT
+    Soft memory limit in megabytes for the container. The container can use more memory
+    if available on the host, up to the hard limit (container_memory).
+    If null, no reservation is set and container_memory acts as both reservation and limit.
+    Must be greater than 0 and less than or equal to container_memory when specified.
+  EOT
+  type        = number
+  default     = null
+
+  validation {
+    condition     = var.container_memory_reservation == null ? true : var.container_memory_reservation > 0
+    error_message = "container_memory_reservation must be greater than 0 when specified."
+  }
+}
+
 variable "container_port" {
   description = "TCP port that a container serves client requests on."
   type        = number

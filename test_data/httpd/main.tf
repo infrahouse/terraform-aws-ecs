@@ -35,11 +35,13 @@ module "httpd" {
   service_name                  = var.service_name
   zone_id                       = var.zone_id
   container_healthcheck_command = "ls"
-  task_role_arn                 = aws_iam_role.task_role.arn
-  enable_cloudwatch_logs        = true
-  vanta_contains_user_data      = true
-  task_min_count                = 20
-  task_max_count                = 40
+  container_command = [
+    "sh", "-c",
+    "echo '<html><body><h1>It works!</h1></body></html>' > /usr/local/apache2/htdocs/index.html && httpd-foreground"
+  ]
+  task_role_arn            = aws_iam_role.task_role.arn
+  enable_cloudwatch_logs   = true
+  vanta_contains_user_data = true
   task_secrets = [
     {
       name : "FAKE_API_KEY"

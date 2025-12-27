@@ -28,10 +28,14 @@ module "httpd" {
   asg_max_size                  = 1
   asg_min_size                  = 1
   container_healthcheck_command = "ls"
-  healthcheck_interval          = 10
-  lb_type                       = "nlb"
-  access_log_force_destroy      = true
-  alarm_emails                  = ["test@example.com"]
+  container_command = [
+    "sh", "-c",
+    "echo '<html><body><h1>It works!</h1></body></html>' > /usr/local/apache2/htdocs/index.html && httpd-foreground"
+  ]
+  healthcheck_interval     = 10
+  lb_type                  = "nlb"
+  access_log_force_destroy = true
+  alarm_emails             = ["test@example.com"]
   dockerSecurityOptions = [
     "no-new-privileges",
   ]

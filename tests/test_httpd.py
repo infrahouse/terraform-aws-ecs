@@ -109,3 +109,38 @@ def test_module(
 
             # For now we just log the encryption status
             # In the future, when KMS key is provided via tfvars, we can assert kms_key_id is not None
+
+        # Validate CloudWatch monitoring outputs
+        LOG.info("Validating CloudWatch monitoring outputs...")
+
+        service_name = tf_httpd_output["service_name"]["value"]
+        assert service_name, "service_name output should not be empty"
+        LOG.info(f"✓ service_name: {service_name}")
+
+        cluster_name = tf_httpd_output["cluster_name"]["value"]
+        assert cluster_name, "cluster_name output should not be empty"
+        LOG.info(f"✓ cluster_name: {cluster_name}")
+
+        load_balancer_arn_suffix = tf_httpd_output["load_balancer_arn_suffix"]["value"]
+        assert (
+            load_balancer_arn_suffix
+        ), "load_balancer_arn_suffix output should not be empty"
+        assert load_balancer_arn_suffix.startswith(
+            "app/"
+        ), f"load_balancer_arn_suffix should start with 'app/', got: {load_balancer_arn_suffix}"
+        assert (
+            load_balancer_arn_suffix.count("/") == 2
+        ), f"load_balancer_arn_suffix should have format 'app/name/id', got: {load_balancer_arn_suffix}"
+        LOG.info(f"✓ load_balancer_arn_suffix: {load_balancer_arn_suffix}")
+
+        target_group_arn_suffix = tf_httpd_output["target_group_arn_suffix"]["value"]
+        assert (
+            target_group_arn_suffix
+        ), "target_group_arn_suffix output should not be empty"
+        assert target_group_arn_suffix.startswith(
+            "targetgroup/"
+        ), f"target_group_arn_suffix should start with 'targetgroup/', got: {target_group_arn_suffix}"
+        assert (
+            target_group_arn_suffix.count("/") == 2
+        ), f"target_group_arn_suffix should have format 'targetgroup/name/id', got: {target_group_arn_suffix}"
+        LOG.info(f"✓ target_group_arn_suffix: {target_group_arn_suffix}")
