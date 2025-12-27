@@ -176,3 +176,49 @@ check "vpc_has_internet_gateway" {
     EOF
   }
 }
+
+# Cross-variable validation: container_memory_reservation must be <= container_memory
+check "memory_reservation_within_limit" {
+  assert {
+    condition = (
+      var.container_memory_reservation == null ||
+      var.container_memory_reservation <= var.container_memory
+    )
+    error_message = <<-EOF
+      ╔════════════════════════════════════════════════════════════════════════╗
+      ║                    ⚠️  CONFIGURATION ERROR ⚠️                          ║
+      ╚════════════════════════════════════════════════════════════════════════╝
+
+      Memory reservation must be less than or equal to the hard memory limit.
+
+      Current configuration:
+        - Hard memory limit (container_memory):             ${var.container_memory} MB
+        - Soft memory limit (container_memory_reservation): ${coalesce(var.container_memory_reservation, "(not set)")} MB
+
+      Problem:
+        ECS requires that the memory reservation (soft limit) cannot exceed the
+        hard memory limit. The container can use memory up to the hard limit, but
+        ECS uses the reservation for task placement decisions.
+
+      Solution:
+        Adjust your configuration so that container_memory_reservation <= container_memory:
+
+        # Good configurations:
+        container_memory             = 512
+        container_memory_reservation = 256  # Reserve 256MB, can burst to 512MB
+
+        container_memory             = 1024
+        container_memory_reservation = 512  # Reserve 512MB, can burst to 1024MB
+
+        container_memory             = 128
+        container_memory_reservation = null # No reservation (uses hard limit for scheduling)
+
+      How memory limits work:
+        - Reservation (soft): Used by ECS for task placement (bin packing)
+        - Hard limit: Container is killed if it exceeds this limit
+        - Burst capacity: container_memory - container_memory_reservation
+
+      ════════════════════════════════════════════════════════════════════════
+    EOF
+  }
+}

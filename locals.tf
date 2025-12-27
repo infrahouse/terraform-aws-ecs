@@ -63,8 +63,9 @@ locals {
   asg_min_size = var.asg_min_size != null ? var.asg_min_size : length(var.asg_subnets)
   asg_max_size = max(
     # How many EC2 instances we need to host task_max_count assuming memory consumption
+    # Note: ECS uses memory reservation (soft limit) for task placement decisions when set
     ceil(
-      var.task_max_count / ((data.aws_ec2_instance_type.backend.memory_size - 1024 - local.cloudwatch_agent_container_resources.memory) / var.container_memory)
+      var.task_max_count / ((data.aws_ec2_instance_type.backend.memory_size - 1024 - local.cloudwatch_agent_container_resources.memory) / coalesce(var.container_memory_reservation, var.container_memory))
     ),
     # How many EC2 instances we need to host task_max_count assuming CPU consumption
     ceil(

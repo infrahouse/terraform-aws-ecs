@@ -17,3 +17,15 @@ output "service_name" {
 output "cloudwatch_log_group_names" {
   value = module.httpd.cloudwatch_log_group_names
 }
+
+output "cluster_name" {
+  value = module.httpd.cluster_name
+}
+
+output "load_balancer_arn_suffix" {
+  value = module.httpd.load_balancer_arn_suffix
+}
+
+output "target_group_arn_suffix" {
+  value = module.httpd.target_group_arn_suffix
+}

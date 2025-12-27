@@ -28,9 +28,13 @@ module "httpd" {
   zone_id                       = data.aws_route53_zone.cicd.zone_id
   task_desired_count            = 1
   container_healthcheck_command = "ls"
-  task_role_arn                 = aws_iam_role.task_role.arn
-  access_log_force_destroy      = true
-  alarm_emails                  = ["test@example.com"]
+  container_command = [
+    "sh", "-c",
+    "echo '<html><body><h1>It works!</h1></body></html>' > /usr/local/apache2/htdocs/index.html && httpd-foreground"
+  ]
+  task_role_arn            = aws_iam_role.task_role.arn
+  access_log_force_destroy = true
+  alarm_emails             = ["test@example.com"]
   task_efs_volumes = {
     "volume1" : {
       file_system_id : aws_efs_file_system.volume1.id

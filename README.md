@@ -584,7 +584,7 @@ If you encounter validation errors during `terraform plan`, the error message wi
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.12.1 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.13.0 |
 | <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.6.0 |
 
 ## Resources
@@ -661,6 +661,7 @@ If you encounter validation errors during `terraform plan`, the error message wi
 | <a name="input_container_cpu"></a> [container\_cpu](#input\_container\_cpu) | Number of CPU units that a container is going to use. | `number` | `200` | no |
 | <a name="input_container_healthcheck_command"></a> [container\_healthcheck\_command](#input\_container\_healthcheck\_command) | A shell command that a container runs to check if it's healthy. Exit code 0 means healthy, non-zero - unhealthy. | `string` | `"curl -f http://localhost/ || exit 1"` | no |
 | <a name="input_container_memory"></a> [container\_memory](#input\_container\_memory) | Amount of RAM in megabytes the container is going to use. | `number` | `128` | no |
+| <a name="input_container_memory_reservation"></a> [container\_memory\_reservation](#input\_container\_memory\_reservation) | Soft memory limit in megabytes for the container. The container can use more memory<br/>if available on the host, up to the hard limit (container\_memory).<br/>If null, no reservation is set and container\_memory acts as both reservation and limit.<br/>Must be greater than 0 and less than or equal to container\_memory when specified. | `number` | `null` | no |
 | <a name="input_container_port"></a> [container\_port](#input\_container\_port) | TCP port that a container serves client requests on. | `number` | `8080` | no |
 | <a name="input_dns_names"></a> [dns\_names](#input\_dns\_names) | List of hostnames the module will create in var.zone\_id. | `list(string)` | n/a | yes |
 | <a name="input_dockerSecurityOptions"></a> [dockerSecurityOptions](#input\_dockerSecurityOptions) | A list of strings to provide custom configuration for multiple security systems.<br/><br/>Supported options:<br/>- "no-new-privileges" - Prevent privilege escalation<br/>- "label:<value>" - SELinux labels<br/>- "apparmor:<value>" - AppArmor profile<br/>- "credentialspec:<value>" - Credential specifications (Windows)<br/><br/>Example:<br/>  dockerSecurityOptions = [<br/>    "no-new-privileges",<br/>    "label:type:container\_runtime\_t"<br/>  ] | `list(string)` | `null` | no |
@@ -720,12 +721,16 @@ If you encounter validation errors during `terraform plan`, the error message wi
 | <a name="output_backend_security_group"></a> [backend\_security\_group](#output\_backend\_security\_group) | Security group of backend. |
 | <a name="output_cloudwatch_log_group_name"></a> [cloudwatch\_log\_group\_name](#output\_cloudwatch\_log\_group\_name) | Name of the main CloudWatch log group for ECS tasks |
 | <a name="output_cloudwatch_log_group_names"></a> [cloudwatch\_log\_group\_names](#output\_cloudwatch\_log\_group\_names) | Names of all CloudWatch log groups created by this module |
+| <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | ECS cluster name. Required for CloudWatch Container Insights metrics. |
 | <a name="output_dns_hostnames"></a> [dns\_hostnames](#output\_dns\_hostnames) | DNS hostnames where the ECS service is available. |
 | <a name="output_load_balancer_arn"></a> [load\_balancer\_arn](#output\_load\_balancer\_arn) | Load balancer ARN. |
+| <a name="output_load_balancer_arn_suffix"></a> [load\_balancer\_arn\_suffix](#output\_load\_balancer\_arn\_suffix) | Load balancer ARN suffix. Required for CloudWatch ALB metrics as dimension. |
 | <a name="output_load_balancer_dns_name"></a> [load\_balancer\_dns\_name](#output\_load\_balancer\_dns\_name) | Load balancer DNS name. |
 | <a name="output_load_balancer_security_groups"></a> [load\_balancer\_security\_groups](#output\_load\_balancer\_security\_groups) | Security groups associated with the load balancer |
 | <a name="output_service_arn"></a> [service\_arn](#output\_service\_arn) | ECS service ARN. |
+| <a name="output_service_name"></a> [service\_name](#output\_service\_name) | ECS service name. Required for CloudWatch Container Insights metrics. |
 | <a name="output_ssl_listener_arn"></a> [ssl\_listener\_arn](#output\_ssl\_listener\_arn) | SSL listener ARN |
+| <a name="output_target_group_arn_suffix"></a> [target\_group\_arn\_suffix](#output\_target\_group\_arn\_suffix) | Target group ARN suffix. Required for CloudWatch ALB target group metrics as dimension. |
 | <a name="output_task_execution_role_arn"></a> [task\_execution\_role\_arn](#output\_task\_execution\_role\_arn) | Task execution role is a role that ECS agent gets. |
 | <a name="output_task_execution_role_name"></a> [task\_execution\_role\_name](#output\_task\_execution\_role\_name) | Task execution role is a role that ECS agent gets. |
 <!-- END_TF_DOCS -->
