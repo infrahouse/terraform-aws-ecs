@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.1.0] - 2025-12-28
+
+### Features
+
+- Add memory reservation support and CloudWatch monitoring outputs
+
+### Miscellaneous Tasks
+
+- Update terraform registry.infrahouse.com/infrahouse/website-pod/aws to v5.13.0
+
 ## [7.0.0] - 2025-12-03
 
 ### Bug Fixes
