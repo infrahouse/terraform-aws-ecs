@@ -21,7 +21,7 @@ from tests.conftest import (
     "autoscaling_metric, autoscaling_target",
     [
         ("ALBRequestCountPerTarget", 100),
-        ("ECSServiceAverageMemoryUtilization", 1024 * 1024 * 1024),
+        ("ECSServiceAverageMemoryUtilization", 80),
         ("ECSServiceAverageCPUUtilization", 70),
     ],
 )

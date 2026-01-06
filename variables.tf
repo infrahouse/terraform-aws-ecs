@@ -114,6 +114,11 @@ variable "autoscaling_target_cpu_usage" {
   EOT
   type        = number
   default     = 60
+
+  validation {
+    condition     = var.autoscaling_target_cpu_usage >= 1 && var.autoscaling_target_cpu_usage <= 100
+    error_message = "autoscaling_target_cpu_usage must be a percentage between 1 and 100."
+  }
 }
 
 variable "autoscaling_target" {
