@@ -181,8 +181,7 @@ check "vpc_has_internet_gateway" {
 check "memory_reservation_within_limit" {
   assert {
     condition = (
-      var.container_memory_reservation == null ||
-      var.container_memory_reservation <= var.container_memory
+      var.container_memory_reservation == null ? true : var.container_memory_reservation <= var.container_memory
     )
     error_message = <<-EOF
       ╔════════════════════════════════════════════════════════════════════════╗
