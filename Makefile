@@ -39,7 +39,7 @@ test-keep:  ## Run a test and keep resources
 		--aws-region=${TEST_REGION} \
 		--test-role-arn=${TEST_ROLE} \
 		--keep-after \
-		$(if ${TEST_FILTER},-k ${TEST_FILTER}) \
+		$(if ${TEST_FILTER},-k "${TEST_FILTER}") \
 		${TEST_PATH} \
 		2>&1 | tee pytest-`date +%Y%m%d-%H%M%S`-output.log
 
@@ -48,7 +48,7 @@ test-clean:  ## Run a test and destroy resources
 	pytest -xvvs \
 		--aws-region=${TEST_REGION} \
 		--test-role-arn=${TEST_ROLE} \
-		$(if ${TEST_FILTER},-k ${TEST_FILTER}) \
+		$(if ${TEST_FILTER},-k "${TEST_FILTER}") \
 		${TEST_PATH} \
 		2>&1 | tee pytest-`date +%Y%m%d-%H%M%S`-output.log
 

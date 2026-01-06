@@ -221,3 +221,95 @@ check "memory_reservation_within_limit" {
     EOF
   }
 }
+
+# Cross-variable validation: autoscaling_target must be appropriate for the metric type
+locals {
+  is_percentage_metric = contains([
+    "ECSServiceAverageCPUUtilization",
+    "ECSServiceAverageMemoryUtilization"
+  ], var.autoscaling_metric)
+
+  autoscaling_problem_message = local.is_percentage_metric ? (
+    "CPU and Memory utilization metrics require a percentage value between 1-100."
+    ) : (
+    "ALBRequestCountPerTarget metric requires a positive number (requests per target)."
+  )
+
+  autoscaling_solution_message = local.is_percentage_metric ? (
+    <<-EOT
+    Set autoscaling_target to a percentage between 1-100:
+
+        # Good configurations:
+        autoscaling_metric = "${var.autoscaling_metric}"
+        autoscaling_target = 70  # Scale to maintain 70% utilization
+
+        autoscaling_metric = "${var.autoscaling_metric}"
+        autoscaling_target = 80  # Scale to maintain 80% utilization
+    EOT
+    ) : (
+    <<-EOT
+    Set autoscaling_target to a positive number:
+
+        # Good configurations:
+        autoscaling_metric = "ALBRequestCountPerTarget"
+        autoscaling_target = 100  # 100 requests per target
+
+        autoscaling_metric = "ALBRequestCountPerTarget"
+        autoscaling_target = 1000  # 1000 requests per target
+    EOT
+  )
+
+  autoscaling_examples_message = local.is_percentage_metric ? (
+    <<-EOT
+    - Light workloads:   autoscaling_target = 50
+        - Normal workloads:  autoscaling_target = 70
+        - Heavy workloads:   autoscaling_target = 85
+    EOT
+    ) : (
+    <<-EOT
+    - Low traffic:    autoscaling_target = 50
+        - Medium traffic: autoscaling_target = 100
+        - High traffic:   autoscaling_target = 1000
+    EOT
+  )
+}
+
+check "autoscaling_target_valid_for_metric" {
+  assert {
+    condition = (
+      # For percentage-based metrics (CPU and Memory), target must be 1-100
+      local.is_percentage_metric ? (
+        var.autoscaling_target == null ? true : (
+          var.autoscaling_target >= 1 && var.autoscaling_target <= 100
+        )
+        ) : (
+        # For ALBRequestCountPerTarget, target must be positive
+        var.autoscaling_metric == "ALBRequestCountPerTarget" ? (
+          var.autoscaling_target != null && var.autoscaling_target > 0
+        ) : true
+      )
+    )
+    error_message = <<-EOF
+      ╔════════════════════════════════════════════════════════════════════════╗
+      ║                    ⚠️  CONFIGURATION ERROR ⚠️                          ║
+      ╚════════════════════════════════════════════════════════════════════════╝
+
+      Autoscaling target value is invalid for the selected metric type.
+
+      Current configuration:
+        - Autoscaling metric: ${var.autoscaling_metric}
+        - Autoscaling target: ${coalesce(var.autoscaling_target, "(not set)")}
+
+      Problem:
+        ${local.autoscaling_problem_message}
+
+      Solution:
+        ${local.autoscaling_solution_message}
+
+      Common configurations:
+        ${local.autoscaling_examples_message}
+
+      ════════════════════════════════════════════════════════════════════════
+    EOF
+  }
+}
