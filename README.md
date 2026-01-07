@@ -457,7 +457,7 @@ If you want to continue using Amazon Linux 2, explicitly set the `ami_id` variab
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "7.1.0"
+  version = "7.2.0"
   ami_id  = "<your-al2-ami-id>"  # Lock to Amazon Linux 2
   # ... other configuration
 }
@@ -483,7 +483,7 @@ If you use custom AMIs based on Amazon Linux 2, you must:
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "7.1.0"
+  version = "7.2.0"
   providers = {
     aws     = aws
     aws.dns = aws
@@ -524,7 +524,7 @@ Pass the volumes to the ECS module:
 ```hcl
 module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "7.1.0"
+  version = "7.2.0"
   providers = {
     aws     = aws
     aws.dns = aws
