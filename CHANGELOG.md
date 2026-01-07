@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.2.0] - 2026-01-07
+
+### Bug Fixes
+
+- Handle null value in memory reservation validation check
+
+### Features
+
+- Add autoscaling target validation and improve test configuration
+
 ## [7.1.0] - 2025-12-28
 
 ### Features
