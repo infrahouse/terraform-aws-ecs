@@ -378,6 +378,30 @@ variable "lb_type" {
   }
 }
 
+variable "load_balancing_algorithm_type" {
+  description = <<-EOF
+    Load balancing algorithm for the target group.
+
+    **Available algorithms:**
+    - `round_robin` (default): Distributes requests evenly across healthy targets.
+      Best for: General-purpose workloads with similar request processing times.
+
+    - `least_outstanding_requests`: Routes to the target with fewest in-flight requests.
+      Best for: Workloads with varying request processing times, long-running requests,
+      or when backend instances have different capacities.
+
+    **Note:** When stickiness is enabled, the algorithm applies only to initial
+    session assignment. Subsequent requests from the same client go to the same target.
+  EOF
+  type        = string
+  default     = "round_robin"
+
+  validation {
+    condition     = contains(["round_robin", "least_outstanding_requests"], var.load_balancing_algorithm_type)
+    error_message = "load_balancing_algorithm_type must be either 'round_robin' or 'least_outstanding_requests'."
+  }
+}
+
 variable "load_balancer_subnets" {
   description = "Load Balancer Subnets."
   type        = list(string)
