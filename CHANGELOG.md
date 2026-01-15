@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.3.0] - 2026-01-15
+
+### Features
+
+- Add load balancing algorithm configuration for target groups
+
 ## [7.2.0] - 2026-01-07
 
 ### Bug Fixes
