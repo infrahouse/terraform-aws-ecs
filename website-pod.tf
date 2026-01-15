@@ -1,7 +1,7 @@
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "5.13.0"
+  version = "5.14.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -18,6 +18,7 @@ module "pod" {
   alb_healthcheck_timeout               = var.healthcheck_timeout
   alb_healthcheck_response_code_matcher = var.healthcheck_response_code_matcher
   alb_healthcheck_interval              = var.healthcheck_interval
+  load_balancing_algorithm_type         = var.load_balancing_algorithm_type
   health_check_grace_period             = var.asg_health_check_grace_period
   health_check_type                     = "EC2"
   attach_target_group_to_asg            = false
