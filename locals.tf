@@ -61,7 +61,7 @@ locals {
 
 
   asg_min_size = var.asg_min_size != null ? var.asg_min_size : length(var.asg_subnets)
-  asg_max_size = max(
+  asg_max_size = var.asg_max_size != null ? var.asg_max_size : max(
     # How many EC2 instances we need to host task_max_count assuming memory consumption
     # Note: ECS uses memory reservation (soft limit) for task placement decisions when set
     ceil(

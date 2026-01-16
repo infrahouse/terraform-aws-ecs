@@ -34,6 +34,7 @@ resource "aws_ecs_cluster_capacity_providers" "ecs" {
     weight            = 100
     capacity_provider = aws_ecs_capacity_provider.ecs.name
   }
+
 }
 
 resource "aws_ecs_cluster" "ecs" {
