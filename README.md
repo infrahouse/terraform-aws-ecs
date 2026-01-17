@@ -1,291 +1,128 @@
 # terraform-aws-ecs
+
+[![Need Help?](https://img.shields.io/badge/Need%20Help%3F-Contact%20Us-0066CC)](https://infrahouse.com/contact)
+[![Docs](https://img.shields.io/badge/docs-github.io-blue)](https://infrahouse.github.io/terraform-aws-ecs/)
+[![Registry](https://img.shields.io/badge/Terraform-Registry-purple?logo=terraform)](https://registry.terraform.io/modules/infrahouse/ecs/aws/latest)
+[![Release](https://img.shields.io/github/release/infrahouse/terraform-aws-ecs.svg)](https://github.com/infrahouse/terraform-aws-ecs/releases/latest)
+[![Security](https://img.shields.io/github/actions/workflow/status/infrahouse/terraform-aws-ecs/vuln-scanner-pr.yml?label=Security)](https://github.com/infrahouse/terraform-aws-ecs/actions/workflows/vuln-scanner-pr.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+[![AWS ECS](https://img.shields.io/badge/AWS-ECS-orange?logo=amazonecs)](https://aws.amazon.com/ecs/)
+[![AWS EC2](https://img.shields.io/badge/AWS-EC2-orange?logo=amazonec2)](https://aws.amazon.com/ec2/)
+[![AWS ELB](https://img.shields.io/badge/AWS-ELB-orange?logo=awselasticloadbalancing)](https://aws.amazon.com/elasticloadbalancing/)
+
 The module creates an Elastic Container Service and runs one docker image in it.
 
-![ECS.drawio.png](assets/ECS.drawio.png)
+![ECS Architecture](docs/assets/architecture.png)
 
-A user is expected to create a VPC, subnets 
-(See the [service network](https://github.com/infrahouse/terraform-aws-service-network) module if you need to do it),
-and a Route53 zone.
+## Features
 
-The module uses the [infrahouse/website-pod/aws](https://registry.terraform.io/modules/infrahouse/website-pod/aws/latest)
-module to create a load balancer, autoscaling group, and update DNS.
+- ECS Cluster with EC2 capacity provider and managed Auto Scaling Group
+- Application Load Balancer (ALB) or Network Load Balancer (NLB)
+- Automatic SSL certificate creation and DNS validation
+- Task-level autoscaling based on CPU, memory, or request count
+- CloudWatch logging with configurable retention
+- CloudWatch alarms with email notifications
+- EFS volume support for persistent storage
+- Spot instance support for cost optimization
+
+## Quick Start
+
+```hcl
+module "ecs_service" {
+  source  = "infrahouse/ecs/aws"
+  version = "7.3.0"
+
+  providers = {
+    aws     = aws
+    aws.dns = aws
+  }
+
+  # Required
+  service_name          = "my-api"
+  docker_image          = "nginx:latest"
+  container_port        = 80
+  alarm_emails          = ["devops@example.com"]
+
+  # Networking
+  load_balancer_subnets = module.vpc.subnet_public_ids
+  asg_subnets           = module.vpc.subnet_private_ids
+  zone_id               = data.aws_route53_zone.main.zone_id
+  dns_names             = ["api"]
+
+  # Optional
+  environment       = "production"
+  asg_instance_type = "t3.small"
+}
+```
+
+## Prerequisites
+
+You need to create:
+
+- A VPC with subnets (see the
+  [service-network](https://github.com/infrahouse/terraform-aws-service-network) module)
+- A Route53 hosted zone for DNS
 
 ## Usage
 
-Basically, you need to pass the docker image and subnets where to place a load balancer 
-and autoscaling group.
+The module creates an SSL certificate and DNS records. If `dns_names = ["www"]` and the zone is
+"domain.com", the module creates a record "www.domain.com".
 
-The module will create an SSL certificate and a DNS record. If the `dns_names` is `["www"]` 
-and the zone is "domain.com", the module will create a record "www.domain.com". 
-You can specify more than one DNS name, then the module will create DNS records for all of them 
-and the certificate will list them as aliases. You can also specify an empty name - `dns_names = ["", "www"]` - 
-if you want a popular setup https://domain.com + https://www.domain.com/.
+You can specify multiple DNS names, and the certificate will list them as aliases.
+Use an empty name for the apex domain: `dns_names = ["", "www"]` creates both
+https://domain.com and https://www.domain.com.
 
-For usage see how the module is used in the using tests in `test_data/test_module`.
-
-## Migration from v6.x to v7.0
-
-**Breaking Change (v7.0.0):** The `alarm_emails` variable is now required for CloudWatch alerting.
-
-### What Changed
-- **New Required Variable:** `alarm_emails` must be provided
-- **Module Dependency Update:** `infrahouse/website-pod/aws` upgraded from 5.9.0 to 5.12.1
-- This enables CloudWatch alerts for service health monitoring (high latency, low success rate, unhealthy hosts)
-
-### Why This Change
-Starting with v7.0.0, the module requires email addresses for CloudWatch alarm notifications. This ensures that critical service health issues are immediately reported to the appropriate team members.
-
-### Migration Steps
-
-**Before (v6.x):**
-```hcl
-module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
-  version = "~> 6.0"
-
-  service_name       = "my-service"
-  environment        = "production"
-  # ... other parameters
-}
-```
-
-**After (v7.0):**
-```hcl
-module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
-  version = "~> 7.0"
-
-  service_name       = "my-service"
-  environment        = "production"
-  alarm_emails       = ["devops@example.com", "oncall@example.com"]  # REQUIRED
-  # ... other parameters
-}
-```
-
-### Email Validation
-The `alarm_emails` variable includes validation to ensure:
-- At least one email address is provided
-- All email addresses are in valid format
-
-Example with multiple emails:
-```hcl
-alarm_emails = [
-  "devops-team@example.com",
-  "oncall@example.com",
-  "infrastructure-alerts@example.com"
-]
-```
-
-### What Alerts Are Sent
-With `alarm_emails` configured, you'll receive CloudWatch alerts for:
-- **High Latency:** Target response time exceeds threshold
-- **Low Success Rate:** HTTP error rate is too high
-- **Unhealthy Hosts:** Target health checks are failing
-
-These alerts help ensure your ECS service maintains high availability and performance.
-
-**Important:** After first deployment, check your inbox for SNS subscription confirmation emails.
-You must click "Confirm subscription" in each email to start receiving alerts.
+For more examples, see how the module is used in tests: `test_data/test_module`.
 
 ---
 
-## Behavioral Changes in v7.0
+## Mount EFS Volume
 
-In addition to the required `alarm_emails` parameter, 
-v7.0.0 includes several behavioral changes that may affect costs and scaling behavior. 
-**Review these carefully before upgrading.**
+The module can attach EFS volumes to containers.
 
-### 1. CloudWatch Logs Now Enabled by Default
+Create the EFS volume with mount points:
 
-**Change:** The `enable_cloudwatch_logs` variable default changed from `false` to `true`.
-
-**Impact:**
-- CloudWatch log groups will be created automatically
-- Container logs will be sent to CloudWatch (incurs costs)
-- **Estimated Costs:** ~$0.50/GB ingested + $0.03/GB stored per month
-- For a typical service logging 1GB/day: ~$15-20/month
-
-**What Logs Are Collected:**
-- Container application logs (stdout/stderr)
-- EC2 instance system logs (syslog)
-- EC2 instance kernel logs (dmesg)
-
-**Migration Actions:**
-
-**Option 1 - Keep logging enabled (recommended):**
 ```hcl
-# No action needed - logging will be enabled automatically
-module "ecs_service" {
+resource "aws_efs_file_system" "my-volume" {
+  creation_token = "my-volume"
+  tags = {
+    Name = "my-volume"
+  }
+}
+
+resource "aws_efs_mount_target" "my-volume" {
+  for_each       = toset(var.subnet_private_ids)
+  file_system_id = aws_efs_file_system.my-volume.id
+  subnet_id      = each.key
+}
+```
+
+Pass the volumes to the ECS module:
+
+```hcl
+module "httpd" {
   source  = "infrahouse/ecs/aws"
-  version = "~> 7.0"
+  version = "7.3.0"
+  # ... other parameters ...
 
-  alarm_emails = ["devops@example.com"]
-  # enable_cloudwatch_logs defaults to true
-  # ... other parameters
+  task_efs_volumes = {
+    "my-volume" = {
+      file_system_id = aws_efs_file_system.my-volume.id
+      container_path = "/mnt/"
+    }
+  }
 }
 ```
-
-**Option 2 - Disable logging to maintain v6.x behavior:**
-```hcl
-module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
-  version = "~> 7.0"
-
-  alarm_emails            = ["devops@example.com"]
-  enable_cloudwatch_logs  = false  # Disable logging
-  # ... other parameters
-}
-```
-
-**Option 3 - Reduce retention to control costs:**
-```hcl
-module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
-  version = "~> 7.0"
-
-  alarm_emails                   = ["devops@example.com"]
-  cloudwatch_log_group_retention = 7  # Keep logs for 7 days instead of 90
-  # ... other parameters
-}
-```
-
-### 2. CPU Autoscaling Target Lowered to 60%
-
-**Change:** The `autoscaling_target_cpu_usage` default changed from 80% to 60%.
-
-**Impact:**
-- ECS services will scale out earlier when CPU usage increases
-- More instances may run to maintain lower CPU usage
-- Better performance headroom, but potentially higher costs
-- Aligns with `website-pod` module default for consistency
-
-**When This Matters:**
-- If you rely on the default value (didn't explicitly set it)
-- For CPU-based autoscaling configurations
-
-**Migration Actions:**
-
-**Option 1 - Keep new 60% target (recommended):**
-```hcl
-# No action needed - 60% provides better performance headroom
-module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
-  version = "~> 7.0"
-
-  alarm_emails            = ["devops@example.com"]
-  autoscaling_metric      = "ECSServiceAverageCPUUtilization"
-  # autoscaling_target_cpu_usage defaults to 60
-  # ... other parameters
-}
-```
-
-**Option 2 - Maintain previous 80% target:**
-```hcl
-module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
-  version = "~> 7.0"
-
-  alarm_emails                 = ["devops@example.com"]
-  autoscaling_metric           = "ECSServiceAverageCPUUtilization"
-  autoscaling_target_cpu_usage = 80  # Use previous default
-  # ... other parameters
-}
-```
-
-**Choosing the Right Target:**
-- **50-60%:** Better performance, higher cost, more headroom for traffic spikes
-- **70%:** Balanced approach
-- **80%:** More cost-efficient, less headroom for sudden load increases
-
-### 3. Output Format Change: cloudwatch_log_group_names
-
-**Change:** The `cloudwatch_log_group_names` output changed from a list to a map for better usability.
-
-**Impact:** If you reference this output in downstream Terraform code, you must update the access pattern.
-
-**Before (v6.x):**
-```hcl
-# Access by numeric index (brittle - order-dependent)
-locals {
-  ecs_log_group    = module.ecs.cloudwatch_log_group_names[0]
-  syslog_log_group = module.ecs.cloudwatch_log_group_names[1]
-  dmesg_log_group  = module.ecs.cloudwatch_log_group_names[2]
-}
-```
-
-**After (v7.0):**
-```hcl
-# Access by descriptive name (more intuitive)
-locals {
-  ecs_log_group    = module.ecs.cloudwatch_log_group_names["ecs"]
-  syslog_log_group = module.ecs.cloudwatch_log_group_names["syslog"]
-  dmesg_log_group  = module.ecs.cloudwatch_log_group_names["dmesg"]
-}
-
-# Or use the new singular output for the main log group:
-locals {
-  ecs_log_group = module.ecs.cloudwatch_log_group_name
-}
-```
-
-**Migration Action:** Update any downstream Terraform code that references `cloudwatch_log_group_names`.
-
-### 4. Internet Gateway Auto-Detection
-
-**Change:** The `internet_gateway_id` parameter has been removed. The module now automatically detects the Internet Gateway from your VPC.
-
-**Impact:** Configurations with explicit `internet_gateway_id` will get an "unknown variable" error.
-
-**Before (v6.x):**
-```hcl
-module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
-  version = "~> 6.0"
-
-  internet_gateway_id = data.aws_internet_gateway.main.id  # Explicit parameter
-  # ... other parameters
-}
-```
-
-**After (v7.0):**
-```hcl
-module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
-  version = "~> 7.0"
-
-  # internet_gateway_id removed - auto-discovered from VPC
-  # ... other parameters
-}
-```
-
-**Migration Action:** Simply remove the `internet_gateway_id` parameter from your configuration.
-The module will automatically discover it.
 
 ---
 
 ## CloudWatch Logs KMS Encryption
 
-The module supports encrypting CloudWatch logs with a customer-managed KMS key for enhanced security and compliance.
-By default, CloudWatch uses AWS-managed encryption, but you can provide your own KMS key for additional control.
-
-### Why Use KMS Encryption?
-
-**AWS-Managed Encryption (default):**
-- ✅ No additional configuration required
-- ✅ No cost for key management
-- ❌ No control over key rotation or access policies
-- ❌ Cannot meet compliance requirements for customer-managed keys
-
-**Customer-Managed KMS Key:**
-- ✅ Full control over key policies and access
-- ✅ Custom key rotation schedules
-- ✅ Detailed CloudTrail audit logs of key usage
-- ✅ Meets compliance requirements (HIPAA, PCI-DSS, etc.)
-- ❌ Additional AWS KMS costs (~$1/month per key + usage)
+The module supports encrypting CloudWatch logs with a customer-managed KMS key for enhanced
+security and compliance.
 
 ### Creating a KMS Key for CloudWatch Logs
-
-To enable KMS encryption, you must create a KMS key with proper permissions for the CloudWatch Logs service:
 
 ```hcl
 data "aws_caller_identity" "current" {}
@@ -323,7 +160,9 @@ data "aws_iam_policy_document" "cloudwatch_logs_kms" {
     condition {
       test     = "ArnLike"
       variable = "kms:EncryptionContext:aws:logs:arn"
-      values   = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*"]
+      values   = [
+        "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*"
+      ]
     }
   }
 }
@@ -333,234 +172,69 @@ resource "aws_kms_key" "cloudwatch_logs" {
   deletion_window_in_days = 30
   enable_key_rotation     = true
   policy                  = data.aws_iam_policy_document.cloudwatch_logs_kms.json
-
-  tags = {
-    Name        = "ecs-cloudwatch-logs-key"
-    Environment = "production"
-  }
-}
-
-resource "aws_kms_alias" "cloudwatch_logs" {
-  name          = "alias/ecs-cloudwatch-logs"
-  target_key_id = aws_kms_key.cloudwatch_logs.key_id
 }
 ```
 
-### Using the KMS Key with the ECS Module
+### Using the KMS Key
 
 ```hcl
 module "ecs_service" {
   source  = "infrahouse/ecs/aws"
-  version = "~> 7.0"
+  version = "7.3.0"
+  # ... other parameters ...
 
-  service_name              = "my-service"
-  environment               = "production"
-  alarm_emails              = ["devops@example.com"]
-
-  # Enable KMS encryption for CloudWatch logs
   cloudwatch_log_kms_key_id = aws_kms_key.cloudwatch_logs.arn
-
-  # CloudWatch logs configuration
-  enable_cloudwatch_logs         = true
-  cloudwatch_log_group_retention = 90  # Keep encrypted logs for 90 days
-
-  # ... other parameters
 }
 ```
 
-### Important Requirements
-
-1. **Region Matching**: The KMS key MUST be in the same AWS region as the CloudWatch log groups
-2. **Service Principal**: Use the regional service principal format: `logs.REGION.amazonaws.com`
-3. **Encryption Context**: The condition must include the proper encryption context for log groups
-4. **Permissions**: The CloudWatch Logs service needs `kms:GenerateDataKey*` and `kms:CreateGrant` permissions
-
-### Troubleshooting KMS Encryption
-
-**Error: "User is not authorized to perform: kms:CreateGrant"**
-- **Cause**: KMS key policy doesn't allow CloudWatch Logs service
-- **Solution**: Verify the key policy includes the CloudWatch Logs service principal with required permissions
-
-**Error: "Invalid KMS key"**
-- **Cause**: KMS key is in a different region than the log groups
-- **Solution**: Create the KMS key in the same region as your ECS service
-
-**Error: "Access denied"**
-- **Cause**: Missing encryption context condition in key policy
-- **Solution**: Ensure the key policy includes the `kms:EncryptionContext:aws:logs:arn` condition
-
-### Cost Considerations
-
-**KMS Key Costs:**
-- Customer-managed key: $1/month
-- KMS API requests: $0.03 per 10,000 requests
-- Typical cost for ECS logging: $1-2/month additional
-
-**Example Monthly Costs:**
-- KMS key: $1.00
-- Log ingestion (1GB/day): $15.00
-- Log storage (30GB): $1.50
-- KMS API requests: $0.10
-- **Total: ~$17.60/month with KMS encryption** (vs $16.50 without)
-
-### Security Best Practices
-
-1. **Enable Key Rotation**: Set `enable_key_rotation = true` for automatic annual rotation
-2. **Restrict Key Access**: Use key policies to limit who can use or manage the key
-3. **Monitor Key Usage**: Enable CloudTrail to log all KMS key operations
-4. **Use Separate Keys**: Consider separate KMS keys for different environments (dev/staging/prod)
-5. **Backup Key Policy**: Document your key policy configuration for disaster recovery
-
 ---
 
-## IAM Permissions and Security
+## IAM Permissions
 
-### ECS Instance Permissions
-
-This module uses the AWS-managed policy **`AmazonEC2ContainerServiceforEC2Role`** for ECS instance permissions. This policy is automatically maintained by AWS and includes all necessary permissions for ECS container instances to function properly.
+This module uses the AWS-managed policy **`AmazonEC2ContainerServiceforEC2Role`** for ECS
+instance permissions. This policy is automatically maintained by AWS.
 
 **Benefits:**
-- ✅ **Automatically updated** - AWS maintains the policy when ECS requirements change
-- ✅ **Best practices** - Follows AWS recommendations for ECS instance roles
-- ✅ **No maintenance needed** - No action required when AWS updates ECS features
-- ✅ **Minimal permissions** - Only includes necessary ECS and EC2 describe permissions
 
-**What's Included:**
-The AWS-managed policy grants permissions for:
-- ECS cluster registration and deregistration
-- ECS task lifecycle management
-- EC2 instance metadata access
-- CloudWatch metrics and logs (when enabled)
+- Automatically updated when ECS requirements change
+- Follows AWS best practices
+- Minimal permissions for ECS operations
 
-**Additional Permissions:**
-The module adds a minimal custom policy on top of the AWS-managed policy for:
+The module adds custom policies only for:
+
 - CloudWatch Logs write permissions (when `enable_cloudwatch_logs = true`)
-- Any extra policies specified via `execution_extra_policy` variable
-
-**Security Note:**
-The module follows the principle of least privilege. No wildcard permissions (like `ecs:*` or `ec2:Describe*`) are used in custom policies. All broad permissions are delegated to the AWS-managed policy, which AWS maintains responsibly.
+- Extra policies specified via `execution_extra_policy`
 
 ---
-
-## Migration from Amazon Linux 2 to Amazon Linux 2023
-
-**Breaking Change (v6.0.0+):** This module now defaults to Amazon Linux 2023 (AL2023) ECS-optimized AMIs instead of Amazon Linux 2.
-
-### What Changed
-- Default AMI filter changed from `amzn2-ami-ecs-hvm-*` to `al2023-ami-ecs-hvm-*`
-- This affects all new ECS instances launched by the autoscaling group
-
-### Migration Path
-
-**Option 1: Stay on Amazon Linux 2 (Recommended for existing deployments)**
-If you want to continue using Amazon Linux 2, explicitly set the `ami_id` variable:
-```hcl
-module "httpd" {
-  source  = "infrahouse/ecs/aws"
-  version = "7.3.0"
-  ami_id  = "<your-al2-ami-id>"  # Lock to Amazon Linux 2
-  # ... other configuration
-}
-```
-
-**Option 2: Migrate to Amazon Linux 2023**
-To adopt AL2023, simply upgrade the module version. Note that existing instances will need to be replaced:
-1. The autoscaling group will gradually replace instances with AL2023-based ones
-2. During replacement, ECS tasks will be migrated to new instances
-3. Test thoroughly in a non-production environment first
-
-### Key Differences
-- AL2023 uses systemd-based initialization (cloud-init still supported)
-- Different default package versions
-- Improved security posture and longer support lifecycle
-- See [AWS AL2023 documentation](https://docs.aws.amazon.com/linux/al2023/ug/compare-with-al2.html) for detailed differences
-
-### Custom AMIs
-If you use custom AMIs based on Amazon Linux 2, you must:
-- Rebuild your AMIs based on AL2023, OR
-- Explicitly set the `ami_id` variable to your custom AL2 AMI
-
-```hcl
-module "httpd" {
-  source  = "infrahouse/ecs/aws"
-  version = "7.3.0"
-  providers = {
-    aws     = aws
-    aws.dns = aws
-  }
-  load_balancer_subnets         = module.service-network.subnet_public_ids
-  asg_subnets                   = module.service-network.subnet_private_ids
-  dns_names                     = ["foo-ecs"]
-  docker_image                  = "httpd"
-  container_port                = 80
-  service_name                  = var.service_name
-  ssh_key_name                  = aws_key_pair.test.key_name
-  zone_id                       = data.aws_route53_zone.cicd.zone_id
-  internet_gateway_id           = module.service-network.internet_gateway_id
-}
-```
-
-### Mount EFS volume
-
-The module can attach one or more EFS volumes to a container.
-
-To do that, create the EFS volume with a mount point:
-```hcl
-resource "aws_efs_file_system" "my-volume" {
-  creation_token = "my-volume"
-  tags = {
-    Name = "my-volume"
-  }
-}
-
-resource "aws_efs_mount_target" "my-volume" {
-  for_each       = toset(var.subnet_private_ids)
-  file_system_id = aws_efs_file_system.my-volume.id
-  subnet_id      = each.key
-}
-```
-
-Pass the volumes to the ECS module:
-```hcl
-module "httpd" {
-  source  = "infrahouse/ecs/aws"
-  version = "7.3.0"
-  providers = {
-    aws     = aws
-    aws.dns = aws
-  }
-...
-  task_volumes = {
-    "my-volume" : {
-      file_system_id : aws_efs_file_system.my-volume.id
-      container_path : "/mnt/"
-    }
-}
-```
 
 ## Variable Validations
 
 This module includes built-in validations to catch configuration errors early.
 
-**Note:** This module requires **Terraform >= 1.5.0** due to the use of `check` blocks for cross-variable validation. If you're using an older version of Terraform, you'll see an error during `terraform init`.
+**Note:** Requires **Terraform >= 1.5.0** for `check` blocks.
 
-### Input Variable Validations
+### Input Validations
 
-- **`lb_type`**: Must be either `"alb"` or `"nlb"` (case-insensitive)
-- **`container_port`**: Must be between 1 and 65535
-- **`autoscaling_metric`**: Must be one of:
-  - `ECSServiceAverageCPUUtilization`
-  - `ECSServiceAverageMemoryUtilization`
-  - `ALBRequestCountPerTarget`
-- **`cloudwatch_log_group_retention`**: Must be a valid CloudWatch retention period (0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, or 3653 days)
+- **`lb_type`**: Must be `"alb"` or `"nlb"`
+- **`container_port`**: Must be 1-65535
+- **`asg_min_size`** / **`asg_max_size`**: Must be 1-1000 when set
+- **`asg_max_size`**: Must be >= `asg_min_size` when both are set
+- **`autoscaling_metric`**: Must be a valid ECS/ALB metric
+- **`cloudwatch_log_group_retention`**: Must be a valid CloudWatch retention period
 
 ### Cross-Variable Validations
 
-The module uses Terraform check blocks (in `validations.tf`) to validate relationships between variables:
+- **Health Check**: `healthcheck_interval` must be >= `healthcheck_timeout`
 
-- **Health Check Configuration**: `healthcheck_interval` must be greater than or equal to `healthcheck_timeout`
+---
 
-If you encounter validation errors during `terraform plan`, the error message will guide you to fix the configuration issue.
+## Documentation
+
+- [Getting Started](docs/getting-started.md) - Prerequisites and first deployment
+- [Configuration Reference](docs/configuration.md) - All variables explained
+- [Upgrading Guide](docs/upgrading.md) - Migration between versions
+
+---
 
 <!-- BEGIN_TF_DOCS -->
 
@@ -644,7 +318,7 @@ If you encounter validation errors during `terraform plan`, the error message wi
 | <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances.<br/>If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used. | `string` | `null` | no |
 | <a name="input_asg_health_check_grace_period"></a> [asg\_health\_check\_grace\_period](#input\_asg\_health\_check\_grace\_period) | ASG will wait up to this number of seconds for instance to become healthy.<br/>Default: 300 seconds (5 minutes) | `number` | `300` | no |
 | <a name="input_asg_instance_type"></a> [asg\_instance\_type](#input\_asg\_instance\_type) | EC2 instances type | `string` | `"t3.micro"` | no |
-| <a name="input_asg_max_size"></a> [asg\_max\_size](#input\_asg\_max\_size) | Maximum number of instances in ASG.<br/>Default: Automatically calculated based on number of tasks and their memory requirements. | `number` | `null` | no |
+| <a name="input_asg_max_size"></a> [asg\_max\_size](#input\_asg\_max\_size) | Maximum number of instances in ASG.<br/><br/>**Default Behavior (Recommended):**<br/>When not specified, the module automatically calculates the optimal max size based on:<br/>- Memory capacity: instances needed to run task\_max\_count tasks based on container\_memory<br/>  (or container\_memory\_reservation if set)<br/>- CPU capacity: instances needed to run task\_max\_count tasks based on container\_cpu<br/>- Minimum headroom: at least asg\_min\_size + 1 to allow scaling<br/><br/>The calculation accounts for:<br/>- Instance type memory/CPU (from var.asg\_instance\_type)<br/>- Reserved resources for system overhead (~1GB memory)<br/>- CloudWatch agent sidecar resources (128 CPU units, 256MB memory)<br/><br/>**When to Override:**<br/>- Cost control: Limit maximum spend by capping instance count<br/>- Capacity planning: Match a specific infrastructure budget<br/>- Testing: Use smaller values in non-production environments<br/><br/>**When NOT to Override:**<br/>- If you're unsure - the automatic calculation is designed for optimal scaling<br/>- Without understanding your workload's resource requirements<br/><br/>**Warning:**<br/>Setting this too low can cause:<br/>- ECS tasks failing to place (no capacity available)<br/>- Service degradation during traffic spikes<br/>- Deployment failures if new tasks can't be scheduled<br/><br/>Must be >= asg\_min\_size when both are explicitly set.<br/><br/>Example: asg\_max\_size = 10  # Cap at 10 instances for cost control | `number` | `null` | no |
 | <a name="input_asg_min_size"></a> [asg\_min\_size](#input\_asg\_min\_size) | Minimum number of instances in ASG.<br/>Default: The number of subnets (one instance per subnet for high availability). | `number` | `null` | no |
 | <a name="input_asg_subnets"></a> [asg\_subnets](#input\_asg\_subnets) | Auto Scaling Group Subnets. | `list(string)` | n/a | yes |
 | <a name="input_assume_dns"></a> [assume\_dns](#input\_assume\_dns) | If true, create DNS records provided by var.dns\_names.<br/>Set to false if DNS records are managed externally. | `bool` | `true` | no |

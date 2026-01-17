@@ -1,3 +1,14 @@
+check "asg_size_validation" {
+  assert {
+    condition = (
+      var.asg_min_size == null || var.asg_max_size == null
+      ? true
+      : var.asg_max_size >= var.asg_min_size
+    )
+    error_message = "asg_max_size (${coalesce(var.asg_max_size, "auto")}) must be greater than or equal to asg_min_size (${coalesce(var.asg_min_size, "auto")}) when both are explicitly set."
+  }
+}
+
 locals {
   module_version = "7.3.0"
 
@@ -60,8 +71,13 @@ locals {
   }
 
 
+  # ASG sizing: User-provided values take precedence over calculated defaults.
+  # - asg_min_size defaults to subnet count (one instance per AZ for HA)
+  # - asg_max_size defaults to calculated capacity based on task requirements
+  # When overriding asg_max_size, ensure it's sufficient for task_max_count tasks
+  # or ECS may fail to place tasks during scaling events.
   asg_min_size = var.asg_min_size != null ? var.asg_min_size : length(var.asg_subnets)
-  asg_max_size = max(
+  asg_max_size = var.asg_max_size != null ? var.asg_max_size : max(
     # How many EC2 instances we need to host task_max_count assuming memory consumption
     # Note: ECS uses memory reservation (soft limit) for task placement decisions when set
     ceil(
