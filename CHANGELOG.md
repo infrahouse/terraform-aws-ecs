@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.4.0] - 2026-01-17
+
+### Bug Fixes
+
+- Respect var.asg_max_size when explicitly set ([#123](https://github.com/infrahouse/terraform-aws-ecs/issues/123))
+
 ## [7.3.0] - 2026-01-15
 
 ### Features
