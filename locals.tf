@@ -5,7 +5,7 @@ check "asg_size_validation" {
       ? true
       : var.asg_max_size >= var.asg_min_size
     )
-    error_message = "asg_max_size (${var.asg_max_size}) must be greater than or equal to asg_min_size (${var.asg_min_size}) when both are explicitly set."
+    error_message = "asg_max_size (${coalesce(var.asg_max_size, "auto")}) must be greater than or equal to asg_min_size (${coalesce(var.asg_min_size, "auto")}) when both are explicitly set."
   }
 }
 
