@@ -57,15 +57,55 @@ variable "asg_min_size" {
   EOT
   type        = number
   default     = null
+
+  validation {
+    condition     = var.asg_min_size == null ? true : var.asg_min_size >= 1 && var.asg_min_size <= 1000
+    error_message = "asg_min_size must be between 1 and 1000 when specified."
+  }
 }
 
 variable "asg_max_size" {
   description = <<-EOT
     Maximum number of instances in ASG.
-    Default: Automatically calculated based on number of tasks and their memory requirements.
+
+    **Default Behavior (Recommended):**
+    When not specified, the module automatically calculates the optimal max size based on:
+    - Memory capacity: instances needed to run task_max_count tasks based on container_memory
+      (or container_memory_reservation if set)
+    - CPU capacity: instances needed to run task_max_count tasks based on container_cpu
+    - Minimum headroom: at least asg_min_size + 1 to allow scaling
+
+    The calculation accounts for:
+    - Instance type memory/CPU (from var.asg_instance_type)
+    - Reserved resources for system overhead (~1GB memory)
+    - CloudWatch agent sidecar resources (128 CPU units, 256MB memory)
+
+    **When to Override:**
+    - Cost control: Limit maximum spend by capping instance count
+    - Capacity planning: Match a specific infrastructure budget
+    - Testing: Use smaller values in non-production environments
+
+    **When NOT to Override:**
+    - If you're unsure - the automatic calculation is designed for optimal scaling
+    - Without understanding your workload's resource requirements
+
+    **Warning:**
+    Setting this too low can cause:
+    - ECS tasks failing to place (no capacity available)
+    - Service degradation during traffic spikes
+    - Deployment failures if new tasks can't be scheduled
+
+    Must be >= asg_min_size when both are explicitly set.
+
+    Example: asg_max_size = 10  # Cap at 10 instances for cost control
   EOT
   type        = number
   default     = null
+
+  validation {
+    condition     = var.asg_max_size == null ? true : var.asg_max_size >= 1 && var.asg_max_size <= 1000
+    error_message = "asg_max_size must be between 1 and 1000 when specified."
+  }
 }
 
 variable "asg_subnets" {
