@@ -20,6 +20,34 @@ Before you begin, ensure you have:
     - Route53 hosted zone for DNS
     - Internet Gateway attached to VPC
 
+## Cost Estimation
+
+Running an ECS service on EC2 incurs several AWS costs. Here's a rough breakdown for a minimal setup in us-east-1:
+
+| Component | Configuration | Estimated Monthly Cost |
+|-----------|---------------|------------------------|
+| EC2 instances | 2 × t3.micro | ~$15 |
+| Application Load Balancer | Base + LCU | ~$20 + data processing |
+| CloudWatch Logs | Ingestion + storage | ~$0.50/GB ingested + $0.03/GB stored |
+| Route53 | Hosted zone + queries | ~$0.50 + $0.40/million queries |
+| NAT Gateway | If using private subnets | ~$32 + $0.045/GB processed |
+
+**Example scenarios:**
+
+- **Minimal dev setup** (1 t3.micro, ALB, 1GB logs/month): ~$40/month
+- **Small production** (2 t3.small, ALB, 10GB logs/month): ~$70/month
+- **Medium production** (3 t3.medium, ALB, 50GB logs/month): ~$150/month
+
+**Cost optimization tips:**
+
+- Use spot instances with `on_demand_base_capacity = 1` for non-critical workloads
+- Reduce `cloudwatch_log_group_retention` to 7-30 days in development
+- Use smaller instance types and let autoscaling add capacity as needed
+- Consider NLB instead of ALB if you don't need HTTP-level features (~$6/month cheaper)
+
+> **Note:** These are rough estimates. Actual costs vary by region, data transfer, and usage patterns.
+> Use the [AWS Pricing Calculator](https://calculator.aws/) for precise estimates.
+
 ## First Deployment
 
 ### Step 1: Create the Module Configuration
@@ -35,7 +63,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = ">= 5.56, < 7.0"
     }
   }
 }
@@ -51,7 +79,7 @@ data "aws_route53_zone" "main" {
 
 # Deploy the ECS service
 module "my_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.3.0"
 
   providers = {
@@ -101,7 +129,7 @@ terraform apply
 
 After `terraform apply` completes:
 
-1. **Check the outputs** for your service URL
+1. **Check the outputs** for your service URL (see [all available outputs](https://registry.terraform.io/modules/infrahouse/ecs/aws/latest?tab=outputs))
 2. **Confirm SNS subscription** - Check email for subscription confirmation
 3. **Access your service** at `https://app.example.com`
 
@@ -120,7 +148,7 @@ module "vpc" {
 }
 
 module "my_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.3.0"
 
   providers = {
@@ -147,7 +175,7 @@ module "my_service" {
 
 ```hcl
 module "production_api" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.3.0"
 
   providers = {
@@ -193,7 +221,7 @@ module "production_api" {
 
 ```hcl
 module "dev_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.3.0"
 
   # ... required parameters ...
@@ -210,7 +238,45 @@ module "dev_service" {
 }
 ```
 
+## Deploying Updates
+
+There are two ways to deploy new container versions:
+
+### Option 1: Pinned Image Tags (Recommended)
+
+Use specific version tags in your Terraform configuration:
+
+```hcl
+docker_image = "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-app:v1.2.3"
+```
+
+To deploy a new version, update the tag and run `terraform apply`. In production, this is typically handled by a CI/CD pipeline with approvals, plan reviews, and automated rollback.
+
+This is the recommended approach - it's explicit, auditable, and easy to rollback.
+
+### Option 2: Latest Tag with Force Deploy
+
+If using `latest` or mutable tags:
+
+```hcl
+docker_image = "my-app:latest"
+```
+
+Force ECS to pull the new image and rotate containers:
+
+```bash
+aws ecs update-service \
+  --cluster my-cluster \
+  --service my-service \
+  --force-new-deployment
+```
+
+This approach is simpler for development but less traceable in production.
+
+---
+
 ## Next Steps
 
 - [Configuration Reference](configuration.md) - All variables explained
+- [Troubleshooting](troubleshooting.md) - Common issues and solutions
 - [README](https://github.com/infrahouse/terraform-aws-ecs#readme) - Full module documentation

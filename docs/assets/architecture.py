@@ -16,7 +16,7 @@ Output:
 
 from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.compute import ECS, EC2
-from diagrams.aws.network import ALB, Route53
+from diagrams.aws.network import ALB, Route53, NATGateway
 from diagrams.aws.management import Cloudwatch
 from diagrams.aws.security import ACM
 from diagrams.aws.general import Users
@@ -60,18 +60,21 @@ with Diagram(
 
     with Cluster("VPC"):
         with Cluster("Public Subnets"):
-            # Note: ALB can be NLB for generic TCP services (lb_type = "nlb")
-            lb = ALB("\nLoad Balancer\n(ALB or NLB)")
+            with Cluster("ALB/NLB Security Group\n(inbound 80/443)"):
+                # Note: ALB can be NLB for generic TCP services (lb_type = "nlb")
+                lb = ALB("\nLoad Balancer\n(ALB or NLB)")
+            nat = NATGateway("\nNAT Gateway")
 
         with Cluster("Private Subnets"):
-            with Cluster("Auto Scaling Group"):
-                ec2_instances = [
-                    EC2("\nEC2 Instance\n(ECS Agent)"),
-                    EC2("\nEC2 Instance\n(ECS Agent)"),
-                ]
+            with Cluster("Backend Security Group\n(ALB traffic only)"):
+                with Cluster("Auto Scaling Group"):
+                    ec2_instances = [
+                        EC2("\nEC2 Instance\n(ECS Agent)"),
+                        EC2("\nEC2 Instance\n(ECS Agent)"),
+                    ]
 
-            with Cluster("ECS Cluster"):
-                ecs_tasks = ECS("\nECS Tasks\n(Containers)")
+                with Cluster("ECS Cluster"):
+                    ecs_tasks = ECS("\nECS Tasks\n(Containers)")
 
     cloudwatch = Cloudwatch("\nCloudWatch\nLogs & Metrics\n(ISO 27001)")
 
@@ -79,10 +82,13 @@ with Diagram(
 
     # User traffic flow
     users >> dns >> lb
-    cert - Edge(style="dashed") - lb
+    cert - Edge(style="dashed", label="TLS") - lb
     lb >> ec2_instances
     ec2_instances[0] - ecs_tasks
     ec2_instances[1] - ecs_tasks
+
+    # NAT Gateway for outbound (ECR, etc.)
+    ec2_instances[0] >> Edge(style="dotted", label="ECR/S3") >> nat
 
     # CloudWatch connections (dashed for monitoring)
     ecs_tasks >> Edge(style="dashed", label="logs") >> cloudwatch

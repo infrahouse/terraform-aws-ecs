@@ -1,6 +1,6 @@
 site_name: InfraHouse terraform-aws-ecs
 site_url: https://infrahouse.github.io/terraform-aws-ecs/
-site_description: Terraform module documentation
+site_description: Terraform module for deploying containerized services on AWS ECS with EC2 capacity providers, auto scaling, and load balancing
 site_author: InfraHouse
 
 repo_url: https://github.com/infrahouse/terraform-aws-ecs
@@ -38,6 +38,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Configuration: configuration.md
+  - Troubleshooting: troubleshooting.md
   - Upgrading: upgrading.md
 
 markdown_extensions:

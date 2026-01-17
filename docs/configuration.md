@@ -143,9 +143,7 @@ container_command = ["python", "app.py", "--port", "8080"]
 
 Container health check command. Exit 0 = healthy.
 
-| Default |
-|---------|
-| `"curl -f http://localhost/ \|\| exit 1"` |
+**Default:** `curl -f http://localhost/ || exit 1`
 
 ```hcl
 container_healthcheck_command = "wget -q --spider http://localhost:8080/health || exit 1"
@@ -317,9 +315,25 @@ Load balancer type.
 |---------|--------------|
 | `"alb"` | `alb`, `nlb` |
 
+**When to use ALB (default):**
+- HTTP/HTTPS services (REST APIs, web apps)
+- Need path-based or host-based routing
+- Need HTTP-level health checks (`healthcheck_path`)
+
+**When to use NLB:**
+- Raw TCP/UDP services (databases, gRPC, custom protocols)
+- Need ultra-low latency or static IPs
+- Health check is TCP connection only (no HTTP path)
+
 ```hcl
-lb_type = "nlb"  # For TCP/UDP workloads
+# ALB for HTTP services (default)
+lb_type = "alb"
+
+# NLB for TCP services
+lb_type = "nlb"
 ```
+
+> **Note:** With NLB, the `healthcheck_path` variable is ignored. Health checks verify only that a TCP connection can be established on `container_port`.
 
 ### `load_balancing_algorithm_type`
 
@@ -591,7 +605,7 @@ The module includes built-in validation to catch errors early:
 
 ```hcl
 module "production_api" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.3.0"
 
   providers = {
@@ -649,5 +663,100 @@ module "production_api" {
     team    = "platform"
     project = "api"
   }
+}
+```
+
+---
+
+## Outputs
+
+The module exports these outputs for use in downstream configurations.
+
+### Service Outputs
+
+| Output | Description |
+|--------|-------------|
+| `service_arn` | ECS service ARN |
+| `service_name` | ECS service name (for CloudWatch Container Insights metrics) |
+| `cluster_name` | ECS cluster name (for CloudWatch Container Insights metrics) |
+
+### DNS and Load Balancer
+
+| Output | Description |
+|--------|-------------|
+| `dns_hostnames` | List of DNS hostnames where the service is available |
+| `load_balancer_arn` | Load balancer ARN |
+| `load_balancer_dns_name` | Load balancer DNS name |
+| `load_balancer_arn_suffix` | ARN suffix for CloudWatch ALB metrics |
+| `target_group_arn_suffix` | Target group ARN suffix for CloudWatch metrics |
+| `ssl_listener_arn` | SSL listener ARN (ALB only) |
+| `acm_certificate_arn` | ACM certificate ARN used by the load balancer (ALB only) |
+| `load_balancer_security_groups` | Security groups associated with the load balancer (ALB only) |
+
+### Auto Scaling Group
+
+| Output | Description |
+|--------|-------------|
+| `asg_arn` | Auto Scaling Group ARN |
+| `asg_name` | Auto Scaling Group name |
+
+### IAM and Security
+
+| Output | Description |
+|--------|-------------|
+| `task_execution_role_arn` | Task execution role ARN (used by ECS agent) |
+| `task_execution_role_name` | Task execution role name |
+| `backend_security_group` | Security group ID of backend instances |
+
+### CloudWatch
+
+| Output | Description |
+|--------|-------------|
+| `cloudwatch_log_group_name` | Main CloudWatch log group name for ECS tasks |
+| `cloudwatch_log_group_names` | Map of all log group names: `ecs`, `syslog`, `dmesg` |
+
+### Usage Examples
+
+**Reference DNS hostnames:**
+
+```hcl
+output "service_urls" {
+  value = [for h in module.ecs.dns_hostnames : "https://${h}"]
+}
+```
+
+**Create CloudWatch dashboard:**
+
+```hcl
+resource "aws_cloudwatch_dashboard" "ecs" {
+  dashboard_name = "ecs-${module.ecs.service_name}"
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        properties = {
+          metrics = [
+            ["AWS/ECS", "CPUUtilization", "ClusterName", module.ecs.cluster_name, "ServiceName", module.ecs.service_name]
+          ]
+        }
+      }
+    ]
+  })
+}
+```
+
+**Access log groups:**
+
+```hcl
+# Main ECS task logs
+locals {
+  ecs_log_group = module.ecs.cloudwatch_log_group_name
+}
+
+# All log groups (v7.0+ returns a map)
+locals {
+  ecs_logs    = module.ecs.cloudwatch_log_group_names["ecs"]
+  syslog_logs = module.ecs.cloudwatch_log_group_names["syslog"]
+  dmesg_logs  = module.ecs.cloudwatch_log_group_names["dmesg"]
 }
 ```

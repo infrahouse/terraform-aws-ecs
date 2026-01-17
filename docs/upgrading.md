@@ -25,7 +25,7 @@ team members.
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 6.0"
 
   service_name       = "my-service"
@@ -38,7 +38,7 @@ module "ecs_service" {
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 7.0"
 
   service_name       = "my-service"
@@ -109,7 +109,7 @@ that may affect costs and scaling behavior. **Review these carefully before upgr
 ```hcl
 # No action needed - logging will be enabled automatically
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 7.0"
 
   alarm_emails = ["devops@example.com"]
@@ -122,7 +122,7 @@ module "ecs_service" {
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 7.0"
 
   alarm_emails            = ["devops@example.com"]
@@ -135,11 +135,11 @@ module "ecs_service" {
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 7.0"
 
   alarm_emails                   = ["devops@example.com"]
-  cloudwatch_log_group_retention = 7  # Keep logs for 7 days instead of 90
+  cloudwatch_log_group_retention = 7  # Keep logs for 7 days instead of 365
   # ... other parameters
 }
 ```
@@ -167,7 +167,7 @@ module "ecs_service" {
 ```hcl
 # No action needed - 60% provides better performance headroom
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 7.0"
 
   alarm_emails            = ["devops@example.com"]
@@ -181,7 +181,7 @@ module "ecs_service" {
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 7.0"
 
   alarm_emails                 = ["devops@example.com"]
@@ -247,7 +247,7 @@ error.
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 6.0"
 
   internet_gateway_id = data.aws_internet_gateway.main.id  # Explicit parameter
@@ -259,7 +259,7 @@ module "ecs_service" {
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "~> 7.0"
 
   # internet_gateway_id removed - auto-discovered from VPC
@@ -290,7 +290,7 @@ If you want to continue using Amazon Linux 2, explicitly set the `ami_id` variab
 
 ```hcl
 module "httpd" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.3.0"
   ami_id  = "<your-al2-ami-id>"  # Lock to Amazon Linux 2
   # ... other configuration

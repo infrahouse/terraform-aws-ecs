@@ -18,9 +18,12 @@ and runs containerized services with automatic scaling, load balancing, and moni
 
 ## Quick Start
 
+> **Note:** Check the [Terraform Registry](https://registry.terraform.io/modules/infrahouse/ecs/aws/latest)
+> or [GitHub Releases](https://github.com/infrahouse/terraform-aws-ecs/releases) for the latest version.
+
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.3.0"
 
   providers = {
@@ -79,3 +82,4 @@ The module creates:
 
 - [Getting Started](getting-started.md) - Prerequisites and first deployment
 - [Configuration](configuration.md) - All variables explained with examples
+- [Troubleshooting](troubleshooting.md) - Common issues and solutions
