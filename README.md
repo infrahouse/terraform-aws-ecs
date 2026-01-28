@@ -30,7 +30,7 @@ The module creates an Elastic Container Service and runs one docker image in it.
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.4.0"
 
   providers = {
@@ -39,16 +39,16 @@ module "ecs_service" {
   }
 
   # Required
-  service_name          = "my-api"
-  docker_image          = "nginx:latest"
-  container_port        = 80
-  alarm_emails          = ["devops@example.com"]
+  service_name   = "my-api"
+  docker_image   = "nginx:latest"
+  container_port = 80
+  alarm_emails   = ["devops@example.com"]
 
   # Networking
   load_balancer_subnets = module.vpc.subnet_public_ids
   asg_subnets           = module.vpc.subnet_private_ids
   zone_id               = data.aws_route53_zone.main.zone_id
-  dns_names             = ["api"]
+  dns_names = ["api"]
 
   # Optional
   environment       = "production"
@@ -73,7 +73,7 @@ You can specify multiple DNS names, and the certificate will list them as aliase
 Use an empty name for the apex domain: `dns_names = ["", "www"]` creates both
 https://domain.com and https://www.domain.com.
 
-For more examples, see how the module is used in tests: `test_data/test_module`.
+For more examples, see how the module is used in tests: `test_data/`.
 
 ---
 
@@ -84,16 +84,16 @@ The module can attach EFS volumes to containers.
 Create the EFS volume with mount points:
 
 ```hcl
-resource "aws_efs_file_system" "my-volume" {
+resource "aws_efs_file_system" "my_volume" {
   creation_token = "my-volume"
   tags = {
     Name = "my-volume"
   }
 }
 
-resource "aws_efs_mount_target" "my-volume" {
-  for_each       = toset(var.subnet_private_ids)
-  file_system_id = aws_efs_file_system.my-volume.id
+resource "aws_efs_mount_target" "my_volume" {
+  for_each = toset(var.subnet_private_ids)
+  file_system_id = aws_efs_file_system.my_volume.id
   subnet_id      = each.key
 }
 ```
@@ -102,13 +102,13 @@ Pass the volumes to the ECS module:
 
 ```hcl
 module "httpd" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.4.0"
   # ... other parameters ...
 
   task_efs_volumes = {
-    "my-volume" = {
-      file_system_id = aws_efs_file_system.my-volume.id
+    "my_volume" = {
+      file_system_id = aws_efs_file_system.my_volume.id
       container_path = "/mnt/"
     }
   }
@@ -179,7 +179,7 @@ resource "aws_kms_key" "cloudwatch_logs" {
 
 ```hcl
 module "ecs_service" {
-  source  = "infrahouse/ecs/aws"
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
   version = "7.4.0"
   # ... other parameters ...
 
@@ -236,6 +236,18 @@ This module includes built-in validations to catch configuration errors early.
 
 ---
 
+## Examples
+
+See the [test_data/](test_data/) directory for complete working examples.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+Apache 2.0 - see [LICENSE](LICENSE) for details.
+
 <!-- BEGIN_TF_DOCS -->
 
 ## Requirements
@@ -249,16 +261,16 @@ This module includes built-in validations to catch configuration errors early.
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.28.0 |
-| <a name="provider_aws.dns"></a> [aws.dns](#provider\_aws.dns) | 6.28.0 |
-| <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | 2.3.7 |
-| <a name="provider_tls"></a> [tls](#provider\_tls) | 4.1.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.56, < 7.0 |
+| <a name="provider_aws.dns"></a> [aws.dns](#provider\_aws.dns) | >= 5.56, < 7.0 |
+| <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | n/a |
+| <a name="provider_tls"></a> [tls](#provider\_tls) | n/a |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.14.0 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.17.0 |
 | <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.6.0 |
 
 ## Resources
@@ -338,6 +350,9 @@ This module includes built-in validations to catch configuration errors early.
 | <a name="input_container_memory_reservation"></a> [container\_memory\_reservation](#input\_container\_memory\_reservation) | Soft memory limit in megabytes for the container. The container can use more memory<br/>if available on the host, up to the hard limit (container\_memory).<br/>If null, no reservation is set and container\_memory acts as both reservation and limit.<br/>Must be greater than 0 and less than or equal to container\_memory when specified. | `number` | `null` | no |
 | <a name="input_container_port"></a> [container\_port](#input\_container\_port) | TCP port that a container serves client requests on. | `number` | `8080` | no |
 | <a name="input_dns_names"></a> [dns\_names](#input\_dns\_names) | List of hostnames the module will create in var.zone\_id. | `list(string)` | n/a | yes |
+| <a name="input_dns_routing_policy"></a> [dns\_routing\_policy](#input\_dns\_routing\_policy) | DNS routing policy for Route53 A records.<br/><br/>**Available policies:**<br/>- `simple` (default): Standard DNS routing. Each A record resolves directly to the ALB.<br/>  Best for: Single deployments, standard configurations.<br/><br/>- `weighted`: Enables Route53 weighted routing policy for zero-downtime migrations.<br/>  Requires: dns\_set\_identifier must be set.<br/>  Best for: Blue/green deployments, gradual traffic migration, A/B testing.<br/><br/>**Migration workflow example:**<br/>1. Deploy new service with `dns_routing_policy = "weighted"`, `dns_weight = 0`<br/>2. Convert existing service to weighted with `dns_weight = 100`<br/>3. Gradually shift: 90/10 -> 50/50 -> 10/90 -> 0/100<br/>4. Remove old service<br/><br/>**Note:** When using weighted routing, you can have multiple modules create<br/>records for the same DNS name, each with a unique dns\_set\_identifier. | `string` | `"simple"` | no |
+| <a name="input_dns_set_identifier"></a> [dns\_set\_identifier](#input\_dns\_set\_identifier) | Unique identifier for weighted routing records.<br/>Required when dns\_routing\_policy is not "simple".<br/><br/>This identifier distinguishes between multiple weighted records with the same name.<br/>Must be unique across all weighted records for the same DNS name.<br/><br/>**Recommended naming conventions:**<br/>- Environment-based: "production-blue", "production-green"<br/>- Version-based: "v1", "v2", "v3"<br/>- Region-based: "us-west-2-primary", "us-east-1-secondary"<br/>- Module-based: "website-pod-main", "ecs-service-new"<br/><br/>**Example:**<pre>hcl<br/># Old service (being deprecated)<br/>dns_routing_policy = "weighted"<br/>dns_set_identifier = "legacy-service"<br/>dns_weight         = 10<br/><br/># New service (receiving traffic)<br/>dns_routing_policy = "weighted"<br/>dns_set_identifier = "new-service"<br/>dns_weight         = 90</pre> | `string` | `null` | no |
+| <a name="input_dns_weight"></a> [dns\_weight](#input\_dns\_weight) | Weight for Route53 weighted routing policy (0-255).<br/>Only used when dns\_routing\_policy = "weighted".<br/><br/>**Weight behavior:**<br/>- 0: No traffic routed to this endpoint (useful during initial deployment)<br/>- 255: Maximum weight priority<br/>- Traffic distribution = (this\_weight / sum\_of\_all\_weights) * 100%<br/><br/>**Examples:**<br/>- Two endpoints with weights 100 and 100: 50% each<br/>- Two endpoints with weights 100 and 0: 100% to first, 0% to second<br/>- Three endpoints with weights 70, 20, 10: 70%, 20%, 10%<br/><br/>**Migration tip:** Start new deployments with weight=0, then gradually increase. | `number` | `100` | no |
 | <a name="input_dockerSecurityOptions"></a> [dockerSecurityOptions](#input\_dockerSecurityOptions) | A list of strings to provide custom configuration for multiple security systems.<br/><br/>Supported options:<br/>- "no-new-privileges" - Prevent privilege escalation<br/>- "label:<value>" - SELinux labels<br/>- "apparmor:<value>" - AppArmor profile<br/>- "credentialspec:<value>" - Credential specifications (Windows)<br/><br/>Example:<br/>  dockerSecurityOptions = [<br/>    "no-new-privileges",<br/>    "label:type:container\_runtime\_t"<br/>  ] | `list(string)` | `null` | no |
 | <a name="input_docker_image"></a> [docker\_image](#input\_docker\_image) | A container image that will run the service. | `string` | n/a | yes |
 | <a name="input_enable_cloudwatch_logs"></a> [enable\_cloudwatch\_logs](#input\_enable\_cloudwatch\_logs) | Enable CloudWatch Logs for ECS tasks.<br/>If enabled, containers will use "awslogs" log driver.<br/><br/>Default: true (recommended for production environments) | `bool` | `true` | no |
@@ -365,7 +380,8 @@ This module includes built-in validations to catch configuration errors early.
 | <a name="input_sns_topic_arn"></a> [sns\_topic\_arn](#input\_sns\_topic\_arn) | SNS topic arn for sending alerts on failed deployments. | `string` | `null` | no |
 | <a name="input_ssh_cidr_block"></a> [ssh\_cidr\_block](#input\_ssh\_cidr\_block) | CIDR range that is allowed to SSH into the backend instances | `string` | `null` | no |
 | <a name="input_ssh_key_name"></a> [ssh\_key\_name](#input\_ssh\_key\_name) | ssh key name installed in ECS host instances. | `string` | `null` | no |
-| <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to resources creatded by the module. | `map(string)` | `{}` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to resources created by the module. | `map(string)` | `{}` | no |
+| <a name="input_target_group_protocol"></a> [target\_group\_protocol](#input\_target\_group\_protocol) | Protocol for the ALB target group.<br/><br/>**Available protocols:**<br/>- `HTTP` (default): Standard backend communication. ALB terminates SSL and<br/>  forwards unencrypted traffic to containers.<br/>  Best for: Most applications where SSL termination at the load balancer is sufficient.<br/><br/>- `HTTPS`: End-to-end encryption. ALB forwards encrypted traffic to containers.<br/>  The container must have a valid TLS certificate and listen on HTTPS.<br/>  Best for: Compliance requirements (e.g., PCI-DSS), zero-trust architectures,<br/>  or when data must remain encrypted in transit within the VPC.<br/><br/>**Note:** When using HTTPS, ensure your container:<br/>- Has a valid TLS certificate (self-signed is acceptable for internal traffic)<br/>- Listens on the container\_port using HTTPS<br/>- The health check path is accessible over HTTPS | `string` | `"HTTP"` | no |
 | <a name="input_task_desired_count"></a> [task\_desired\_count](#input\_task\_desired\_count) | Number of containers the ECS service will maintain. | `number` | `1` | no |
 | <a name="input_task_efs_volumes"></a> [task\_efs\_volumes](#input\_task\_efs\_volumes) | Map name->{file\_system\_id, container\_path} of EFS volumes defined in task and available for containers to mount. | <pre>map(<br/>    object(<br/>      {<br/>        file_system_id : string<br/>        container_path : string<br/>      }<br/>    )<br/>  )</pre> | `{}` | no |
 | <a name="input_task_environment_variables"></a> [task\_environment\_variables](#input\_task\_environment\_variables) | Environment variables passed down to a task. | <pre>list(<br/>    object(<br/>      {<br/>        name : string<br/>        value : string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |

@@ -1,3 +1,7 @@
+# Note: Weighted routing (dns_routing_policy, dns_weight, dns_set_identifier)
+# is not yet supported by the tcp-pod module. See validation check
+# "weighted_routing_alb_only" in validations.tf for enforcement.
+# Tracking issue: https://github.com/infrahouse/terraform-aws-tcp-pod/issues/30
 module "tcp-pod" {
   count   = var.lb_type == "nlb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/tcp-pod/aws"

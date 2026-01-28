@@ -1,7 +1,7 @@
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "5.14.0"
+  version = "5.17.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -19,6 +19,7 @@ module "pod" {
   alb_healthcheck_response_code_matcher = var.healthcheck_response_code_matcher
   alb_healthcheck_interval              = var.healthcheck_interval
   load_balancing_algorithm_type         = var.load_balancing_algorithm_type
+  target_group_protocol                 = var.target_group_protocol
   health_check_grace_period             = var.asg_health_check_grace_period
   health_check_type                     = "EC2"
   attach_target_group_to_asg            = false
@@ -60,4 +61,9 @@ module "pod" {
   on_demand_base_capacity       = var.on_demand_base_capacity
   certificate_issuers           = var.certificate_issuers
   alarm_emails                  = var.alarm_emails
+
+  # Route53 weighted routing for zero-downtime migrations
+  dns_routing_policy = var.dns_routing_policy
+  dns_weight         = var.dns_weight
+  dns_set_identifier = var.dns_set_identifier
 }
