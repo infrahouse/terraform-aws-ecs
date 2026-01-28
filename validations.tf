@@ -222,6 +222,75 @@ check "memory_reservation_within_limit" {
   }
 }
 
+# Validate weighted routing configuration
+check "weighted_routing_requires_set_identifier" {
+  assert {
+    condition     = var.dns_routing_policy == "simple" ? true : var.dns_set_identifier != null
+    error_message = <<-EOF
+      ╔════════════════════════════════════════════════════════════════════════╗
+      ║                  ⚠️  CONFIGURATION ERROR ⚠️                            ║
+      ╚════════════════════════════════════════════════════════════════════════╝
+
+      When using dns_routing_policy = "weighted", you must also set dns_set_identifier.
+
+      Current configuration:
+        - dns_routing_policy: ${var.dns_routing_policy}
+        - dns_set_identifier: ${var.dns_set_identifier == null ? "null (not set)" : var.dns_set_identifier}
+
+      Problem:
+        Route53 weighted routing records require a unique set_identifier to distinguish
+        between multiple records with the same name.
+
+      Solution:
+        Add a unique dns_set_identifier to your configuration:
+
+        dns_routing_policy = "weighted"
+        dns_set_identifier = "my-service-v1"  # Must be unique per DNS record name
+        dns_weight         = 100
+
+      Naming conventions for dns_set_identifier:
+        - "production-blue", "production-green" (blue/green deployments)
+        - "v1", "v2", "v3" (version-based)
+        - "website-pod", "ecs-service" (module-based)
+
+      ════════════════════════════════════════════════════════════════════════
+    EOF
+  }
+}
+
+# Validate weighted routing is only supported for ALB
+check "weighted_routing_alb_only" {
+  assert {
+    condition     = var.dns_routing_policy == "simple" ? true : var.lb_type == "alb"
+    error_message = <<-EOF
+      ╔════════════════════════════════════════════════════════════════════════╗
+      ║                  ⚠️  CONFIGURATION ERROR ⚠️                            ║
+      ╚════════════════════════════════════════════════════════════════════════╝
+
+      Weighted routing is currently only supported for ALB (lb_type = "alb").
+
+      Current configuration:
+        - lb_type:            ${var.lb_type}
+        - dns_routing_policy: ${var.dns_routing_policy}
+        - dns_set_identifier: ${var.dns_set_identifier == null ? "null (not set)" : var.dns_set_identifier}
+
+      Problem:
+        The tcp-pod module (used for NLB) does not yet support weighted routing.
+        This feature is only available when using an Application Load Balancer.
+
+      Solution:
+        Either:
+        1. Use ALB instead of NLB:
+           lb_type = "alb"
+
+        2. Or use simple routing for NLB:
+           dns_routing_policy = "simple"
+
+      ════════════════════════════════════════════════════════════════════════
+    EOF
+  }
+}
+
 # Cross-variable validation: autoscaling_target must be appropriate for the metric type
 locals {
   is_percentage_metric = contains([

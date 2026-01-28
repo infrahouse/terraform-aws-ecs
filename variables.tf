@@ -442,6 +442,34 @@ variable "load_balancing_algorithm_type" {
   }
 }
 
+variable "target_group_protocol" {
+  description = <<-EOF
+    Protocol for the ALB target group.
+
+    **Available protocols:**
+    - `HTTP` (default): Standard backend communication. ALB terminates SSL and
+      forwards unencrypted traffic to containers.
+      Best for: Most applications where SSL termination at the load balancer is sufficient.
+
+    - `HTTPS`: End-to-end encryption. ALB forwards encrypted traffic to containers.
+      The container must have a valid TLS certificate and listen on HTTPS.
+      Best for: Compliance requirements (e.g., PCI-DSS), zero-trust architectures,
+      or when data must remain encrypted in transit within the VPC.
+
+    **Note:** When using HTTPS, ensure your container:
+    - Has a valid TLS certificate (self-signed is acceptable for internal traffic)
+    - Listens on the container_port using HTTPS
+    - The health check path is accessible over HTTPS
+  EOF
+  type        = string
+  default     = "HTTP"
+
+  validation {
+    condition     = contains(["HTTP", "HTTPS"], var.target_group_protocol)
+    error_message = "target_group_protocol must be either 'HTTP' or 'HTTPS'."
+  }
+}
+
 variable "load_balancer_subnets" {
   description = "Load Balancer Subnets."
   type        = list(string)
@@ -508,7 +536,7 @@ variable "ssh_cidr_block" {
 }
 
 variable "tags" {
-  description = "Tags to apply to resources creatded by the module."
+  description = "Tags to apply to resources created by the module."
   type        = map(string)
   default     = {}
 }
@@ -761,4 +789,96 @@ variable "certificate_issuers" {
   EOT
   type        = list(string)
   default     = ["amazon.com"]
+}
+
+variable "dns_routing_policy" {
+  description = <<-EOF
+    DNS routing policy for Route53 A records.
+
+    **Available policies:**
+    - `simple` (default): Standard DNS routing. Each A record resolves directly to the ALB.
+      Best for: Single deployments, standard configurations.
+
+    - `weighted`: Enables Route53 weighted routing policy for zero-downtime migrations.
+      Requires: dns_set_identifier must be set.
+      Best for: Blue/green deployments, gradual traffic migration, A/B testing.
+
+    **Migration workflow example:**
+    1. Deploy new service with `dns_routing_policy = "weighted"`, `dns_weight = 0`
+    2. Convert existing service to weighted with `dns_weight = 100`
+    3. Gradually shift: 90/10 -> 50/50 -> 10/90 -> 0/100
+    4. Remove old service
+
+    **Note:** When using weighted routing, you can have multiple modules create
+    records for the same DNS name, each with a unique dns_set_identifier.
+  EOF
+  type        = string
+  default     = "simple"
+
+  validation {
+    condition     = contains(["simple", "weighted"], var.dns_routing_policy)
+    error_message = "dns_routing_policy must be either 'simple' or 'weighted'. Got: ${var.dns_routing_policy}"
+  }
+}
+
+variable "dns_weight" {
+  description = <<-EOF
+    Weight for Route53 weighted routing policy (0-255).
+    Only used when dns_routing_policy = "weighted".
+
+    **Weight behavior:**
+    - 0: No traffic routed to this endpoint (useful during initial deployment)
+    - 255: Maximum weight priority
+    - Traffic distribution = (this_weight / sum_of_all_weights) * 100%
+
+    **Examples:**
+    - Two endpoints with weights 100 and 100: 50% each
+    - Two endpoints with weights 100 and 0: 100% to first, 0% to second
+    - Three endpoints with weights 70, 20, 10: 70%, 20%, 10%
+
+    **Migration tip:** Start new deployments with weight=0, then gradually increase.
+  EOF
+  type        = number
+  default     = 100
+
+  validation {
+    condition     = var.dns_weight >= 0 && var.dns_weight <= 255
+    error_message = "dns_weight must be between 0 and 255. Got: ${var.dns_weight}"
+  }
+}
+
+variable "dns_set_identifier" {
+  description = <<-EOF
+    Unique identifier for weighted routing records.
+    Required when dns_routing_policy is not "simple".
+
+    This identifier distinguishes between multiple weighted records with the same name.
+    Must be unique across all weighted records for the same DNS name.
+
+    **Recommended naming conventions:**
+    - Environment-based: "production-blue", "production-green"
+    - Version-based: "v1", "v2", "v3"
+    - Region-based: "us-west-2-primary", "us-east-1-secondary"
+    - Module-based: "website-pod-main", "ecs-service-new"
+
+    **Example:**
+    ```hcl
+    # Old service (being deprecated)
+    dns_routing_policy = "weighted"
+    dns_set_identifier = "legacy-service"
+    dns_weight         = 10
+
+    # New service (receiving traffic)
+    dns_routing_policy = "weighted"
+    dns_set_identifier = "new-service"
+    dns_weight         = 90
+    ```
+  EOF
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.dns_set_identifier == null ? true : length(var.dns_set_identifier) <= 128
+    error_message = "dns_set_identifier must be 128 characters or less."
+  }
 }
