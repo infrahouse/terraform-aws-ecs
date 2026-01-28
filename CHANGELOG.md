@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.5.0] - 2026-01-28
+
+### Features
+
+- Add Route53 weighted routing for zero-downtime migrations
+
 ## [7.4.0] - 2026-01-17
 
 ### Bug Fixes
