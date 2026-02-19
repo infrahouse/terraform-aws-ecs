@@ -71,15 +71,6 @@ resource "aws_ecs_task_definition" "ecs" {
               containerPort = var.container_port
             }
           ]
-          healthCheck = {
-            "retries" : 3,
-            "command" : [
-              "CMD-SHELL", var.container_healthcheck_command
-            ],
-            "timeout" : 5,
-            "interval" : 30,
-            "startPeriod" : null
-          }
           logConfiguration = local.log_configuration
           environment      = var.task_environment_variables
           secrets          = var.task_secrets
@@ -92,7 +83,18 @@ resource "aws_ecs_task_definition" "ecs" {
         },
         var.container_command != null ? { command : var.container_command } : {},
         var.dockerSecurityOptions != null ? { dockerSecurityOptions : var.dockerSecurityOptions } : {},
-        var.container_memory_reservation != null ? { memoryReservation : var.container_memory_reservation } : {}
+        var.container_memory_reservation != null ? { memoryReservation : var.container_memory_reservation } : {},
+        var.container_healthcheck_command != null ? {
+          healthCheck = {
+            "retries" : 3,
+            "command" : [
+              "CMD-SHELL", var.container_healthcheck_command
+            ],
+            "timeout" : 5,
+            "interval" : 30,
+            "startPeriod" : null
+          }
+        } : {}
       )
     ]
   )
