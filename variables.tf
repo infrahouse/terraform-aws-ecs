@@ -313,7 +313,12 @@ variable "container_command" {
 }
 
 variable "container_healthcheck_command" {
-  description = "A shell command that a container runs to check if it's healthy. Exit code 0 means healthy, non-zero - unhealthy."
+  description = <<-EOT
+    A shell command that a container runs to check if it's healthy.
+    Exit code 0 means healthy, non-zero - unhealthy.
+    Set to null to omit the healthCheck block entirely
+    (useful for distroless images that have no shell).
+  EOT
   type        = string
   default     = "curl -f http://localhost/ || exit 1"
 }
