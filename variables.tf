@@ -752,6 +752,39 @@ variable "vanta_no_alert" {
   default     = null
 }
 
+variable "additional_load_balancers" {
+  type = list(object({
+    target_group_arn = string
+    container_port   = number
+  }))
+  default     = []
+  description = <<-EOT
+    Additional target groups to register with the ECS service.
+    Each entry adds a port mapping to the task definition and a
+    load_balancer block to the service. The user creates target groups
+    and listener rules externally.
+
+    NOTE: adding or removing entries forces ECS service replacement
+    (AWS API limitation).
+
+    Example:
+      additional_load_balancers = [
+        {
+          target_group_arn = aws_alb_target_group.grpc.arn
+          container_port   = 4317
+        }
+      ]
+  EOT
+
+  validation {
+    condition = alltrue([
+      for lb in var.additional_load_balancers :
+      lb.container_port >= 1 && lb.container_port <= 65535
+    ])
+    error_message = "All container_port values in additional_load_balancers must be between 1 and 65535."
+  }
+}
+
 variable "zone_id" {
   description = "Zone where DNS records will be created for the service and certificate validation."
   type        = string

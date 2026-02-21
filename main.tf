@@ -66,11 +66,18 @@ resource "aws_ecs_task_definition" "ecs" {
           cpu       = var.container_cpu
           memory    = var.container_memory
           essential = true
-          portMappings = [
-            {
-              containerPort = var.container_port
-            }
-          ]
+          portMappings = concat(
+            [
+              {
+                containerPort = var.container_port
+              }
+            ],
+            [
+              for lb in var.additional_load_balancers : {
+                containerPort = lb.container_port
+              }
+            ]
+          )
           logConfiguration = local.log_configuration
           environment      = var.task_environment_variables
           secrets          = var.task_secrets
@@ -142,6 +149,15 @@ resource "aws_ecs_service" "ecs" {
     target_group_arn = local.target_group_arn
     container_name   = var.service_name
     container_port   = var.container_port
+  }
+
+  dynamic "load_balancer" {
+    for_each = var.additional_load_balancers
+    content {
+      target_group_arn = load_balancer.value.target_group_arn
+      container_name   = var.service_name
+      container_port   = load_balancer.value.container_port
+    }
   }
 
   capacity_provider_strategy {
