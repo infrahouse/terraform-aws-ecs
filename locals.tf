@@ -63,6 +63,7 @@ locals {
   instance_role_name              = var.lb_type == "alb" ? module.pod[0].instance_role_name : data.aws_iam_instance_profile.tcp_pod[0].role_name
   instance_role_policy_name       = var.lb_type == "alb" ? module.pod[0].instance_role_policy_name : module.tcp-pod[0].instance_role_policy_name
   instance_role_policy_attachment = var.lb_type == "alb" ? module.pod[0].instance_role_policy_attachment : module.tcp-pod[0].instance_role_policy_attachment
+  acm_certificate_arn             = var.lb_type == "alb" ? module.pod[0].acm_certificate_arn : null
 
   cloudwatch_agent_config_path = "/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json"
   cloudwatch_agent_container_resources = {

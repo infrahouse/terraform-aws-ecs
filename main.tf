@@ -114,7 +114,8 @@ resource "aws_ecs_task_definition" "ecs" {
     content {
       name = volume.key
       efs_volume_configuration {
-        file_system_id = volume.value.file_system_id
+        file_system_id     = volume.value.file_system_id
+        transit_encryption = "ENABLED"
       }
     }
   }

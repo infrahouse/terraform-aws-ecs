@@ -80,7 +80,7 @@ For more examples, see how the module is used in tests: `test_data/`.
 
 ## Mount EFS Volume
 
-The module can attach EFS volumes to containers.
+The module can attach EFS volumes to containers. Transit encryption (TLS) is enabled automatically.
 
 Create the EFS volume with mount points:
 
@@ -350,6 +350,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | [aws_key_pair.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/key_pair) | resource |
 | [aws_lb_listener.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
 | [aws_lb_target_group.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group) | resource |
+| [aws_security_group_rule.extra_listener_ingress](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule) | resource |
 | [tls_private_key.rsa](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) | resource |
 | [aws_ami.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
@@ -374,6 +375,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 |------|-------------|------|---------|:--------:|
 | <a name="input_access_log_force_destroy"></a> [access\_log\_force\_destroy](#input\_access\_log\_force\_destroy) | Destroy S3 bucket with access logs even if non-empty | `bool` | `false` | no |
 | <a name="input_alarm_emails"></a> [alarm\_emails](#input\_alarm\_emails) | List of email addresses to receive CloudWatch alarm notifications.<br/>Required for monitoring ECS service health and performance issues.<br/><br/>Example: ["devops@example.com", "oncall@example.com"] | `list(string)` | n/a | yes |
+| <a name="input_alb_ingress_cidr_blocks"></a> [alb\_ingress\_cidr\_blocks](#input\_alb\_ingress\_cidr\_blocks) | List of CIDR blocks allowed to access the ALB.<br/>Applied to both the primary listener (via website-pod)<br/>and any extra target group listeners. | `list(string)` | <pre>[<br/>  "0.0.0.0/0"<br/>]</pre> | no |
 | <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances.<br/>If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used. | `string` | `null` | no |
 | <a name="input_asg_health_check_grace_period"></a> [asg\_health\_check\_grace\_period](#input\_asg\_health\_check\_grace\_period) | ASG will wait up to this number of seconds for instance to become healthy.<br/>Default: 300 seconds (5 minutes) | `number` | `300` | no |
 | <a name="input_asg_instance_type"></a> [asg\_instance\_type](#input\_asg\_instance\_type) | EC2 instances type | `string` | `"t3.micro"` | no |
@@ -428,6 +430,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_sns_topic_arn"></a> [sns\_topic\_arn](#input\_sns\_topic\_arn) | SNS topic arn for sending alerts on failed deployments. | `string` | `null` | no |
 | <a name="input_ssh_cidr_block"></a> [ssh\_cidr\_block](#input\_ssh\_cidr\_block) | CIDR range that is allowed to SSH into the backend instances | `string` | `null` | no |
 | <a name="input_ssh_key_name"></a> [ssh\_key\_name](#input\_ssh\_key\_name) | ssh key name installed in ECS host instances. | `string` | `null` | no |
+| <a name="input_ssl_policy"></a> [ssl\_policy](#input\_ssl\_policy) | TLS security policy for HTTPS listeners.<br/>Used by extra target group listeners. Will be passed to<br/>website-pod when it supports it<br/>(see infrahouse/terraform-aws-website-pod#114).<br/><br/>See https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html<br/>or run `aws elbv2 describe-ssl-policies` to list all available policies.<br/><br/>Common choices:<br/>  - ELBSecurityPolicy-TLS13-1-2-Res-2021-06  (restrictive, default)<br/>  - ELBSecurityPolicy-TLS13-1-2-Ext1-2021-06 (wider compatibility) | `string` | `"ELBSecurityPolicy-TLS13-1-2-Res-2021-06"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to resources created by the module. | `map(string)` | `{}` | no |
 | <a name="input_target_group_protocol"></a> [target\_group\_protocol](#input\_target\_group\_protocol) | Protocol for the ALB target group.<br/><br/>**Available protocols:**<br/>- `HTTP` (default): Standard backend communication. ALB terminates SSL and<br/>  forwards unencrypted traffic to containers.<br/>  Best for: Most applications where SSL termination at the load balancer is sufficient.<br/><br/>- `HTTPS`: End-to-end encryption. ALB forwards encrypted traffic to containers.<br/>  The container must have a valid TLS certificate and listen on HTTPS.<br/>  Best for: Compliance requirements (e.g., PCI-DSS), zero-trust architectures,<br/>  or when data must remain encrypted in transit within the VPC.<br/><br/>**Note:** When using HTTPS, ensure your container:<br/>- Has a valid TLS certificate (self-signed is acceptable for internal traffic)<br/>- Listens on the container\_port using HTTPS<br/>- The health check path is accessible over HTTPS | `string` | `"HTTP"` | no |
 | <a name="input_task_desired_count"></a> [task\_desired\_count](#input\_task\_desired\_count) | Number of containers the ECS service will maintain. | `number` | `1` | no |
@@ -462,6 +465,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="output_cloudwatch_log_group_names"></a> [cloudwatch\_log\_group\_names](#output\_cloudwatch\_log\_group\_names) | Names of all CloudWatch log groups created by this module |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | ECS cluster name. Required for CloudWatch Container Insights metrics. |
 | <a name="output_dns_hostnames"></a> [dns\_hostnames](#output\_dns\_hostnames) | DNS hostnames where the ECS service is available. |
+| <a name="output_extra_target_group_arns"></a> [extra\_target\_group\_arns](#output\_extra\_target\_group\_arns) | Map of extra target group ARNs, keyed by the extra\_target\_groups map keys. |
 | <a name="output_load_balancer_arn"></a> [load\_balancer\_arn](#output\_load\_balancer\_arn) | Load balancer ARN. |
 | <a name="output_load_balancer_arn_suffix"></a> [load\_balancer\_arn\_suffix](#output\_load\_balancer\_arn\_suffix) | Load balancer ARN suffix. Required for CloudWatch ALB metrics as dimension. |
 | <a name="output_load_balancer_dns_name"></a> [load\_balancer\_dns\_name](#output\_load\_balancer\_dns\_name) | Load balancer DNS name. |

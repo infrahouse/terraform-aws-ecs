@@ -1,10 +1,11 @@
 resource "aws_lb_target_group" "extra" {
   for_each = var.extra_target_groups
 
-  name     = "${var.service_name}-${each.key}"
-  port     = each.value.container_port
-  protocol = each.value.protocol
-  vpc_id   = data.aws_subnet.load_balancer.vpc_id
+  name_prefix = substr("${var.service_name}-", 0, 6)
+  port        = each.value.container_port
+  protocol    = each.value.protocol
+  target_type = "instance"
+  vpc_id      = data.aws_subnet.load_balancer.vpc_id
 
   health_check {
     path                = each.value.health_check.path
@@ -24,7 +25,9 @@ resource "aws_lb_listener" "extra" {
 
   load_balancer_arn = local.load_balancer_arn
   port              = each.value.listener_port
-  protocol          = each.value.protocol
+  protocol          = "HTTPS"
+  ssl_policy        = var.ssl_policy
+  certificate_arn   = local.acm_certificate_arn
 
   default_action {
     type             = "forward"
@@ -32,4 +35,16 @@ resource "aws_lb_listener" "extra" {
   }
 
   tags = local.default_module_tags
+}
+
+resource "aws_security_group_rule" "extra_listener_ingress" {
+  for_each = var.lb_type == "alb" ? var.extra_target_groups : {}
+
+  description       = "Allow HTTPS on port ${each.value.listener_port} for extra target group ${each.key}"
+  type              = "ingress"
+  from_port         = each.value.listener_port
+  to_port           = each.value.listener_port
+  protocol          = "tcp"
+  cidr_blocks       = var.alb_ingress_cidr_blocks
+  security_group_id = module.pod[0].load_balancer_security_groups[0]
 }

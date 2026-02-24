@@ -533,7 +533,7 @@ task_secrets = [
 
 ### `task_efs_volumes`
 
-EFS volumes to mount in containers.
+EFS volumes to mount in containers. Transit encryption is enabled automatically.
 
 ```hcl
 task_efs_volumes = {
