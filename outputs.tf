@@ -28,6 +28,11 @@ output "load_balancer_arn" {
   value       = local.load_balancer_arn
 }
 
+output "target_group_arn" {
+  description = "Primary target group ARN."
+  value       = local.target_group_arn
+}
+
 output "load_balancer_dns_name" {
   description = "Load balancer DNS name."
   value       = local.load_balancer_dns_name

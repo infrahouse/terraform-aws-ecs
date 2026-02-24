@@ -400,6 +400,36 @@ HTTP status codes considered healthy.
 healthcheck_response_code_matcher = "200-399"
 ```
 
+### `extra_target_groups`
+
+Extra target groups for multi-port containers. Each entry creates an ALB
+listener and target group, adds a port mapping to the task definition, and
+registers the ECS service with the target group.
+
+| Default |
+|---------|
+| `{}` |
+
+```hcl
+extra_target_groups = {
+  grpc = {
+    listener_port  = 4317
+    container_port = 4317
+    protocol       = "HTTP"     # optional, default: "HTTP"
+    health_check = {            # optional, all fields have defaults
+      path     = "/health"      # default: "/"
+      port     = "traffic-port" # default: "traffic-port"
+      matcher  = "200"          # default: "200-299"
+      interval = 30             # default: 30
+      timeout  = 5              # default: 5
+    }
+  }
+}
+```
+
+> **Note:** Adding or removing entries forces ECS service replacement
+> (AWS API limitation on `load_balancer` blocks).
+
 ---
 
 ## CloudWatch Configuration
@@ -597,6 +627,8 @@ The module includes built-in validation to catch errors early:
 | `lb_type` | "alb" or "nlb" |
 | `autoscaling_metric` | Valid ECS/ALB metric |
 | `autoscaling_target_cpu_usage` | 1-100 |
+| `extra_target_groups[*].container_port` | 1-65535 |
+| `extra_target_groups[*].listener_port` | 1-65535 |
 | `healthcheck_interval` | Must be >= healthcheck_timeout |
 
 ---
@@ -688,6 +720,7 @@ The module exports these outputs for use in downstream configurations.
 | `load_balancer_arn` | Load balancer ARN |
 | `load_balancer_dns_name` | Load balancer DNS name |
 | `load_balancer_arn_suffix` | ARN suffix for CloudWatch ALB metrics |
+| `target_group_arn` | Primary target group ARN |
 | `target_group_arn_suffix` | Target group ARN suffix for CloudWatch metrics |
 | `ssl_listener_arn` | SSL listener ARN (ALB only) |
 | `acm_certificate_arn` | ACM certificate ARN used by the load balancer (ALB only) |
