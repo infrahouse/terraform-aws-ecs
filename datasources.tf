@@ -97,7 +97,7 @@ data "cloudinit_config" "ecs" {
                   {
                     path : local.vector_agent_config_path
                     permissions : "0644"
-                    content : templatefile(
+                    content : var.vector_agent_config != null ? var.vector_agent_config : templatefile(
                       "${path.module}/assets/vector_agent_config.yaml.tftmpl",
                       {
                         environment               : var.environment

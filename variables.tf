@@ -908,9 +908,22 @@ variable "vector_agent_image" {
 variable "vector_aggregator_endpoint" {
   description = <<-EOT
     Vector Aggregator address (host:port) for the agent to forward data to.
-    Required when enable_vector_agent is true.
+    Used by the default config template. Ignored if vector_agent_config is provided.
 
     Example: "vector-aggregator.sandbox.tinyfish.io:6000"
+  EOT
+  type        = string
+  default     = null
+}
+
+variable "vector_agent_config" {
+  description = <<-EOT
+    Custom Vector Agent config (YAML string). When provided, this replaces
+    the built-in default config template entirely. Use this to iterate on
+    the agent config without modifying the module.
+
+    Example:
+      vector_agent_config = templatefile("files/vector-agent.yaml.tftpl", { ... })
   EOT
   type        = string
   default     = null
