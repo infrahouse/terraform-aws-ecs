@@ -752,6 +752,70 @@ variable "vanta_no_alert" {
   default     = null
 }
 
+variable "extra_target_groups" {
+  type = map(object({
+    listener_port  = number
+    container_port = number
+    protocol       = optional(string, "HTTP")
+    health_check = optional(object({
+      path     = optional(string, "/")
+      port     = optional(string, "traffic-port")
+      matcher  = optional(string, "200-299")
+      interval = optional(number, 30)
+      timeout  = optional(number, 5)
+    }), {})
+  }))
+  default     = {}
+  description = <<-EOT
+    Extra target groups to register with the ECS service.
+    Each entry creates a target group, an ALB listener on
+    listener_port, a port mapping in the task definition, and
+    a load_balancer block on the ECS service.
+
+    Use a map keyed by a descriptive name. This is more stable
+    than a list because reordering does not force service
+    replacement.
+
+    NOTE: adding or removing entries forces ECS service
+    replacement (AWS API limitation on load_balancer blocks).
+
+    Example:
+      extra_target_groups = {
+        grpc = {
+          listener_port  = 4317
+          container_port = 4317
+          protocol       = "HTTP"
+          health_check = {
+            path    = "/health"
+            matcher = "200"
+          }
+        }
+      }
+  EOT
+
+  validation {
+    condition = alltrue([
+      for k, v in var.extra_target_groups :
+      v.container_port >= 1 && v.container_port <= 65535
+    ])
+    error_message = <<-EOT
+      All container_port values in extra_target_groups must be
+      between 1 and 65535.
+    EOT
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.extra_target_groups :
+      v.listener_port >= 1 && v.listener_port <= 65535
+    ])
+    error_message = <<-EOT
+      All listener_port values in extra_target_groups must be
+      between 1 and 65535.
+    EOT
+  }
+}
+
 variable "zone_id" {
   description = "Zone where DNS records will be created for the service and certificate validation."
   type        = string

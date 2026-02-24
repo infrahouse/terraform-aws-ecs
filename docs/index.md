@@ -15,6 +15,7 @@ and runs containerized services with automatic scaling, load balancing, and moni
 - **CloudWatch Alarms** - Health monitoring with email notifications
 - **EFS Volume Support** - Mount persistent storage to containers
 - **Spot Instance Support** - Cost optimization with on-demand base capacity
+- **Extra Target Groups** - Expose multiple container ports through the same load balancer
 
 ## Quick Start
 

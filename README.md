@@ -25,6 +25,7 @@ The module creates an Elastic Container Service and runs one docker image in it.
 - CloudWatch alarms with email notifications
 - EFS volume support for persistent storage
 - Spot instance support for cost optimization
+- Extra target groups for multi-port containers
 
 ## Quick Start
 
@@ -114,6 +115,50 @@ module "httpd" {
   }
 }
 ```
+
+---
+
+## Extra Target Groups (Multi-Port Containers)
+
+Some containers listen on multiple TCP ports (e.g., Grafana Tempo exposes port 3200
+for query API and port 4317 for OTLP gRPC ingest). The `extra_target_groups` variable
+lets you expose additional ports through the same load balancer.
+
+For each extra target group, the module creates:
+
+- An ALB target group for the container port
+- An ALB listener on the specified listener port
+- A port mapping in the ECS task definition
+- A load balancer registration on the ECS service
+
+```hcl
+module "tempo" {
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
+  version = "~> 7.7"
+
+  service_name   = "tempo"
+  docker_image   = "grafana/tempo:latest"
+  container_port = 3200  # Primary: query API
+
+  extra_target_groups = {
+    otlp = {
+      listener_port  = 4317
+      container_port = 4317
+      health_check = {
+        path    = "/ready"
+        matcher = "200"
+      }
+    }
+  }
+
+  # ... other required variables ...
+}
+```
+
+> **Note:** Adding or removing entries in `extra_target_groups` forces ECS service
+> replacement (AWS API limitation on `load_balancer` blocks). Use
+> [`dns_routing_policy = "weighted"`](#input_dns_routing_policy) to perform
+> zero-downtime migrations when changing extra target groups.
 
 ---
 
@@ -303,6 +348,8 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | [aws_iam_role_policy_attachment.execution_extra_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.extra_policy_attachment](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_key_pair.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/key_pair) | resource |
+| [aws_lb_listener.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
+| [aws_lb_target_group.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group) | resource |
 | [tls_private_key.rsa](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) | resource |
 | [aws_ami.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
@@ -363,6 +410,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_execution_task_role_policy_arn"></a> [execution\_task\_role\_policy\_arn](#input\_execution\_task\_role\_policy\_arn) | Extra policy for execution task role. | `string` | `null` | no |
 | <a name="input_extra_files"></a> [extra\_files](#input\_extra\_files) | Additional files to create on a host EC2 instance. | <pre>list(<br/>    object(<br/>      {<br/>        content     = string<br/>        path        = string<br/>        permissions = string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |
 | <a name="input_extra_instance_profile_permissions"></a> [extra\_instance\_profile\_permissions](#input\_extra\_instance\_profile\_permissions) | A JSON with a permissions policy document. The policy will be attached to the ASG instance profile. | `string` | `null` | no |
+| <a name="input_extra_target_groups"></a> [extra\_target\_groups](#input\_extra\_target\_groups) | Extra target groups to register with the ECS service.<br/>Each entry creates a target group, an ALB listener on<br/>listener\_port, a port mapping in the task definition, and<br/>a load\_balancer block on the ECS service.<br/><br/>Use a map keyed by a descriptive name. This is more stable<br/>than a list because reordering does not force service<br/>replacement.<br/><br/>NOTE: adding or removing entries forces ECS service<br/>replacement (AWS API limitation on load\_balancer blocks).<br/><br/>Example:<br/>  extra\_target\_groups = {<br/>    grpc = {<br/>      listener\_port  = 4317<br/>      container\_port = 4317<br/>      protocol       = "HTTP"<br/>      health\_check = {<br/>        path    = "/health"<br/>        matcher = "200"<br/>      }<br/>    }<br/>  } | <pre>map(object({<br/>    listener_port  = number<br/>    container_port = number<br/>    protocol       = optional(string, "HTTP")<br/>    health_check = optional(object({<br/>      path     = optional(string, "/")<br/>      port     = optional(string, "traffic-port")<br/>      matcher  = optional(string, "200-299")<br/>      interval = optional(number, 30)<br/>      timeout  = optional(number, 5)<br/>    }), {})<br/>  }))</pre> | `{}` | no |
 | <a name="input_healthcheck_interval"></a> [healthcheck\_interval](#input\_healthcheck\_interval) | Number of seconds between checks | `number` | `10` | no |
 | <a name="input_healthcheck_path"></a> [healthcheck\_path](#input\_healthcheck\_path) | Path on the webserver that the elb will check to determine whether the instance is healthy or not. | `string` | `"/index.html"` | no |
 | <a name="input_healthcheck_response_code_matcher"></a> [healthcheck\_response\_code\_matcher](#input\_healthcheck\_response\_code\_matcher) | Range of http return codes that can match | `string` | `"200-299"` | no |
@@ -421,6 +469,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="output_service_arn"></a> [service\_arn](#output\_service\_arn) | ECS service ARN. |
 | <a name="output_service_name"></a> [service\_name](#output\_service\_name) | ECS service name. Required for CloudWatch Container Insights metrics. |
 | <a name="output_ssl_listener_arn"></a> [ssl\_listener\_arn](#output\_ssl\_listener\_arn) | SSL listener ARN |
+| <a name="output_target_group_arn"></a> [target\_group\_arn](#output\_target\_group\_arn) | Primary target group ARN. |
 | <a name="output_target_group_arn_suffix"></a> [target\_group\_arn\_suffix](#output\_target\_group\_arn\_suffix) | Target group ARN suffix. Required for CloudWatch ALB target group metrics as dimension. |
 | <a name="output_task_execution_role_arn"></a> [task\_execution\_role\_arn](#output\_task\_execution\_role\_arn) | Task execution role is a role that ECS agent gets. |
 | <a name="output_task_execution_role_name"></a> [task\_execution\_role\_name](#output\_task\_execution\_role\_name) | Task execution role is a role that ECS agent gets. |
