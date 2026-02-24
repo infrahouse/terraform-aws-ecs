@@ -887,3 +887,31 @@ variable "dns_set_identifier" {
     error_message = "dns_set_identifier must be 128 characters or less."
   }
 }
+
+variable "enable_vector_agent" {
+  description = <<-EOT
+    Deploy a Vector Agent daemon on every EC2 instance in this cluster.
+    Collects container logs and host metrics, forwards to Vector Aggregator.
+
+    Requires: vector_aggregator_endpoint must be set.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "vector_agent_image" {
+  description = "Vector Agent container image."
+  type        = string
+  default     = "timberio/vector:0.43.1-alpine"
+}
+
+variable "vector_aggregator_endpoint" {
+  description = <<-EOT
+    Vector Aggregator address (host:port) for the agent to forward data to.
+    Required when enable_vector_agent is true.
+
+    Example: "vector-aggregator.sandbox.tinyfish.io:6000"
+  EOT
+  type        = string
+  default     = null
+}

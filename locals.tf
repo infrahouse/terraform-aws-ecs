@@ -70,6 +70,12 @@ locals {
     memory = 256
   }
 
+  vector_agent_config_path = "/etc/vector/vector.yaml"
+  vector_agent_container_resources = {
+    cpu    = 128
+    memory = 256
+  }
+
 
   # ASG sizing: User-provided values take precedence over calculated defaults.
   # - asg_min_size defaults to subnet count (one instance per AZ for HA)

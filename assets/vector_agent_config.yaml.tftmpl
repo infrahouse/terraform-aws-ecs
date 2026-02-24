@@ -1,0 +1,37 @@
+api:
+  enabled: true
+  address: "127.0.0.1:8686"
+
+sources:
+  docker_logs:
+    type: docker_logs
+    exclude_containers:
+      - "vector-agent"
+    docker_host: "unix:///var/run/docker.sock"
+    auto_partial_merge: true
+
+  host_metrics:
+    type: host_metrics
+    scrape_interval_secs: 15
+    collectors:
+      - cpu
+      - memory
+      - disk
+      - network
+
+transforms:
+  enrich:
+    type: remap
+    inputs:
+      - docker_logs
+      - host_metrics
+    source: |
+      .environment = "${environment}"
+      .region = "${aws_region}"
+
+sinks:
+  aggregator:
+    type: vector
+    inputs:
+      - enrich
+    address: "${vector_aggregator_endpoint}"
