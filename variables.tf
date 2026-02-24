@@ -423,6 +423,44 @@ variable "lb_type" {
   }
 }
 
+variable "ssl_policy" {
+  description = <<-EOT
+    TLS security policy for HTTPS listeners.
+    Used by extra target group listeners. Will be passed to
+    website-pod when it supports it
+    (see infrahouse/terraform-aws-website-pod#114).
+
+    See https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html
+    or run `aws elbv2 describe-ssl-policies` to list all available policies.
+
+    Common choices:
+      - ELBSecurityPolicy-TLS13-1-2-Res-2021-06  (restrictive, default)
+      - ELBSecurityPolicy-TLS13-1-2-Ext1-2021-06 (wider compatibility)
+  EOT
+  type        = string
+  default     = "ELBSecurityPolicy-TLS13-1-2-Res-2021-06"
+
+  validation {
+    condition     = can(regex("^ELBSecurityPolicy-", var.ssl_policy))
+    error_message = <<-EOT
+      ssl_policy must be a valid AWS ELB security policy name
+      (starts with "ELBSecurityPolicy-").
+      Got: ${var.ssl_policy}
+      Run `aws elbv2 describe-ssl-policies` to list available policies.
+    EOT
+  }
+}
+
+variable "alb_ingress_cidr_blocks" {
+  description = <<-EOT
+    List of CIDR blocks allowed to access the ALB.
+    Applied to both the primary listener (via website-pod)
+    and any extra target group listeners.
+  EOT
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 variable "load_balancing_algorithm_type" {
   description = <<-EOF
     Load balancing algorithm for the target group.

@@ -291,6 +291,25 @@ check "weighted_routing_alb_only" {
   }
 }
 
+# Validate extra_target_groups is only used with ALB
+check "extra_target_groups_alb_only" {
+  assert {
+    condition = (
+      length(var.extra_target_groups) == 0 ? true : var.lb_type == "alb"
+    )
+    error_message = <<-EOF
+      extra_target_groups is only supported with lb_type = "alb".
+
+      Current configuration:
+        - lb_type:              ${var.lb_type}
+        - extra_target_groups:  ${length(var.extra_target_groups)} entries
+
+      Solution:
+        Either use lb_type = "alb" or remove extra_target_groups.
+    EOF
+  }
+}
+
 # Cross-variable validation: autoscaling_target must be appropriate for the metric type
 locals {
   is_percentage_metric = contains([

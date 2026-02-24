@@ -13,7 +13,7 @@ and runs containerized services with automatic scaling, load balancing, and moni
 - **Auto Scaling** - Task-level scaling based on CPU, memory, or request count metrics
 - **CloudWatch Integration** - Container and EC2 instance logging with configurable retention
 - **CloudWatch Alarms** - Health monitoring with email notifications
-- **EFS Volume Support** - Mount persistent storage to containers
+- **EFS Volume Support** - Mount persistent storage to containers with encryption in transit
 - **Spot Instance Support** - Cost optimization with on-demand base capacity
 - **Extra Target Groups** - Expose multiple container ports through the same load balancer
 

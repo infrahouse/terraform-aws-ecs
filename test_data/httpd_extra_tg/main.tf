@@ -25,6 +25,9 @@ module "httpd" {
     extra = {
       listener_port  = 8081
       container_port = 8081
+      # Permissive matcher: httpd doesn't listen on 8081, so the TG
+      # health check will get connection-refused (502/503). We only
+      # need to verify that the extra TG is wired into the ECS service.
       health_check = {
         matcher = "200-499"
       }

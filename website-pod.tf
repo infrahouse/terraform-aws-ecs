@@ -61,6 +61,7 @@ module "pod" {
   on_demand_base_capacity       = var.on_demand_base_capacity
   certificate_issuers           = var.certificate_issuers
   alarm_emails                  = var.alarm_emails
+  alb_ingress_cidr_blocks       = var.alb_ingress_cidr_blocks
 
   # Route53 weighted routing for zero-downtime migrations
   dns_routing_policy = var.dns_routing_policy

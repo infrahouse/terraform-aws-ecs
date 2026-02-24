@@ -33,6 +33,11 @@ output "target_group_arn" {
   value       = local.target_group_arn
 }
 
+output "extra_target_group_arns" {
+  description = "Map of extra target group ARNs, keyed by the extra_target_groups map keys."
+  value       = { for k, v in aws_lb_target_group.extra : k => v.arn }
+}
+
 output "load_balancer_dns_name" {
   description = "Load balancer DNS name."
   value       = local.load_balancer_dns_name

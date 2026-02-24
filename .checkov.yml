@@ -1,0 +1,10 @@
+framework:
+  - terraform
+skip-path:
+  - test_data
+skip-check:
+  - CKV_TF_1  # Module source version pinning - handled by Renovate
+  - CKV_TF_2  # Module source version pinning - handled by Renovate
+  - CKV_AWS_65  # Container insights - controlled by var.enable_container_insights
+compact: true
+quiet: false
