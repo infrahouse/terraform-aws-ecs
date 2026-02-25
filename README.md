@@ -32,7 +32,7 @@ The module creates an Elastic Container Service and runs one docker image in it.
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.6.0"
+  version = "7.7.0"
 
   providers = {
     aws     = aws
@@ -104,7 +104,7 @@ Pass the volumes to the ECS module:
 ```hcl
 module "httpd" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.6.0"
+  version = "7.7.0"
   # ... other parameters ...
 
   task_efs_volumes = {
@@ -225,7 +225,7 @@ resource "aws_kms_key" "cloudwatch_logs" {
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.6.0"
+  version = "7.7.0"
   # ... other parameters ...
 
   cloudwatch_log_kms_key_id = aws_kms_key.cloudwatch_logs.arn
