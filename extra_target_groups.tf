@@ -1,5 +1,5 @@
 resource "aws_lb_target_group" "extra" {
-  for_each = var.extra_target_groups
+  for_each = var.lb_type == "alb" ? var.extra_target_groups : {}
 
   name_prefix = substr("${var.service_name}-", 0, 6)
   port        = each.value.container_port
@@ -21,7 +21,7 @@ resource "aws_lb_target_group" "extra" {
 }
 
 resource "aws_lb_listener" "extra" {
-  for_each = var.extra_target_groups
+  for_each = var.lb_type == "alb" ? var.extra_target_groups : {}
 
   load_balancer_arn = local.load_balancer_arn
   port              = each.value.listener_port
@@ -46,5 +46,5 @@ resource "aws_security_group_rule" "extra_listener_ingress" {
   to_port           = each.value.listener_port
   protocol          = "tcp"
   cidr_blocks       = var.alb_ingress_cidr_blocks
-  security_group_id = module.pod[0].load_balancer_security_groups[0]
+  security_group_id = tolist(module.pod[0].load_balancer_security_groups)[0]
 }
