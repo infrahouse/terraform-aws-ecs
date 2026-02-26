@@ -310,6 +310,28 @@ check "extra_target_groups_alb_only" {
   }
 }
 
+# Validate vector_aggregator_endpoint is set when using default config
+check "vector_agent_endpoint_required" {
+  assert {
+    condition = (
+      !var.enable_vector_agent ? true : (
+        var.vector_agent_config != null || var.vector_aggregator_endpoint != null
+      )
+    )
+    error_message = <<-EOF
+      When enable_vector_agent = true and vector_agent_config is not provided,
+      vector_aggregator_endpoint must be set.
+
+      Solution:
+        Either set the aggregator endpoint:
+          vector_aggregator_endpoint = "vector-aggregator.example.com:6000"
+
+        Or provide a custom config that doesn't need it:
+          vector_agent_config = file("my-vector-config.yaml")
+    EOF
+  }
+}
+
 # Cross-variable validation: autoscaling_target must be appropriate for the metric type
 locals {
   is_percentage_metric = contains([

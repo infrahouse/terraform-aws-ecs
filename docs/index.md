@@ -16,6 +16,7 @@ and runs containerized services with automatic scaling, load balancing, and moni
 - **EFS Volume Support** - Mount persistent storage to containers with encryption in transit
 - **Spot Instance Support** - Cost optimization with on-demand base capacity
 - **Extra Target Groups** - Expose multiple container ports through the same load balancer
+- **Vector Agent Support** - Optional daemon for log/metrics collection via Vector pipeline
 
 ## Quick Start
 
@@ -25,7 +26,7 @@ and runs containerized services with automatic scaling, load balancing, and moni
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.6.0"
+  version = "7.7.0"
 
   providers = {
     aws     = aws

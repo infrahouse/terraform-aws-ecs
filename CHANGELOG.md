@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.7.0] - 2026-02-25
+
+### Bug Fixes
+
+- Respect var.asg_max_size when explicitly set ([#123](https://github.com/infrahouse/terraform-aws-ecs/issues/123))
+- Add ALB guard to all extra TG resources and fix set indexing
+
+### Features
+
+- Add extra_target_groups for multi-port container support
+
+### Security
+
+- Harden extra target groups and enable EFS transit encryption
+
 ## [7.6.0] - 2026-02-20
 
 ## [7.5.0] - 2026-01-28

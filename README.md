@@ -26,13 +26,14 @@ The module creates an Elastic Container Service and runs one docker image in it.
 - EFS volume support for persistent storage
 - Spot instance support for cost optimization
 - Extra target groups for multi-port containers
+- Vector Agent daemon for log/metrics collection via Vector pipeline
 
 ## Quick Start
 
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.6.0"
+  version = "7.7.0"
 
   providers = {
     aws     = aws
@@ -104,7 +105,7 @@ Pass the volumes to the ECS module:
 ```hcl
 module "httpd" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.6.0"
+  version = "7.7.0"
   # ... other parameters ...
 
   task_efs_volumes = {
@@ -134,7 +135,7 @@ For each extra target group, the module creates:
 ```hcl
 module "tempo" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "~> 7.7"
+  version = "7.7.0"
 
   service_name   = "tempo"
   docker_image   = "grafana/tempo:latest"
@@ -159,6 +160,38 @@ module "tempo" {
 > replacement (AWS API limitation on `load_balancer` blocks). Use
 > [`dns_routing_policy = "weighted"`](#input_dns_routing_policy) to perform
 > zero-downtime migrations when changing extra target groups.
+
+---
+
+## Vector Agent
+
+The module can deploy a [Vector](https://vector.dev/) Agent daemon on every EC2 instance
+in the cluster. It collects container logs via the Docker socket and host metrics, then
+forwards everything to a Vector Aggregator.
+
+```hcl
+module "my_service" {
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
+  version = "7.7.0"
+
+  # ... required variables ...
+
+  enable_vector_agent        = true
+  vector_aggregator_endpoint = "vector-aggregator.example.com:6000"
+}
+```
+
+To use a custom Vector config instead of the built-in template:
+
+```hcl
+  enable_vector_agent = true
+  vector_agent_config = templatefile("files/vector.yaml.tftpl", {
+    endpoint = "aggregator.example.com:6000"
+  })
+```
+
+The Vector Agent daemon consumes 128 CPU units and 256 MB memory per EC2 instance.
+The module accounts for this in ASG sizing calculations automatically.
 
 ---
 
@@ -225,7 +258,7 @@ resource "aws_kms_key" "cloudwatch_logs" {
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.6.0"
+  version = "7.7.0"
   # ... other parameters ...
 
   cloudwatch_log_kms_key_id = aws_kms_key.cloudwatch_logs.arn
@@ -334,12 +367,16 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | [aws_ecs_cluster_capacity_providers.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_cluster_capacity_providers) | resource |
 | [aws_ecs_service.cloudwatch_agent_service](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_service) | resource |
 | [aws_ecs_service.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_service) | resource |
+| [aws_ecs_service.vector_agent](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_service) | resource |
 | [aws_ecs_task_definition.cloudwatch_agent](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
 | [aws_ecs_task_definition.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
+| [aws_ecs_task_definition.vector_agent](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
 | [aws_iam_policy.ecs_task_execution_logs_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_role.cloudwatch_agent_execution_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.cloudwatch_agent_task_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.ecs_task_execution_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.vector_agent_execution_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.vector_agent_task_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy_attachment.cloudwatch_agent_execution_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.cloudwatch_agent_task_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.ecs_instance_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
@@ -347,6 +384,8 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | [aws_iam_role_policy_attachment.ecs_task_execution_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.execution_extra_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.extra_policy_attachment](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.vector_agent_execution_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.vector_agent_task_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_key_pair.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/key_pair) | resource |
 | [aws_lb_listener.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
 | [aws_lb_target_group.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group) | resource |
@@ -379,7 +418,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances.<br/>If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used. | `string` | `null` | no |
 | <a name="input_asg_health_check_grace_period"></a> [asg\_health\_check\_grace\_period](#input\_asg\_health\_check\_grace\_period) | ASG will wait up to this number of seconds for instance to become healthy.<br/>Default: 300 seconds (5 minutes) | `number` | `300` | no |
 | <a name="input_asg_instance_type"></a> [asg\_instance\_type](#input\_asg\_instance\_type) | EC2 instances type | `string` | `"t3.micro"` | no |
-| <a name="input_asg_max_size"></a> [asg\_max\_size](#input\_asg\_max\_size) | Maximum number of instances in ASG.<br/><br/>**Default Behavior (Recommended):**<br/>When not specified, the module automatically calculates the optimal max size based on:<br/>- Memory capacity: instances needed to run task\_max\_count tasks based on container\_memory<br/>  (or container\_memory\_reservation if set)<br/>- CPU capacity: instances needed to run task\_max\_count tasks based on container\_cpu<br/>- Minimum headroom: at least asg\_min\_size + 1 to allow scaling<br/><br/>The calculation accounts for:<br/>- Instance type memory/CPU (from var.asg\_instance\_type)<br/>- Reserved resources for system overhead (~1GB memory)<br/>- CloudWatch agent sidecar resources (128 CPU units, 256MB memory)<br/><br/>**When to Override:**<br/>- Cost control: Limit maximum spend by capping instance count<br/>- Capacity planning: Match a specific infrastructure budget<br/>- Testing: Use smaller values in non-production environments<br/><br/>**When NOT to Override:**<br/>- If you're unsure - the automatic calculation is designed for optimal scaling<br/>- Without understanding your workload's resource requirements<br/><br/>**Warning:**<br/>Setting this too low can cause:<br/>- ECS tasks failing to place (no capacity available)<br/>- Service degradation during traffic spikes<br/>- Deployment failures if new tasks can't be scheduled<br/><br/>Must be >= asg\_min\_size when both are explicitly set.<br/><br/>Example: asg\_max\_size = 10  # Cap at 10 instances for cost control | `number` | `null` | no |
+| <a name="input_asg_max_size"></a> [asg\_max\_size](#input\_asg\_max\_size) | Maximum number of instances in ASG.<br/><br/>**Default Behavior (Recommended):**<br/>When not specified, the module automatically calculates the optimal max size based on:<br/>- Memory capacity: instances needed to run task\_max\_count tasks based on container\_memory<br/>  (or container\_memory\_reservation if set)<br/>- CPU capacity: instances needed to run task\_max\_count tasks based on container\_cpu<br/>- Minimum headroom: at least asg\_min\_size + 1 to allow scaling<br/><br/>The calculation accounts for:<br/>- Instance type memory/CPU (from var.asg\_instance\_type)<br/>- Reserved resources for system overhead (~1GB memory)<br/>- Daemon overhead: CloudWatch agent (128 CPU, 256MB) and, if enabled,<br/>  Vector Agent (128 CPU, 256MB)<br/><br/>**When to Override:**<br/>- Cost control: Limit maximum spend by capping instance count<br/>- Capacity planning: Match a specific infrastructure budget<br/>- Testing: Use smaller values in non-production environments<br/><br/>**When NOT to Override:**<br/>- If you're unsure - the automatic calculation is designed for optimal scaling<br/>- Without understanding your workload's resource requirements<br/><br/>**Warning:**<br/>Setting this too low can cause:<br/>- ECS tasks failing to place (no capacity available)<br/>- Service degradation during traffic spikes<br/>- Deployment failures if new tasks can't be scheduled<br/><br/>Must be >= asg\_min\_size when both are explicitly set.<br/><br/>Example: asg\_max\_size = 10  # Cap at 10 instances for cost control | `number` | `null` | no |
 | <a name="input_asg_min_size"></a> [asg\_min\_size](#input\_asg\_min\_size) | Minimum number of instances in ASG.<br/>Default: The number of subnets (one instance per subnet for high availability). | `number` | `null` | no |
 | <a name="input_asg_subnets"></a> [asg\_subnets](#input\_asg\_subnets) | Auto Scaling Group Subnets. | `list(string)` | n/a | yes |
 | <a name="input_assume_dns"></a> [assume\_dns](#input\_assume\_dns) | If true, create DNS records provided by var.dns\_names.<br/>Set to false if DNS records are managed externally. | `bool` | `true` | no |
@@ -407,12 +446,13 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_enable_cloudwatch_logs"></a> [enable\_cloudwatch\_logs](#input\_enable\_cloudwatch\_logs) | Enable CloudWatch Logs for ECS tasks.<br/>If enabled, containers will use "awslogs" log driver.<br/><br/>Default: true (recommended for production environments) | `bool` | `true` | no |
 | <a name="input_enable_container_insights"></a> [enable\_container\_insights](#input\_enable\_container\_insights) | Enable container insights feature on ECS cluster. | `bool` | `false` | no |
 | <a name="input_enable_deployment_circuit_breaker"></a> [enable\_deployment\_circuit\_breaker](#input\_enable\_deployment\_circuit\_breaker) | Enable ECS deployment circuit breaker. | `bool` | `true` | no |
+| <a name="input_enable_vector_agent"></a> [enable\_vector\_agent](#input\_enable\_vector\_agent) | Deploy a Vector Agent daemon on every EC2 instance in this cluster.<br/>Collects container logs and host metrics, forwards to a Vector Aggregator.<br/><br/>Requires: vector\_aggregator\_endpoint must be set when using the default config. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | Name of environment. | `string` | `"development"` | no |
 | <a name="input_execution_extra_policy"></a> [execution\_extra\_policy](#input\_execution\_extra\_policy) | A map of extra policies attached to the task execution role.<br/>The task execution role is used by the ECS agent to pull images, write logs, and access secrets.<br/><br/>Key: Arbitrary identifier (e.g., "secrets\_access")<br/>Value: IAM policy ARN<br/><br/>Example:<br/>  execution\_extra\_policy = {<br/>    "secrets\_access" = "arn:aws:iam::123456789012:policy/ECSSecretsAccess"<br/>    "ecr\_pull"       = "arn:aws:iam::123456789012:policy/ECRPullPolicy"<br/>  } | `map(string)` | `{}` | no |
 | <a name="input_execution_task_role_policy_arn"></a> [execution\_task\_role\_policy\_arn](#input\_execution\_task\_role\_policy\_arn) | Extra policy for execution task role. | `string` | `null` | no |
 | <a name="input_extra_files"></a> [extra\_files](#input\_extra\_files) | Additional files to create on a host EC2 instance. | <pre>list(<br/>    object(<br/>      {<br/>        content     = string<br/>        path        = string<br/>        permissions = string<br/>      }<br/>    )<br/>  )</pre> | `[]` | no |
 | <a name="input_extra_instance_profile_permissions"></a> [extra\_instance\_profile\_permissions](#input\_extra\_instance\_profile\_permissions) | A JSON with a permissions policy document. The policy will be attached to the ASG instance profile. | `string` | `null` | no |
-| <a name="input_extra_target_groups"></a> [extra\_target\_groups](#input\_extra\_target\_groups) | Extra target groups to register with the ECS service.<br/>Each entry creates a target group, an ALB listener on<br/>listener\_port, a port mapping in the task definition, and<br/>a load\_balancer block on the ECS service.<br/><br/>Use a map keyed by a descriptive name. This is more stable<br/>than a list because reordering does not force service<br/>replacement.<br/><br/>NOTE: adding or removing entries forces ECS service<br/>replacement (AWS API limitation on load\_balancer blocks).<br/><br/>protocol\_version controls the protocol version for the<br/>target group. Valid values: "HTTP1" (default when null),<br/>"HTTP2", or "GRPC". When set to "GRPC", the health check<br/>matcher should use gRPC status codes (e.g., "0" for OK,<br/>"12" for UNIMPLEMENTED, or "0-99" for any).<br/><br/>Example:<br/>  extra\_target\_groups = {<br/>    otlp\_grpc = {<br/>      listener\_port    = 4317<br/>      container\_port   = 4317<br/>      protocol         = "HTTP"<br/>      protocol\_version = "GRPC"<br/>      health\_check = {<br/>        path    = "/"<br/>        matcher = "0-99"<br/>      }<br/>    }<br/>  } | <pre>map(object({<br/>    listener_port    = number<br/>    container_port   = number<br/>    protocol         = optional(string, "HTTP")<br/>    protocol_version = optional(string, null)<br/>    health_check = optional(object({<br/>      path     = optional(string, "/")<br/>      matcher  = optional(string, "200-299")<br/>      interval = optional(number, 30)<br/>      timeout  = optional(number, 5)<br/>    }), {})<br/>  }))</pre> | `{}` | no |
+| <a name="input_extra_target_groups"></a> [extra\_target\_groups](#input\_extra\_target\_groups) | Extra target groups to register with the ECS service.<br/>Each entry creates a target group, an ALB listener on<br/>listener\_port, a port mapping in the task definition, and<br/>a load\_balancer block on the ECS service.<br/><br/>Use a map keyed by a descriptive name. This is more stable<br/>than a list because reordering does not force service<br/>replacement.<br/><br/>NOTE: adding or removing entries forces ECS service<br/>replacement (AWS API limitation on load\_balancer blocks).<br/><br/>Example:<br/>  extra\_target\_groups = {<br/>    grpc = {<br/>      listener\_port  = 4317<br/>      container\_port = 4317<br/>      protocol       = "HTTP"<br/>      health\_check = {<br/>        path    = "/health"<br/>        matcher = "200"<br/>      }<br/>    }<br/>  } | <pre>map(object({<br/>    listener_port        = number<br/>    container_port       = number<br/>    protocol             = optional(string, "HTTP")<br/>    deregistration_delay = optional(number, 300)<br/>    health_check = optional(object({<br/>      path     = optional(string, "/")<br/>      port     = optional(string, "traffic-port")<br/>      matcher  = optional(string, "200-299")<br/>      interval = optional(number, 30)<br/>      timeout  = optional(number, 5)<br/>    }), {})<br/>  }))</pre> | `{}` | no |
 | <a name="input_healthcheck_interval"></a> [healthcheck\_interval](#input\_healthcheck\_interval) | Number of seconds between checks | `number` | `10` | no |
 | <a name="input_healthcheck_path"></a> [healthcheck\_path](#input\_healthcheck\_path) | Path on the webserver that the elb will check to determine whether the instance is healthy or not. | `string` | `"/index.html"` | no |
 | <a name="input_healthcheck_response_code_matcher"></a> [healthcheck\_response\_code\_matcher](#input\_healthcheck\_response\_code\_matcher) | Range of http return codes that can match | `string` | `"200-299"` | no |
@@ -451,6 +491,10 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_vanta_owner"></a> [vanta\_owner](#input\_vanta\_owner) | The email address of the instance's owner for Vanta tracking.<br/><br/>Must be set to the email address of an existing user in Vanta.<br/>If the email doesn't match a Vanta user, no owner will be assigned. | `string` | `null` | no |
 | <a name="input_vanta_production_environments"></a> [vanta\_production\_environments](#input\_vanta\_production\_environments) | Environment names to consider production grade in Vanta. | `list(string)` | <pre>[<br/>  "production",<br/>  "prod"<br/>]</pre> | no |
 | <a name="input_vanta_user_data_stored"></a> [vanta\_user\_data\_stored](#input\_vanta\_user\_data\_stored) | This tag allows administrators to describe the type of user data the instance contains. | `string` | `null` | no |
+| <a name="input_vector_agent_config"></a> [vector\_agent\_config](#input\_vector\_agent\_config) | Custom Vector Agent config (YAML string). When provided, replaces<br/>the built-in default config template entirely.<br/><br/>Example:<br/>  vector\_agent\_config = templatefile("files/vector.yaml.tftpl", { ... }) | `string` | `null` | no |
+| <a name="input_vector_agent_image"></a> [vector\_agent\_image](#input\_vector\_agent\_image) | Vector Agent container image. | `string` | `"timberio/vector:0.43.1-alpine"` | no |
+| <a name="input_vector_agent_task_policy_arns"></a> [vector\_agent\_task\_policy\_arns](#input\_vector\_agent\_task\_policy\_arns) | List of IAM policy ARNs to attach to the Vector Agent task role.<br/>The default config (Docker logs + host metrics forwarded to an<br/>aggregator) needs no AWS permissions. Add policies here if your<br/>Vector config uses AWS sinks (S3, CloudWatch, Kinesis, etc.).<br/><br/>Example:<br/>  vector\_agent\_task\_policy\_arns = [<br/>    "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"<br/>  ] | `list(string)` | `[]` | no |
+| <a name="input_vector_aggregator_endpoint"></a> [vector\_aggregator\_endpoint](#input\_vector\_aggregator\_endpoint) | Vector Aggregator address (host:port) for the agent to forward data to.<br/>Used by the default config template. Ignored if vector\_agent\_config is set.<br/><br/>Example: "vector-aggregator.sandbox.tinyfish.io:6000" | `string` | `null` | no |
 | <a name="input_zone_id"></a> [zone\_id](#input\_zone\_id) | Zone where DNS records will be created for the service and certificate validation. | `string` | n/a | yes |
 
 ## Outputs

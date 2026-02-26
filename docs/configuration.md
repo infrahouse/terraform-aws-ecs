@@ -615,6 +615,50 @@ service_health_check_grace_period_seconds = 300
 
 ---
 
+## Vector Agent
+
+The module can deploy a [Vector](https://vector.dev/) Agent daemon on every
+EC2 instance in the cluster. It collects container logs and host metrics,
+then forwards them to a Vector Aggregator.
+
+### `enable_vector_agent`
+
+Enable the Vector Agent daemon.
+
+| Default |
+|---------|
+| `false` |
+
+### `vector_aggregator_endpoint`
+
+Address of the Vector Aggregator (`host:port`). Required when using the
+default config template.
+
+```hcl
+enable_vector_agent        = true
+vector_aggregator_endpoint = "vector-aggregator.example.com:6000"
+```
+
+### `vector_agent_image`
+
+Container image for the Vector Agent.
+
+| Default |
+|---------|
+| `timberio/vector:0.43.1-alpine` |
+
+### `vector_agent_config`
+
+Custom Vector Agent config (YAML string). Replaces the built-in template.
+
+```hcl
+vector_agent_config = templatefile("files/vector.yaml.tftpl", {
+  endpoint = "aggregator.example.com:6000"
+})
+```
+
+---
+
 ## Validation Rules
 
 The module includes built-in validation to catch errors early:
@@ -630,6 +674,8 @@ The module includes built-in validation to catch errors early:
 | `extra_target_groups[*].container_port` | 1-65535 |
 | `extra_target_groups[*].listener_port` | 1-65535 |
 | `healthcheck_interval` | Must be >= healthcheck_timeout |
+| `vector_aggregator_endpoint` | Required when `enable_vector_agent = true` and no custom config |
+| `extra_target_groups` | Only supported with `lb_type = "alb"` |
 
 ---
 
@@ -638,7 +684,7 @@ The module includes built-in validation to catch errors early:
 ```hcl
 module "production_api" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.3.0"
+  version = "7.7.0"
 
   providers = {
     aws     = aws
@@ -721,6 +767,7 @@ The module exports these outputs for use in downstream configurations.
 | `load_balancer_dns_name` | Load balancer DNS name |
 | `load_balancer_arn_suffix` | ARN suffix for CloudWatch ALB metrics |
 | `target_group_arn` | Primary target group ARN |
+| `extra_target_group_arns` | Map of extra target group ARNs |
 | `target_group_arn_suffix` | Target group ARN suffix for CloudWatch metrics |
 | `ssl_listener_arn` | SSL listener ARN (ALB only) |
 | `acm_certificate_arn` | ACM certificate ARN used by the load balancer (ALB only) |
