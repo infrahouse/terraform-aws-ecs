@@ -79,11 +79,11 @@ locals {
 
   # Total daemon overhead per EC2 instance
   daemon_memory_overhead = (
-    local.cloudwatch_agent_container_resources.memory +
+    (var.enable_cloudwatch_logs ? local.cloudwatch_agent_container_resources.memory : 0) +
     (var.enable_vector_agent ? local.vector_agent_container_resources.memory : 0)
   )
   daemon_cpu_overhead = (
-    local.cloudwatch_agent_container_resources.cpu +
+    (var.enable_cloudwatch_logs ? local.cloudwatch_agent_container_resources.cpu : 0) +
     (var.enable_vector_agent ? local.vector_agent_container_resources.cpu : 0)
   )
 
