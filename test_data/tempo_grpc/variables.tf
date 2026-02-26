@@ -6,7 +6,7 @@ variable "role_arn" {
   default = null
 }
 variable "service_name" {
-  default = "test-terraform-aws-ecs"
+  default = "test-tempo-grpc"
 }
 variable "task_role_arn" {
   default = null

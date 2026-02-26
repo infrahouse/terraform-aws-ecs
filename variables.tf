@@ -792,12 +792,12 @@ variable "vanta_no_alert" {
 
 variable "extra_target_groups" {
   type = map(object({
-    listener_port  = number
-    container_port = number
-    protocol       = optional(string, "HTTP")
+    listener_port    = number
+    container_port   = number
+    protocol         = optional(string, "HTTP")
+    protocol_version = optional(string, null)
     health_check = optional(object({
       path     = optional(string, "/")
-      port     = optional(string, "traffic-port")
       matcher  = optional(string, "200-299")
       interval = optional(number, 30)
       timeout  = optional(number, 5)
@@ -817,15 +817,22 @@ variable "extra_target_groups" {
     NOTE: adding or removing entries forces ECS service
     replacement (AWS API limitation on load_balancer blocks).
 
+    protocol_version controls the protocol version for the
+    target group. Valid values: "HTTP1" (default when null),
+    "HTTP2", or "GRPC". When set to "GRPC", the health check
+    matcher should use gRPC status codes (e.g., "0" for OK,
+    "12" for UNIMPLEMENTED, or "0-99" for any).
+
     Example:
       extra_target_groups = {
-        grpc = {
-          listener_port  = 4317
-          container_port = 4317
-          protocol       = "HTTP"
+        otlp_grpc = {
+          listener_port    = 4317
+          container_port   = 4317
+          protocol         = "HTTP"
+          protocol_version = "GRPC"
           health_check = {
-            path    = "/health"
-            matcher = "200"
+            path    = "/"
+            matcher = "0-99"
           }
         }
       }
@@ -850,6 +857,19 @@ variable "extra_target_groups" {
     error_message = <<-EOT
       All listener_port values in extra_target_groups must be
       between 1 and 65535.
+    EOT
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.extra_target_groups :
+      v.protocol_version == null ? true : contains(
+        ["HTTP1", "HTTP2", "GRPC"], v.protocol_version
+      )
+    ])
+    error_message = <<-EOT
+      protocol_version must be one of "HTTP1", "HTTP2", "GRPC",
+      or null (defaults to HTTP1).
     EOT
   }
 }

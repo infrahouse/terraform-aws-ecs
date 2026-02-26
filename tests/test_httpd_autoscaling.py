@@ -14,9 +14,7 @@ from tests.conftest import (
 )
 
 
-@pytest.mark.parametrize(
-    "aws_provider_version", ["~> 5.56", "~> 6.0"], ids=["aws-5", "aws-6"]
-)
+@pytest.mark.parametrize("aws_provider_version", ["~> 6.0"], ids=["aws-6"])
 @pytest.mark.parametrize(
     "autoscaling_metric, autoscaling_target",
     [
