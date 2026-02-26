@@ -78,7 +78,8 @@ variable "asg_max_size" {
     The calculation accounts for:
     - Instance type memory/CPU (from var.asg_instance_type)
     - Reserved resources for system overhead (~1GB memory)
-    - CloudWatch agent sidecar resources (128 CPU units, 256MB memory)
+    - Daemon overhead: CloudWatch agent (128 CPU, 256MB) and, if enabled,
+      Vector Agent (128 CPU, 256MB)
 
     **When to Override:**
     - Cost control: Limit maximum spend by capping instance count
@@ -251,6 +252,62 @@ variable "enable_container_insights" {
   description = "Enable container insights feature on ECS cluster."
   type        = bool
   default     = false
+}
+
+variable "enable_vector_agent" {
+  description = <<-EOT
+    Deploy a Vector Agent daemon on every EC2 instance in this cluster.
+    Collects container logs and host metrics, forwards to a Vector Aggregator.
+
+    Requires: vector_aggregator_endpoint must be set when using the default config.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "vector_agent_image" {
+  description = "Vector Agent container image."
+  type        = string
+  default     = "timberio/vector:0.43.1-alpine"
+}
+
+variable "vector_aggregator_endpoint" {
+  description = <<-EOT
+    Vector Aggregator address (host:port) for the agent to forward data to.
+    Used by the default config template. Ignored if vector_agent_config is set.
+
+    Example: "vector-aggregator.sandbox.tinyfish.io:6000"
+  EOT
+  type        = string
+  default     = null
+}
+
+variable "vector_agent_config" {
+  description = <<-EOT
+    Custom Vector Agent config (YAML string). When provided, replaces
+    the built-in default config template entirely.
+
+    Example:
+      vector_agent_config = templatefile("files/vector.yaml.tftpl", { ... })
+  EOT
+  type        = string
+  default     = null
+}
+
+variable "vector_agent_task_policy_arns" {
+  description = <<-EOT
+    List of IAM policy ARNs to attach to the Vector Agent task role.
+    The default config (Docker logs + host metrics forwarded to an
+    aggregator) needs no AWS permissions. Add policies here if your
+    Vector config uses AWS sinks (S3, CloudWatch, Kinesis, etc.).
+
+    Example:
+      vector_agent_task_policy_arns = [
+        "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+      ]
+  EOT
+  type        = list(string)
+  default     = []
 }
 
 variable "execution_extra_policy" {
@@ -792,9 +849,10 @@ variable "vanta_no_alert" {
 
 variable "extra_target_groups" {
   type = map(object({
-    listener_port  = number
-    container_port = number
-    protocol       = optional(string, "HTTP")
+    listener_port        = number
+    container_port       = number
+    protocol             = optional(string, "HTTP")
+    deregistration_delay = optional(number, 300)
     health_check = optional(object({
       path     = optional(string, "/")
       port     = optional(string, "traffic-port")

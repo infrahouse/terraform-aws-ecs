@@ -71,6 +71,21 @@ locals {
     memory = 256
   }
 
+  vector_agent_config_path = "/etc/vector/vector.yaml"
+  vector_agent_container_resources = {
+    cpu    = 128
+    memory = 256
+  }
+
+  # Total daemon overhead per EC2 instance
+  daemon_memory_overhead = (
+    local.cloudwatch_agent_container_resources.memory +
+    (var.enable_vector_agent ? local.vector_agent_container_resources.memory : 0)
+  )
+  daemon_cpu_overhead = (
+    local.cloudwatch_agent_container_resources.cpu +
+    (var.enable_vector_agent ? local.vector_agent_container_resources.cpu : 0)
+  )
 
   # ASG sizing: User-provided values take precedence over calculated defaults.
   # - asg_min_size defaults to subnet count (one instance per AZ for HA)
@@ -82,11 +97,11 @@ locals {
     # How many EC2 instances we need to host task_max_count assuming memory consumption
     # Note: ECS uses memory reservation (soft limit) for task placement decisions when set
     ceil(
-      var.task_max_count / ((data.aws_ec2_instance_type.backend.memory_size - 1024 - local.cloudwatch_agent_container_resources.memory) / coalesce(var.container_memory_reservation, var.container_memory))
+      var.task_max_count / ((data.aws_ec2_instance_type.backend.memory_size - 1024 - local.daemon_memory_overhead) / coalesce(var.container_memory_reservation, var.container_memory))
     ),
     # How many EC2 instances we need to host task_max_count assuming CPU consumption
     ceil(
-      var.task_max_count / ((data.aws_ec2_instance_type.backend.default_vcpus * 1024 - local.cloudwatch_agent_container_resources.cpu) / var.container_cpu)
+      var.task_max_count / ((data.aws_ec2_instance_type.backend.default_vcpus * 1024 - local.daemon_cpu_overhead) / var.container_cpu)
     ),
     # Or at least one more than min size.
     local.asg_min_size + 1

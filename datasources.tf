@@ -93,6 +93,20 @@ data "cloudinit_config" "ecs" {
                     )
                   }
                 ] : [],
+                var.enable_vector_agent == true ? [
+                  {
+                    path : local.vector_agent_config_path
+                    permissions : "0644"
+                    content : var.vector_agent_config != null ? var.vector_agent_config : templatefile(
+                      "${path.module}/assets/vector_agent_config.yaml.tftmpl",
+                      {
+                        environment                = var.environment
+                        aws_region                 = data.aws_region.current.name
+                        vector_aggregator_endpoint = var.vector_aggregator_endpoint
+                      }
+                    )
+                  }
+                ] : [],
                 var.extra_files
               )
             },
