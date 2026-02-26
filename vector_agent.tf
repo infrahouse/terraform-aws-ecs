@@ -89,10 +89,15 @@ resource "aws_ecs_task_definition" "vector_agent" {
     host_path = "/var/lib/docker/containers"
   }
 
-  # Docker socket grants Docker API access (read-only). Required by
-  # Vector's docker_logs source to discover and tail container logs.
-  # Unlike the CloudWatch agent (which reads /var/log), Vector needs
-  # the socket for container metadata and log streaming.
+  # Security: Docker socket grants full Docker API access. The readOnly
+  # mount flag only prevents filesystem writes — it does NOT restrict
+  # API calls (list, inspect, stop containers) through the Unix socket.
+  # This is a known trade-off: Vector's docker_logs source requires
+  # the socket to discover and tail container logs (unlike the CloudWatch
+  # agent, which reads /var/log). Mitigations:
+  #   - Task role has no AWS permissions by default
+  #   - Health API binds to localhost:8686 only
+  #   - Container runs within managed ECS environment
   volume {
     name      = "docker-sock"
     host_path = "/var/run/docker.sock"
