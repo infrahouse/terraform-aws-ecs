@@ -792,9 +792,10 @@ variable "vanta_no_alert" {
 
 variable "extra_target_groups" {
   type = map(object({
-    listener_port  = number
-    container_port = number
-    protocol       = optional(string, "HTTP")
+    listener_port    = number
+    container_port   = number
+    protocol         = optional(string, "HTTP")
+    protocol_version = optional(string, "HTTP1")
     health_check = optional(object({
       path     = optional(string, "/")
       port     = optional(string, "traffic-port")
@@ -817,15 +818,29 @@ variable "extra_target_groups" {
     NOTE: adding or removing entries forces ECS service
     replacement (AWS API limitation on load_balancer blocks).
 
-    Example:
+    protocol_version controls how the ALB communicates with
+    targets. Values: "HTTP1" (default), "HTTP2", "GRPC".
+    Use "GRPC" for gRPC services — ALB will use HTTP/2 and
+    health checks will expect gRPC status codes (e.g.
+    matcher = "0" for success).
+
+    Example (HTTP):
+      extra_target_groups = {
+        api = {
+          listener_port  = 8080
+          container_port = 8080
+        }
+      }
+
+    Example (gRPC):
       extra_target_groups = {
         grpc = {
-          listener_port  = 4317
-          container_port = 4317
-          protocol       = "HTTP"
+          listener_port    = 4317
+          container_port   = 4317
+          protocol_version = "GRPC"
           health_check = {
-            path    = "/health"
-            matcher = "200"
+            path    = "/grpc.health.v1.Health/Check"
+            matcher = "0"
           }
         }
       }
@@ -850,6 +865,17 @@ variable "extra_target_groups" {
     error_message = <<-EOT
       All listener_port values in extra_target_groups must be
       between 1 and 65535.
+    EOT
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.extra_target_groups :
+      contains(["HTTP1", "HTTP2", "GRPC"], v.protocol_version)
+    ])
+    error_message = <<-EOT
+      All protocol_version values in extra_target_groups must be
+      one of: "HTTP1", "HTTP2", "GRPC".
     EOT
   }
 }
