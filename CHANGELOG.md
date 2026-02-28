@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.8.0] - 2026-02-28
+
+### Bug Fixes
+
+- Make daemon overhead conditional and document Docker socket security
+
+### Features
+
+- Add Vector Agent daemon support and polish extra target groups
+- Add protocol_version, gRPC support, and CI optimization ([#141](https://github.com/infrahouse/terraform-aws-ecs/issues/141))
+
 ## [7.7.0] - 2026-02-25
 
 ### Bug Fixes
