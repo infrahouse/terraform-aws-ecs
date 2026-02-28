@@ -33,7 +33,7 @@ The module creates an Elastic Container Service and runs one docker image in it.
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
 
   providers = {
     aws     = aws
@@ -105,7 +105,7 @@ Pass the volumes to the ECS module:
 ```hcl
 module "httpd" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
   # ... other parameters ...
 
   task_efs_volumes = {
@@ -135,7 +135,7 @@ For each extra target group, the module creates:
 ```hcl
 module "tempo" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
 
   service_name   = "tempo"
   docker_image   = "grafana/tempo:latest"
@@ -172,7 +172,7 @@ forwards everything to a Vector Aggregator.
 ```hcl
 module "my_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
 
   # ... required variables ...
 
@@ -258,7 +258,7 @@ resource "aws_kms_key" "cloudwatch_logs" {
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
   # ... other parameters ...
 
   cloudwatch_log_kms_key_id = aws_kms_key.cloudwatch_logs.arn

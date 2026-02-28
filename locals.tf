@@ -10,7 +10,7 @@ check "asg_size_validation" {
 }
 
 locals {
-  module_version = "7.7.0"
+  module_version = "7.8.0"
 
   module_name = "infrahouse/ecs/aws"
   default_module_tags = merge(

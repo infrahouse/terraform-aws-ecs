@@ -80,7 +80,7 @@ data "aws_route53_zone" "main" {
 # Deploy the ECS service
 module "my_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
 
   providers = {
     aws     = aws
@@ -149,7 +149,7 @@ module "vpc" {
 
 module "my_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
 
   providers = {
     aws     = aws
@@ -176,7 +176,7 @@ module "my_service" {
 ```hcl
 module "production_api" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
 
   providers = {
     aws     = aws
@@ -222,7 +222,7 @@ module "production_api" {
 ```hcl
 module "dev_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.7.0"
+  version = "7.8.0"
 
   # ... required parameters ...
 
