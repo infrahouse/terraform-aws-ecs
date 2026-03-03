@@ -103,6 +103,7 @@ data "cloudinit_config" "ecs" {
                         environment                = var.environment
                         aws_region                 = data.aws_region.current.name
                         vector_aggregator_endpoint = var.vector_aggregator_endpoint
+                        exclude_containers         = concat(["vector-agent"], var.vector_agent_exclude_containers)
                       }
                     )
                   }

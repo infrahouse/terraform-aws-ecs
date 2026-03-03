@@ -6,7 +6,9 @@ sources:
   docker_logs:
     type: docker_logs
     exclude_containers:
-      - "vector-agent"
+%{ for name in exclude_containers ~}
+      - "${name}"
+%{ endfor ~}
     docker_host: "unix:///var/run/docker.sock"
     auto_partial_merge: true
 

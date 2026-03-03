@@ -282,6 +282,17 @@ variable "vector_aggregator_endpoint" {
   default     = null
 }
 
+variable "vector_agent_exclude_containers" {
+  description = <<-EOT
+    Container names to exclude from Vector Agent log collection.
+    Only used by the default config template. Ignored if vector_agent_config is set.
+
+    The agent always excludes itself ("vector-agent") regardless of this list.
+  EOT
+  type        = list(string)
+  default     = ["ecs-agent"]
+}
+
 variable "vector_agent_config" {
   description = <<-EOT
     Custom Vector Agent config (YAML string). When provided, replaces
