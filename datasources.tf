@@ -102,6 +102,7 @@ data "cloudinit_config" "ecs" {
                       {
                         environment                = var.environment
                         aws_region                 = data.aws_region.current.name
+                        service_name               = var.service_name
                         vector_aggregator_endpoint = var.vector_aggregator_endpoint
                       }
                     )

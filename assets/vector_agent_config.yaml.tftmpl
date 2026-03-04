@@ -28,6 +28,7 @@ transforms:
     source: |
       .environment = "${environment}"
       .region = "${aws_region}"
+      .service = "${service_name}"
 
 sinks:
   aggregator:
