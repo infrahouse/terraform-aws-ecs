@@ -948,6 +948,35 @@ variable "enable_deployment_circuit_breaker" {
   default     = true
 }
 
+variable "deployment_minimum_healthy_percent" {
+  description = <<-EOT
+    Lower limit on the number of running tasks during a deployment,
+    as a percentage of desired_count. Set to 0 for single-task
+    EFS-backed services that cannot run two copies simultaneously.
+  EOT
+  type        = number
+  default     = 100
+
+  validation {
+    condition     = var.deployment_minimum_healthy_percent >= 0 && var.deployment_minimum_healthy_percent <= 100
+    error_message = "deployment_minimum_healthy_percent must be between 0 and 100. Got: ${var.deployment_minimum_healthy_percent}"
+  }
+}
+
+variable "deployment_maximum_percent" {
+  description = <<-EOT
+    Upper limit on the number of running tasks during a deployment,
+    as a percentage of desired_count.
+  EOT
+  type        = number
+  default     = 200
+
+  validation {
+    condition     = var.deployment_maximum_percent >= 100 && var.deployment_maximum_percent <= 400
+    error_message = "deployment_maximum_percent must be between 100 and 400. Got: ${var.deployment_maximum_percent}"
+  }
+}
+
 variable "sns_topic_arn" {
   description = "SNS topic arn for sending alerts on failed deployments."
   type        = string

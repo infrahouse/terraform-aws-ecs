@@ -305,6 +305,65 @@ autoscaling_target_cpu_usage = 70
 
 ---
 
+## Deployment Strategy
+
+By default ECS performs **rolling deployments**: it starts a new task,
+waits for it to become healthy, then stops the old one. This is safe for
+stateless services but breaks when two copies of a service cannot coexist
+— for example, when a container holds an exclusive file lock on an EFS
+volume.
+
+Three variables control this behaviour:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `deployment_minimum_healthy_percent` | `100` | Minimum running tasks during deploy (% of `desired_count`) |
+| `deployment_maximum_percent` | `200` | Maximum running tasks during deploy (% of `desired_count`) |
+| `enable_deployment_circuit_breaker` | `true` | Auto-rollback on repeated failures |
+
+### When to change the defaults
+
+**Single-writer / EFS-backed services** (e.g. VictoriaLogs, Loki in
+single-tenant mode, any service that calls `flock`):
+
+```hcl
+# Stop the old task first, then start the new one.
+# Brief downtime during deployment — acceptable for background services.
+deployment_minimum_healthy_percent = 0
+deployment_maximum_percent         = 100
+```
+
+The `0` / `100` pair tells ECS: "you may have zero running tasks
+temporarily, and never more than one." ECS will drain and stop the
+existing task, release the file lock, and only then launch the
+replacement.
+
+**Stateless web services (default — no change needed):**
+
+```hcl
+# The defaults keep at least one task running at all times.
+# deployment_minimum_healthy_percent = 100
+# deployment_maximum_percent         = 200
+```
+
+ECS launches a second task alongside the first, shifts traffic once the
+new task is healthy, then removes the old one. Zero downtime.
+
+**Aggressive rolling deploy for large task counts:**
+
+```hcl
+# Replace up to half the fleet at a time for faster deploys.
+deployment_minimum_healthy_percent = 50
+deployment_maximum_percent         = 200
+```
+
+> **Tip:** Combine `deployment_minimum_healthy_percent = 0` with
+> `enable_deployment_circuit_breaker = true` (the default) so that a
+> bad image is automatically rolled back instead of leaving the service
+> down.
+
+---
+
 ## Load Balancer Configuration
 
 ### `lb_type`
@@ -604,6 +663,35 @@ Enable ECS deployment circuit breaker.
 |---------|
 | `true` |
 
+### `deployment_minimum_healthy_percent`
+
+Lower limit on the number of running tasks during a deployment, as a
+percentage of `desired_count`. Set to `0` for single-task EFS-backed
+services that cannot run two copies simultaneously (e.g. services using
+`flock`).
+
+| Default | Validation |
+|---------|------------|
+| `100` | 0-100 |
+
+```hcl
+# Allow ECS to stop the old task before starting a new one
+deployment_minimum_healthy_percent = 0
+```
+
+### `deployment_maximum_percent`
+
+Upper limit on the number of running tasks during a deployment, as a
+percentage of `desired_count`.
+
+| Default | Validation |
+|---------|------------|
+| `200` | 100-400 |
+
+```hcl
+deployment_maximum_percent = 200
+```
+
 ### `service_health_check_grace_period_seconds`
 
 Grace period before health checks start for new tasks.
@@ -675,6 +763,8 @@ The module includes built-in validation to catch errors early:
 | `extra_target_groups[*].listener_port` | 1-65535 |
 | `healthcheck_interval` | Must be >= healthcheck_timeout |
 | `vector_aggregator_endpoint` | Required when `enable_vector_agent = true` and no custom config |
+| `deployment_minimum_healthy_percent` | 0-100 |
+| `deployment_maximum_percent` | 100-400 |
 | `extra_target_groups` | Only supported with `lb_type = "alb"` |
 
 ---
