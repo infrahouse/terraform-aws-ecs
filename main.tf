@@ -136,11 +136,13 @@ resource "aws_ecs_task_definition" "ecs" {
 }
 
 resource "aws_ecs_service" "ecs" {
-  name                              = var.service_name
-  cluster                           = aws_ecs_cluster.ecs.id
-  task_definition                   = aws_ecs_task_definition.ecs.arn
-  desired_count                     = var.task_desired_count
-  health_check_grace_period_seconds = var.service_health_check_grace_period_seconds
+  name                               = var.service_name
+  cluster                            = aws_ecs_cluster.ecs.id
+  task_definition                    = aws_ecs_task_definition.ecs.arn
+  desired_count                      = var.task_desired_count
+  health_check_grace_period_seconds  = var.service_health_check_grace_period_seconds
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  deployment_maximum_percent         = var.deployment_maximum_percent
 
   lifecycle {
     ignore_changes = [desired_count]
