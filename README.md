@@ -33,7 +33,7 @@ The module creates an Elastic Container Service and runs one docker image in it.
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.8.0"
+  version = "7.9.0"
 
   providers = {
     aws     = aws
@@ -105,7 +105,7 @@ Pass the volumes to the ECS module:
 ```hcl
 module "httpd" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.8.0"
+  version = "7.9.0"
   # ... other parameters ...
 
   task_efs_volumes = {
@@ -135,7 +135,7 @@ For each extra target group, the module creates:
 ```hcl
 module "tempo" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.8.0"
+  version = "7.9.0"
 
   service_name   = "tempo"
   docker_image   = "grafana/tempo:latest"
@@ -172,7 +172,7 @@ forwards everything to a Vector Aggregator.
 ```hcl
 module "my_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.8.0"
+  version = "7.9.0"
 
   # ... required variables ...
 
@@ -258,7 +258,7 @@ resource "aws_kms_key" "cloudwatch_logs" {
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "7.8.0"
+  version = "7.9.0"
   # ... other parameters ...
 
   cloudwatch_log_kms_key_id = aws_kms_key.cloudwatch_logs.arn
@@ -437,6 +437,8 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_container_memory"></a> [container\_memory](#input\_container\_memory) | Amount of RAM in megabytes the container is going to use. | `number` | `128` | no |
 | <a name="input_container_memory_reservation"></a> [container\_memory\_reservation](#input\_container\_memory\_reservation) | Soft memory limit in megabytes for the container. The container can use more memory<br/>if available on the host, up to the hard limit (container\_memory).<br/>If null, no reservation is set and container\_memory acts as both reservation and limit.<br/>Must be greater than 0 and less than or equal to container\_memory when specified. | `number` | `null` | no |
 | <a name="input_container_port"></a> [container\_port](#input\_container\_port) | TCP port that a container serves client requests on. | `number` | `8080` | no |
+| <a name="input_deployment_maximum_percent"></a> [deployment\_maximum\_percent](#input\_deployment\_maximum\_percent) | Upper limit on the number of running tasks during a deployment,<br/>as a percentage of desired\_count. | `number` | `200` | no |
+| <a name="input_deployment_minimum_healthy_percent"></a> [deployment\_minimum\_healthy\_percent](#input\_deployment\_minimum\_healthy\_percent) | Lower limit on the number of running tasks during a deployment,<br/>as a percentage of desired\_count. Set to 0 for single-task<br/>EFS-backed services that cannot run two copies simultaneously. | `number` | `100` | no |
 | <a name="input_dns_names"></a> [dns\_names](#input\_dns\_names) | List of hostnames the module will create in var.zone\_id. | `list(string)` | n/a | yes |
 | <a name="input_dns_routing_policy"></a> [dns\_routing\_policy](#input\_dns\_routing\_policy) | DNS routing policy for Route53 A records.<br/><br/>**Available policies:**<br/>- `simple` (default): Standard DNS routing. Each A record resolves directly to the ALB.<br/>  Best for: Single deployments, standard configurations.<br/><br/>- `weighted`: Enables Route53 weighted routing policy for zero-downtime migrations.<br/>  Requires: dns\_set\_identifier must be set.<br/>  Best for: Blue/green deployments, gradual traffic migration, A/B testing.<br/><br/>**Migration workflow example:**<br/>1. Deploy new service with `dns_routing_policy = "weighted"`, `dns_weight = 0`<br/>2. Convert existing service to weighted with `dns_weight = 100`<br/>3. Gradually shift: 90/10 -> 50/50 -> 10/90 -> 0/100<br/>4. Remove old service<br/><br/>**Note:** When using weighted routing, you can have multiple modules create<br/>records for the same DNS name, each with a unique dns\_set\_identifier. | `string` | `"simple"` | no |
 | <a name="input_dns_set_identifier"></a> [dns\_set\_identifier](#input\_dns\_set\_identifier) | Unique identifier for weighted routing records.<br/>Required when dns\_routing\_policy is not "simple".<br/><br/>This identifier distinguishes between multiple weighted records with the same name.<br/>Must be unique across all weighted records for the same DNS name.<br/><br/>**Recommended naming conventions:**<br/>- Environment-based: "production-blue", "production-green"<br/>- Version-based: "v1", "v2", "v3"<br/>- Region-based: "us-west-2-primary", "us-east-1-secondary"<br/>- Module-based: "website-pod-main", "ecs-service-new"<br/><br/>**Example:**<pre>hcl<br/># Old service (being deprecated)<br/>dns_routing_policy = "weighted"<br/>dns_set_identifier = "legacy-service"<br/>dns_weight         = 10<br/><br/># New service (receiving traffic)<br/>dns_routing_policy = "weighted"<br/>dns_set_identifier = "new-service"<br/>dns_weight         = 90</pre> | `string` | `null` | no |

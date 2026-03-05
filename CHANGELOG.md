@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.9.0] - 2026-03-04
+
+### Features
+
+- Add deployment_minimum_healthy_percent and deployment_maximum_percent variables
+
 ## [7.8.0] - 2026-02-28
 
 ### Bug Fixes

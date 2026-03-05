@@ -414,6 +414,43 @@ df -h
 
 ---
 
+## EFS-Backed Service Fails to Deploy (flock / Single-Writer)
+
+**Symptom:** Deployment hangs or the new task panics immediately with a
+file-lock error (e.g. `flock.lock`). The old task is still running and
+holds the lock when the new task starts.
+
+**Cause:** By default ECS starts the replacement task *before* stopping
+the old one (`deployment_minimum_healthy_percent = 100`). For services
+that use an EFS volume with an exclusive file lock, two copies cannot run
+at the same time.
+
+**Solution:** Allow ECS to stop the old task first:
+
+```hcl
+module "victorialogs" {
+  source = "registry.infrahouse.com/infrahouse/ecs/aws"
+  # ...
+
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+
+  task_efs_volumes = {
+    "data" = {
+      file_system_id = aws_efs_file_system.logs.id
+      container_path = "/data"
+    }
+  }
+}
+```
+
+> **Note:** Setting `deployment_minimum_healthy_percent = 0` means there
+> will be a brief period during deployment with no running tasks. This is
+> acceptable for single-instance background services but not for
+> user-facing APIs.
+
+---
+
 ## Frequently Asked Questions
 
 ### Can I use Fargate instead of EC2?
