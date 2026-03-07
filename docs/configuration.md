@@ -735,6 +735,21 @@ Container image for the Vector Agent.
 |---------|
 | `timberio/vector:0.43.1-alpine` |
 
+### `vector_agent_exclude_containers`
+
+Container names to exclude from Vector Agent log collection.
+The agent always excludes itself (`vector-agent`) regardless of this list.
+Only used by the default config template — ignored if `vector_agent_config` is set.
+
+| Default |
+|---------|
+| `["ecs-agent"]` |
+
+```hcl
+# Exclude additional sidecars
+vector_agent_exclude_containers = ["ecs-agent", "nginx-sidecar", "envoy"]
+```
+
 ### `vector_agent_config`
 
 Custom Vector Agent config (YAML string). Replaces the built-in template.
@@ -743,6 +758,26 @@ Custom Vector Agent config (YAML string). Replaces the built-in template.
 vector_agent_config = templatefile("files/vector.yaml.tftpl", {
   endpoint = "aggregator.example.com:6000"
 })
+```
+
+---
+
+## ECS Agent Configuration
+
+### `ecs_log_level`
+
+Log level for the ECS agent running on EC2 instances.
+
+| Default | Valid Values |
+|---------|--------------|
+| `"info"` | `debug`, `info`, `warn`, `error`, `crit` |
+
+Use `debug` only for troubleshooting — it generates a high volume of logs
+that can overwhelm observability pipelines.
+
+```hcl
+# Temporarily enable debug logging for troubleshooting
+ecs_log_level = "debug"
 ```
 
 ---
@@ -766,6 +801,7 @@ The module includes built-in validation to catch errors early:
 | `deployment_minimum_healthy_percent` | 0-100 |
 | `deployment_maximum_percent` | 100-400 |
 | `extra_target_groups` | Only supported with `lb_type = "alb"` |
+| `ecs_log_level` | One of: debug, info, warn, error, crit |
 
 ---
 
