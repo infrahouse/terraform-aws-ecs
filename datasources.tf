@@ -74,7 +74,7 @@ data "cloudinit_config" "ecs" {
                       "\n",
                       [
                         "ECS_CLUSTER=${var.service_name}",
-                        "ECS_LOGLEVEL=debug",
+                        "ECS_LOGLEVEL=${var.ecs_log_level}",
                         "ECS_ALLOW_OFFHOST_INTROSPECTION_ACCESS=true"
                       ]
                     )
@@ -103,6 +103,8 @@ data "cloudinit_config" "ecs" {
                         environment                = var.environment
                         aws_region                 = data.aws_region.current.name
                         vector_aggregator_endpoint = var.vector_aggregator_endpoint
+                        service_name               = var.service_name
+                        exclude_containers         = concat(["vector-agent"], var.vector_agent_exclude_containers)
                       }
                     )
                   }

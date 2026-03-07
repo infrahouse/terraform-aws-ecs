@@ -310,6 +310,34 @@ variable "vector_agent_task_policy_arns" {
   default     = []
 }
 
+variable "vector_agent_exclude_containers" {
+  description = <<-EOT
+    Container names to exclude from Vector Agent log collection.
+    Only used by the default config template. Ignored if vector_agent_config is set.
+
+    The agent always excludes itself ("vector-agent") regardless of this list.
+  EOT
+  type        = list(string)
+  default     = ["ecs-agent"]
+}
+
+variable "ecs_log_level" {
+  description = <<-EOT
+    Log level for the ECS agent running on EC2 instances.
+    Valid values: "debug", "info", "warn", "error", "crit".
+
+    Default is "info". Use "debug" only for troubleshooting — it generates
+    a high volume of logs that can overwhelm observability pipelines.
+  EOT
+  type        = string
+  default     = "info"
+
+  validation {
+    condition     = contains(["debug", "info", "warn", "error", "crit"], var.ecs_log_level)
+    error_message = "ecs_log_level must be one of: debug, info, warn, error, crit. Got: ${var.ecs_log_level}"
+  }
+}
+
 variable "execution_extra_policy" {
   description = <<-EOT
     A map of extra policies attached to the task execution role.
