@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.10.0] - 2026-03-07
+
+### Features
+
+- Change ECS agent log level from debug to info and add Vector Agent filtering
+
 ## [7.9.0] - 2026-03-04
 
 ### Features
