@@ -348,6 +348,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_ecr_image_tagger"></a> [ecr\_image\_tagger](#module\_ecr\_image\_tagger) | registry.infrahouse.com/infrahouse/lambda-monitored/aws | 1.0.4 |
 | <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.17.0 |
 | <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.6.0 |
 
@@ -357,7 +358,9 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 |------|------|
 | [aws_appautoscaling_policy.ecs_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy) | resource |
 | [aws_appautoscaling_target.ecs_target](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_target) | resource |
+| [aws_cloudwatch_event_rule.ecr_image_tagger](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_rule) | resource |
 | [aws_cloudwatch_event_rule.failed_deployment_event_rule](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_rule) | resource |
+| [aws_cloudwatch_event_target.ecr_image_tagger](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_target) | resource |
 | [aws_cloudwatch_event_target.ecs_task_deployment_failure_sns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_target) | resource |
 | [aws_cloudwatch_log_group.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
 | [aws_cloudwatch_log_group.ecs_ec2_dmesg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
@@ -371,6 +374,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | [aws_ecs_task_definition.cloudwatch_agent](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
 | [aws_ecs_task_definition.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
 | [aws_ecs_task_definition.vector_agent](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
+| [aws_iam_policy.ecr_image_tagger](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.ecs_task_execution_logs_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_role.cloudwatch_agent_execution_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.cloudwatch_agent_task_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
@@ -387,6 +391,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | [aws_iam_role_policy_attachment.vector_agent_execution_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.vector_agent_task_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_key_pair.ecs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/key_pair) | resource |
+| [aws_lambda_permission.ecr_image_tagger](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission) | resource |
 | [aws_lb_listener.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
 | [aws_lb_target_group.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group) | resource |
 | [aws_security_group_rule.extra_listener_ingress](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule) | resource |
@@ -399,6 +404,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | [aws_iam_policy.ecs-task-execution-role-policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy) | data source |
 | [aws_iam_policy_document.assume_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.cloudwatch_agent_task_role_assume_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.ecr_image_tagger](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.ecs_cloudwatch_logs_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.instance_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_internet_gateway.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/internet_gateway) | data source |
@@ -437,6 +443,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_container_memory"></a> [container\_memory](#input\_container\_memory) | Amount of RAM in megabytes the container is going to use. | `number` | `128` | no |
 | <a name="input_container_memory_reservation"></a> [container\_memory\_reservation](#input\_container\_memory\_reservation) | Soft memory limit in megabytes for the container. The container can use more memory<br/>if available on the host, up to the hard limit (container\_memory).<br/>If null, no reservation is set and container\_memory acts as both reservation and limit.<br/>Must be greater than 0 and less than or equal to container\_memory when specified. | `number` | `null` | no |
 | <a name="input_container_port"></a> [container\_port](#input\_container\_port) | TCP port that a container serves client requests on. | `number` | `8080` | no |
+| <a name="input_deployed_image_tag_prefix"></a> [deployed\_image\_tag\_prefix](#input\_deployed\_image\_tag\_prefix) | Prefix for the tag applied to ECR images after successful<br/>deployment. The full tag is `<prefix>YYYY-MM-DDTHH-MM-SSZ`. | `string` | `"deployed-at-"` | no |
 | <a name="input_deployment_maximum_percent"></a> [deployment\_maximum\_percent](#input\_deployment\_maximum\_percent) | Upper limit on the number of running tasks during a deployment,<br/>as a percentage of desired\_count. | `number` | `200` | no |
 | <a name="input_deployment_minimum_healthy_percent"></a> [deployment\_minimum\_healthy\_percent](#input\_deployment\_minimum\_healthy\_percent) | Lower limit on the number of running tasks during a deployment,<br/>as a percentage of desired\_count. Set to 0 for single-task<br/>EFS-backed services that cannot run two copies simultaneously. | `number` | `100` | no |
 | <a name="input_dns_names"></a> [dns\_names](#input\_dns\_names) | List of hostnames the module will create in var.zone\_id. | `list(string)` | n/a | yes |
@@ -449,6 +456,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_enable_cloudwatch_logs"></a> [enable\_cloudwatch\_logs](#input\_enable\_cloudwatch\_logs) | Enable CloudWatch Logs for ECS tasks.<br/>If enabled, containers will use "awslogs" log driver.<br/><br/>Default: true (recommended for production environments) | `bool` | `true` | no |
 | <a name="input_enable_container_insights"></a> [enable\_container\_insights](#input\_enable\_container\_insights) | Enable container insights feature on ECS cluster. | `bool` | `false` | no |
 | <a name="input_enable_deployment_circuit_breaker"></a> [enable\_deployment\_circuit\_breaker](#input\_enable\_deployment\_circuit\_breaker) | Enable ECS deployment circuit breaker. | `bool` | `true` | no |
+| <a name="input_enable_ecr_image_tagging"></a> [enable\_ecr\_image\_tagging](#input\_enable\_ecr\_image\_tagging) | When enabled, a Lambda function tags deployed ECR images with<br/>a `deployed-at-<timestamp>` tag each time the ECS service<br/>reaches steady state. This lets ECR lifecycle policies retain<br/>recently deployed images as rollback candidates.<br/><br/>Only affects images pulled from ECR (Docker Hub, public ECR,<br/>etc. are silently skipped). | `bool` | `false` | no |
 | <a name="input_enable_vector_agent"></a> [enable\_vector\_agent](#input\_enable\_vector\_agent) | Deploy a Vector Agent daemon on every EC2 instance in this cluster.<br/>Collects container logs and host metrics, forwards to a Vector Aggregator.<br/><br/>Requires: vector\_aggregator\_endpoint must be set when using the default config. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | Name of environment. | `string` | `"development"` | no |
 | <a name="input_execution_extra_policy"></a> [execution\_extra\_policy](#input\_execution\_extra\_policy) | A map of extra policies attached to the task execution role.<br/>The task execution role is used by the ECS agent to pull images, write logs, and access secrets.<br/><br/>Key: Arbitrary identifier (e.g., "secrets\_access")<br/>Value: IAM policy ARN<br/><br/>Example:<br/>  execution\_extra\_policy = {<br/>    "secrets\_access" = "arn:aws:iam::123456789012:policy/ECSSecretsAccess"<br/>    "ecr\_pull"       = "arn:aws:iam::123456789012:policy/ECRPullPolicy"<br/>  } | `map(string)` | `{}` | no |
