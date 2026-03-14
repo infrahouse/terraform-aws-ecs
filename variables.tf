@@ -959,6 +959,29 @@ variable "extra_target_groups" {
   }
 }
 
+variable "enable_ecr_image_tagging" {
+  description = <<-EOT
+    When enabled, a Lambda function tags deployed ECR images with
+    a ``deployed-at-<timestamp>`` tag each time the ECS service
+    reaches steady state. This lets ECR lifecycle policies retain
+    recently deployed images as rollback candidates.
+
+    Only affects images pulled from ECR (Docker Hub, public ECR,
+    etc. are silently skipped).
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "deployed_image_tag_prefix" {
+  description = <<-EOT
+    Prefix for the tag applied to ECR images after successful
+    deployment. The full tag is ``<prefix>YYYY-MM-DDTHH-MM-SSZ``.
+  EOT
+  type        = string
+  default     = "deployed-at-"
+}
+
 variable "zone_id" {
   description = "Zone where DNS records will be created for the service and certificate validation."
   type        = string
