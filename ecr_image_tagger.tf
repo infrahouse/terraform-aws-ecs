@@ -26,6 +26,7 @@ module "ecr_image_tagger" {
 # IAM policy for ECS/ECR access
 
 data "aws_iam_policy_document" "ecr_image_tagger" {
+  count = var.enable_ecr_image_tagging ? 1 : 0
   statement {
     sid = "DescribeECSServices"
     actions = [
@@ -60,13 +61,16 @@ data "aws_iam_policy_document" "ecr_image_tagger" {
     ]
   }
 
+  # ecr:PutImage is scoped to only the repository from var.docker_image
+  # to follow least privilege. Read permissions remain broad since the
+  # Lambda may need to inspect sidecar images from other repos.
   statement {
     sid = "ECRTagImages"
     actions = [
       "ecr:PutImage",
     ]
     resources = [
-      "arn:aws:ecr:*:${data.aws_caller_identity.current.account_id}:repository/*"
+      local.ecr_image_repo_arn
     ]
   }
 }
@@ -74,7 +78,7 @@ data "aws_iam_policy_document" "ecr_image_tagger" {
 resource "aws_iam_policy" "ecr_image_tagger" {
   count       = var.enable_ecr_image_tagging ? 1 : 0
   name_prefix = substr("${var.service_name}-ecr-tagger-", 0, 38)
-  policy      = data.aws_iam_policy_document.ecr_image_tagger.json
+  policy      = data.aws_iam_policy_document.ecr_image_tagger[0].json
   tags = merge(
     local.default_module_tags,
     {
