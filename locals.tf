@@ -77,6 +77,20 @@ locals {
     memory = 256
   }
 
+  # ECR repository ARN extracted from var.docker_image for scoped IAM permissions.
+  # ECR URI format: ACCOUNT.dkr.ecr.REGION.amazonaws.com/REPO:TAG or /REPO@sha256:DIGEST
+  ecr_image_repo_arn = (
+    var.enable_ecr_image_tagging
+    ? "arn:aws:ecr:${
+      regex("dkr\\.ecr\\.([^.]+)\\.amazonaws\\.com", var.docker_image)[0]
+      }:${
+      data.aws_caller_identity.current.account_id
+      }:repository/${
+      regex("amazonaws\\.com/([^:@]+)", var.docker_image)[0]
+    }"
+    : null
+  )
+
   # Total daemon overhead per EC2 instance
   daemon_memory_overhead = (
     (var.enable_cloudwatch_logs ? local.cloudwatch_agent_container_resources.memory : 0) +

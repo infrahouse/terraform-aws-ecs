@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 
 import boto3
 from botocore.exceptions import ClientError
-from infrahouse_core.aws import ECRRepository
 from infrahouse_core.logging import setup_logging
 
 LOG = logging.getLogger(__name__)
@@ -111,29 +110,13 @@ def _tag_ecr_image(match: re.Match, deployed_tag: str) -> str:
     image_tag = match.group("tag")
     image_digest = match.group("digest")
 
-    ecr_repo = ECRRepository(repo_name, region=region)
-
-    if image_digest:
-        image = ecr_repo.get_image(digest=image_digest)
-    elif image_tag:
-        image = ecr_repo.get_image(tag=image_tag)
-    else:
+    if not image_tag and not image_digest:
         LOG.warning("No tag or digest found for %s/%s", account, repo_name)
         return ""
 
-    if not image.exists:
-        LOG.warning(
-            "Image not found in %s: tag=%s digest=%s",
-            repo_name,
-            image_tag,
-            image_digest,
-        )
-        return ""
+    ecr_client = boto3.client("ecr", region_name=region)
 
     try:
-        # Get the image manifest via batch_get_image
-        # (ECRImage doesn't expose manifest, so use the client directly)
-        ecr_client = ecr_repo._client  # noqa: SLF001
         image_id = {}
         if image_digest:
             image_id["imageDigest"] = image_digest
