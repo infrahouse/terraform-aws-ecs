@@ -973,6 +973,21 @@ variable "enable_ecr_image_tagging" {
   default     = false
 }
 
+variable "ecr_image_tagger_log_level" {
+  description = <<-EOT
+    Log level for the ECR image tagger Lambda function.
+    Set to "DEBUG" to log full EventBridge event payloads
+    for troubleshooting.
+  EOT
+  type        = string
+  default     = "INFO"
+
+  validation {
+    condition     = contains(["DEBUG", "INFO", "WARNING", "ERROR"], var.ecr_image_tagger_log_level)
+    error_message = "ecr_image_tagger_log_level must be one of: DEBUG, INFO, WARNING, ERROR. Got: ${var.ecr_image_tagger_log_level}"
+  }
+}
+
 variable "deployed_image_tag_prefix" {
   description = <<-EOT
     Prefix for the tag applied to ECR images after successful
