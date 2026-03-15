@@ -13,6 +13,7 @@ module "ecr_image_tagger" {
     ECS_CLUSTER_NAME    = aws_ecs_cluster.ecs.name
     ECS_SERVICE_NAME    = aws_ecs_service.ecs.name
     DEPLOYED_TAG_PREFIX = var.deployed_image_tag_prefix
+    LOG_LEVEL           = var.ecr_image_tagger_log_level
   }
 
   additional_iam_policy_arns = [
@@ -54,7 +55,6 @@ data "aws_iam_policy_document" "ecr_image_tagger" {
     sid = "ECRReadImages"
     actions = [
       "ecr:BatchGetImage",
-      "ecr:DescribeImages",
     ]
     resources = [
       "arn:aws:ecr:*:${data.aws_caller_identity.current.account_id}:repository/*"

@@ -17,7 +17,7 @@ from botocore.exceptions import ClientError
 from infrahouse_core.logging import setup_logging
 
 LOG = logging.getLogger(__name__)
-setup_logging(LOG)
+setup_logging(LOG, debug=os.environ.get("LOG_LEVEL", "INFO").upper() == "DEBUG")
 
 # Pattern: ACCOUNT.dkr.ecr.REGION.amazonaws.com/REPO:TAG
 # or:      ACCOUNT.dkr.ecr.REGION.amazonaws.com/REPO@sha256:DIGEST
@@ -35,7 +35,7 @@ def lambda_handler(event: dict, context) -> dict:
     :param context: Lambda context (unused).
     :return: Summary of tagged images.
     """
-    LOG.info("Received event: %s", event)
+    LOG.debug("Received event: %s", event)
 
     cluster_name = os.environ["ECS_CLUSTER_NAME"]
     service_name = os.environ["ECS_SERVICE_NAME"]
