@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.11.1] - 2026-03-17
+
+### Bug Fixes
+
+- Scope EventBridge rule to specific ECS service ARN
+
 ## [7.11.0] - 2026-03-17
 
 ### Bug Fixes
