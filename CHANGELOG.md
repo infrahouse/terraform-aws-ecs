@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.11.0] - 2026-03-17
+
+### Bug Fixes
+
+- Scope ECR image tagger IAM and remove private API usage
+- Address review findings for ECR image tagger
+
+### Features
+
+- Add ECR image tagging on ECS steady state deployment
+
 ## [7.10.0] - 2026-03-07
 
 ### Features
