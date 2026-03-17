@@ -88,7 +88,9 @@ resource "aws_iam_policy" "ecr_image_tagger" {
   )
 }
 
-# EventBridge rule to match SERVICE_STEADY_STATE on this cluster
+# EventBridge rule to match SERVICE_STEADY_STATE for this specific service.
+# Filters on the service ARN in the "resources" field to avoid triggering
+# on other services in the same cluster (e.g., cloudwatch-agent-daemon).
 
 resource "aws_cloudwatch_event_rule" "ecr_image_tagger" {
   count       = var.enable_ecr_image_tagging ? 1 : 0
@@ -98,6 +100,7 @@ resource "aws_cloudwatch_event_rule" "ecr_image_tagger" {
   event_pattern = jsonencode({
     "detail-type" = ["ECS Service Action"]
     "source"      = ["aws.ecs"]
+    "resources"   = [aws_ecs_service.ecs.id]
     "detail" = {
       "eventType"  = ["INFO"]
       "eventName"  = ["SERVICE_STEADY_STATE"]
