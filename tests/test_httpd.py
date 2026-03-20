@@ -36,26 +36,18 @@ def test_module(
     cleanup_dot_terraform(terraform_module_dir)
     update_terraform_tf(terraform_module_dir, aws_provider_version)
     with open(osp.join(terraform_module_dir, "terraform.tfvars"), "w") as fp:
-        fp.write(
-            dedent(
-                f"""
+        fp.write(dedent(f"""
                 zone_id       = "{zone_id}"
                 region        = "{aws_region}"
 
                 subnet_public_ids   = {json.dumps(subnet_public_ids)}
                 subnet_private_ids  = {json.dumps(subnet_private_ids)}
-                """
-            )
-        )
+                """))
         if test_role_arn:
-            fp.write(
-                dedent(
-                    f"""
+            fp.write(dedent(f"""
                     role_arn      = "{test_role_arn}"
                     task_role_arn = "{test_role_arn}"
-                    """
-                )
-            )
+                    """))
 
     with terraform_apply(
         terraform_module_dir,
