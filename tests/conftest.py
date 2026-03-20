@@ -74,9 +74,7 @@ def wait_for_success(url, wait_time=300, request_timeout=10):
 def update_terraform_tf(terraform_module_dir, aws_provider_version):
     terraform_tf_path = osp.join(terraform_module_dir, "terraform.tf")
     with open(terraform_tf_path, "w") as fp:
-        fp.write(
-            dedent(
-                f"""
+        fp.write(dedent(f"""
                 terraform {{
                   required_providers {{
                     aws = {{
@@ -85,9 +83,7 @@ def update_terraform_tf(terraform_module_dir, aws_provider_version):
                     }}
                   }}
                 }}
-                """
-            )
-        )
+                """))
 
 
 def cleanup_dot_terraform(terraform_module_dir):
