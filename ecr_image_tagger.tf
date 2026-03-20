@@ -55,6 +55,7 @@ data "aws_iam_policy_document" "ecr_image_tagger" {
     sid = "ECRReadImages"
     actions = [
       "ecr:BatchGetImage",
+      "ecr:DescribeImages",
     ]
     resources = [
       "arn:aws:ecr:*:${data.aws_caller_identity.current.account_id}:repository/*"
