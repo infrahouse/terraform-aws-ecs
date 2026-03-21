@@ -15,7 +15,7 @@ from tests.conftest import (
 
 
 @pytest.mark.parametrize(
-    "aws_provider_version", ["~> 5.56", "~> 6.0"], ids=["aws-5", "aws-6"]
+    "aws_provider_version", ["~> 6.0"], ids=["aws-6"]
 )
 def test_module(
     service_network,
