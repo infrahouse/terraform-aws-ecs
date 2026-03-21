@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.11.2] - 2026-03-21
+
+### Bug Fixes
+
+- Skip tagging if ECR image already has deployed-at- tag
+- Use direct imports for infrahouse-core 0.26.1 compatibility; drop aws-5
+
+### Styling
+
+- Adjust to black 26.3
+- Fix black 26.3 findings
+
 ## [7.11.1] - 2026-03-17
 
 ### Bug Fixes
