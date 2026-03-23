@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.12.0] - 2026-03-23
+
+### Security
+
+- Manage Container Insights log group for ISO/SOC compliance
+
 ## [7.11.2] - 2026-03-21
 
 ### Bug Fixes
@@ -203,3 +209,4 @@ For more details on the differences between AL2 and AL2023, see the [AWS documen
 ## Earlier Releases
 
 See Git history for changes prior to v5.12.0.
+
