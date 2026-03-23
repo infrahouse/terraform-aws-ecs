@@ -39,3 +39,17 @@ resource "aws_cloudwatch_log_group" "ecs_ec2_dmesg" {
     }
   )
 }
+
+resource "aws_cloudwatch_log_group" "container_insights" {
+  count             = var.enable_container_insights ? 1 : 0
+  name              = "/aws/ecs/containerinsights/${var.service_name}/performance"
+  retention_in_days = var.cloudwatch_log_group_retention
+  kms_key_id        = var.cloudwatch_log_kms_key_id
+  tags = merge(
+    local.default_module_tags,
+    {
+      VantaContainsUserData : false
+      VantaContainsEPHI : false
+    }
+  )
+}

@@ -538,9 +538,24 @@ Enable ECS Container Insights.
 |---------|
 | `false` |
 
+When enabled, the module proactively creates the
+`/aws/ecs/containerinsights/<service_name>/performance` log group with the
+configured `cloudwatch_log_group_retention` (365 days by default). This
+ensures ISO/SOC-compliant retention instead of the 1-day default that ECS
+would set if it created the group itself.
+
 ```hcl
 enable_container_insights = true
 ```
+
+> **Existing deployments:** If ECS already created the log group, import it
+> into Terraform state before applying:
+>
+> ```bash
+> terraform import \
+>   'module.<name>.aws_cloudwatch_log_group.container_insights[0]' \
+>   '/aws/ecs/containerinsights/<cluster>/performance'
+> ```
 
 ---
 
