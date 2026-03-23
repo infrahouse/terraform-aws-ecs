@@ -320,3 +320,30 @@ If you use custom AMIs based on Amazon Linux 2, you must:
 
 - Rebuild your AMIs based on AL2023, OR
 - Explicitly set the `ami_id` variable to your custom AL2 AMI
+
+---
+
+## Container Insights Log Group Migration
+
+Starting with the version that adds the `aws_cloudwatch_log_group.container_insights`
+resource, the module proactively creates the Container Insights performance log group
+when `enable_container_insights = true`. This ensures 365-day retention for ISO/SOC
+compliance instead of the 1-day default ECS would apply.
+
+### If You Already Have Container Insights Enabled
+
+ECS previously created the log group `/aws/ecs/containerinsights/<cluster>/performance`
+automatically with 1-day retention. You need to import it so Terraform can manage it:
+
+```bash
+terraform import \
+  'module.<name>.aws_cloudwatch_log_group.container_insights[0]' \
+  '/aws/ecs/containerinsights/<cluster>/performance'
+```
+
+After import, `terraform plan` will show the retention changing from 1 to 365 days.
+Apply to fix the compliance finding.
+
+### If You Are Enabling Container Insights for the First Time
+
+No migration needed. The module creates the log group before ECS writes to it.
