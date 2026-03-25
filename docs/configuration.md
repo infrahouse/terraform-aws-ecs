@@ -489,6 +489,27 @@ extra_target_groups = {
 > **Note:** Adding or removing entries forces ECS service replacement
 > (AWS API limitation on `load_balancer` blocks).
 
+### `alb_access_log_athena_enabled`
+
+Enable Athena querying for ALB access logs. Only effective with `lb_type = "alb"`.
+
+| Default |
+|---------|
+| `false` |
+
+When enabled, creates:
+- Glue catalog database and table (schema over the ALB access log S3 bucket)
+- S3 results bucket (encrypted, 30-day expiry)
+- Athena workgroup pre-configured with the results bucket
+
+```hcl
+alb_access_log_athena_enabled = true
+```
+
+Once enabled, you can query ALB access logs with SQL in the Athena console.
+For query examples and detailed usage, see the
+[website-pod documentation](https://github.com/infrahouse/terraform-aws-website-pod?tab=readme-ov-file#querying-access-logs-with-athena).
+
 ---
 
 ## CloudWatch Configuration
@@ -928,6 +949,15 @@ The module exports these outputs for use in downstream configurations.
 | `task_execution_role_arn` | Task execution role ARN (used by ECS agent) |
 | `task_execution_role_name` | Task execution role name |
 | `backend_security_group` | Security group ID of backend instances |
+
+### Athena (ALB only)
+
+| Output | Description |
+|--------|-------------|
+| `alb_access_log_glue_database` | Glue catalog database name for ALB access logs |
+| `alb_access_log_glue_table` | Glue catalog table name for ALB access logs |
+| `athena_workgroup` | Athena workgroup name for querying ALB access logs |
+| `athena_results_bucket` | S3 bucket for Athena query results |
 
 ### CloudWatch
 

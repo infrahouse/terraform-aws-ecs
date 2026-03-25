@@ -106,6 +106,26 @@ output "cluster_name" {
   value       = aws_ecs_cluster.ecs.name
 }
 
+output "alb_access_log_glue_database" {
+  description = "Name of the Glue catalog database for ALB access logs (null if not enabled)"
+  value       = var.lb_type == "alb" ? module.pod[0].alb_access_log_glue_database : null
+}
+
+output "alb_access_log_glue_table" {
+  description = "Name of the Glue catalog table for ALB access logs (null if not enabled)"
+  value       = var.lb_type == "alb" ? module.pod[0].alb_access_log_glue_table : null
+}
+
+output "athena_workgroup" {
+  description = "Name of the Athena workgroup for querying ALB access logs (null if not enabled)"
+  value       = var.lb_type == "alb" ? module.pod[0].athena_workgroup : null
+}
+
+output "athena_results_bucket" {
+  description = "S3 bucket where Athena query results are stored (null if not enabled)"
+  value       = var.lb_type == "alb" ? module.pod[0].athena_results_bucket : null
+}
+
 # Used as LoadBalancer dimension for CloudWatch ALB metrics
 # See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html
 output "load_balancer_arn_suffix" {
