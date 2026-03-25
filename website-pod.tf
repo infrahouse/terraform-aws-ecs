@@ -1,7 +1,7 @@
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "5.17.0"
+  version = "5.18.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -11,6 +11,7 @@ module "pod" {
   alb_name_prefix                       = substr(var.service_name, 0, 6)
   alb_access_log_enabled                = true
   alb_access_log_force_destroy          = var.access_log_force_destroy
+  alb_access_log_athena_enabled         = var.alb_access_log_athena_enabled
   alb_healthcheck_enabled               = true
   alb_healthcheck_port                  = "traffic-port"
   alb_healthcheck_path                  = var.healthcheck_path

@@ -349,7 +349,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_ecr_image_tagger"></a> [ecr\_image\_tagger](#module\_ecr\_image\_tagger) | registry.infrahouse.com/infrahouse/lambda-monitored/aws | 1.0.4 |
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.17.0 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.18.0 |
 | <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.6.0 |
 
 ## Resources
@@ -421,6 +421,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 |------|-------------|------|---------|:--------:|
 | <a name="input_access_log_force_destroy"></a> [access\_log\_force\_destroy](#input\_access\_log\_force\_destroy) | Destroy S3 bucket with access logs even if non-empty | `bool` | `false` | no |
 | <a name="input_alarm_emails"></a> [alarm\_emails](#input\_alarm\_emails) | List of email addresses to receive CloudWatch alarm notifications.<br/>Required for monitoring ECS service health and performance issues.<br/><br/>Example: ["devops@example.com", "oncall@example.com"] | `list(string)` | n/a | yes |
+| <a name="input_alb_access_log_athena_enabled"></a> [alb\_access\_log\_athena\_enabled](#input\_alb\_access\_log\_athena\_enabled) | When true, creates an Athena querying stack for ALB access logs:<br/>Glue catalog database and table, S3 results bucket, and Athena workgroup.<br/>Only effective when lb\_type is "alb" (access logs are always enabled for ALB). | `bool` | `false` | no |
 | <a name="input_alb_ingress_cidr_blocks"></a> [alb\_ingress\_cidr\_blocks](#input\_alb\_ingress\_cidr\_blocks) | List of CIDR blocks allowed to access the ALB.<br/>Applied to both the primary listener (via website-pod)<br/>and any extra target group listeners. | `list(string)` | <pre>[<br/>  "0.0.0.0/0"<br/>]</pre> | no |
 | <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | Image for host EC2 instances.<br/>If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used. | `string` | `null` | no |
 | <a name="input_asg_health_check_grace_period"></a> [asg\_health\_check\_grace\_period](#input\_asg\_health\_check\_grace\_period) | ASG will wait up to this number of seconds for instance to become healthy.<br/>Default: 300 seconds (5 minutes) | `number` | `300` | no |
@@ -516,8 +517,12 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | Name | Description |
 |------|-------------|
 | <a name="output_acm_certificate_arn"></a> [acm\_certificate\_arn](#output\_acm\_certificate\_arn) | ARN of the ACM certificate used by the load balancer |
+| <a name="output_alb_access_log_glue_database"></a> [alb\_access\_log\_glue\_database](#output\_alb\_access\_log\_glue\_database) | Name of the Glue catalog database for ALB access logs (null if not enabled) |
+| <a name="output_alb_access_log_glue_table"></a> [alb\_access\_log\_glue\_table](#output\_alb\_access\_log\_glue\_table) | Name of the Glue catalog table for ALB access logs (null if not enabled) |
 | <a name="output_asg_arn"></a> [asg\_arn](#output\_asg\_arn) | Autoscaling group ARN created for the ECS service. |
 | <a name="output_asg_name"></a> [asg\_name](#output\_asg\_name) | Autoscaling group name created for the ECS service. |
+| <a name="output_athena_results_bucket"></a> [athena\_results\_bucket](#output\_athena\_results\_bucket) | S3 bucket where Athena query results are stored (null if not enabled) |
+| <a name="output_athena_workgroup"></a> [athena\_workgroup](#output\_athena\_workgroup) | Name of the Athena workgroup for querying ALB access logs (null if not enabled) |
 | <a name="output_backend_security_group"></a> [backend\_security\_group](#output\_backend\_security\_group) | Security group of backend. |
 | <a name="output_cloudwatch_log_group_name"></a> [cloudwatch\_log\_group\_name](#output\_cloudwatch\_log\_group\_name) | Name of the main CloudWatch log group for ECS tasks |
 | <a name="output_cloudwatch_log_group_names"></a> [cloudwatch\_log\_group\_names](#output\_cloudwatch\_log\_group\_names) | Names of all CloudWatch log groups created by this module |

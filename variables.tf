@@ -4,6 +4,16 @@ variable "access_log_force_destroy" {
   default     = false
 }
 
+variable "alb_access_log_athena_enabled" {
+  description = <<-EOT
+    When true, creates an Athena querying stack for ALB access logs:
+    Glue catalog database and table, S3 results bucket, and Athena workgroup.
+    Only effective when lb_type is "alb" (access logs are always enabled for ALB).
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "alarm_emails" {
   description = <<-EOT
     List of email addresses to receive CloudWatch alarm notifications.
