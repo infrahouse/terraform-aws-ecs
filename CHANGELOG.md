@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.13.0] - 2026-03-26
+
+### Features
+
+- Add optional Athena querying support for ALB access logs
+
 ## [7.12.0] - 2026-03-23
 
 ### Security
