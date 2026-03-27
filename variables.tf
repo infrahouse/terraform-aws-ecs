@@ -322,13 +322,17 @@ variable "vector_agent_task_policy_arns" {
 
 variable "vector_agent_exclude_containers" {
   description = <<-EOT
-    Container names to exclude from Vector Agent log collection.
+    Container name substrings to exclude from Vector Agent log collection.
     Only used by the default config template. Ignored if vector_agent_config is set.
+
+    WARNING: Vector's docker_logs source uses substring matching on container
+    names. For example, "ecs-agent" will also exclude any container whose name
+    contains that substring (e.g. "ecs-agentql-*"). Use specific patterns.
 
     The agent always excludes itself ("vector-agent") regardless of this list.
   EOT
   type        = list(string)
-  default     = ["ecs-agent"]
+  default     = []
 }
 
 variable "ecs_log_level" {
