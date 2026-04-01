@@ -7,6 +7,7 @@ module "ecr_image_tagger" {
   description       = "Tags deployed ECR images for lifecycle retention"
   handler           = "main.lambda_handler"
   lambda_source_dir = "${path.module}/assets/ecr_image_tagger"
+  memory_size       = 256
   timeout           = 120
 
   environment_variables = {
