@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.13.1] - 2026-04-01
+
+### Bug Fixes
+
+- Bump ecr_image_tagger Lambda memory to 256 MB to fix OOM
+
 ## [7.13.0] - 2026-03-26
 
 ### Features
