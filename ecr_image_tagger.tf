@@ -9,6 +9,7 @@ module "ecr_image_tagger" {
   lambda_source_dir = "${path.module}/assets/ecr_image_tagger"
   memory_size       = 256
   timeout           = 120
+  memory_size       = var.ecr_image_tagger_memory_size
 
   environment_variables = {
     ECS_CLUSTER_NAME    = aws_ecs_cluster.ecs.name

@@ -998,6 +998,12 @@ variable "ecr_image_tagger_log_level" {
   }
 }
 
+variable "ecr_image_tagger_memory_size" {
+  description = "Memory size in MB for the ECR image tagger Lambda function."
+  type        = number
+  default     = 128
+}
+
 variable "deployed_image_tag_prefix" {
   description = <<-EOT
     Prefix for the tag applied to ECR images after successful
