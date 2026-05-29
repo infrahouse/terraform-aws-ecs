@@ -106,6 +106,16 @@ output "cluster_name" {
   value       = aws_ecs_cluster.ecs.name
 }
 
+output "access_log_bucket_name" {
+  description = "Name of the ALB access log S3 bucket (null if lb_type is not alb)"
+  value       = var.lb_type == "alb" ? module.pod[0].access_log_bucket_name : null
+}
+
+output "access_log_replica_bucket_name" {
+  description = "Name of the access log replica S3 bucket in the replication region (null if lb_type is not alb)"
+  value       = var.lb_type == "alb" ? module.pod[0].access_log_replica_bucket_name : null
+}
+
 output "alb_access_log_glue_database" {
   description = "Name of the Glue catalog database for ALB access logs (null if not enabled)"
   value       = var.lb_type == "alb" ? module.pod[0].alb_access_log_glue_database : null

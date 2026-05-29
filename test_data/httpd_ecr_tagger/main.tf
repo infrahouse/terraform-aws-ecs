@@ -1,3 +1,7 @@
+locals {
+  replication_region = var.region == "us-east-1" ? "us-west-2" : "us-east-1"
+}
+
 data "aws_caller_identity" "this" {}
 data "aws_region" "current" {}
 
@@ -47,6 +51,7 @@ module "httpd" {
   ]
   enable_cloudwatch_logs   = true
   enable_ecr_image_tagging = true
+  replication_region       = local.replication_region
   access_log_force_destroy = true
   alarm_emails             = ["test@example.com"]
 }

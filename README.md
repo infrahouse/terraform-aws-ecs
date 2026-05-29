@@ -349,7 +349,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_ecr_image_tagger"></a> [ecr\_image\_tagger](#module\_ecr\_image\_tagger) | registry.infrahouse.com/infrahouse/lambda-monitored/aws | 1.0.4 |
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 5.18.0 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 6.0.1 |
 | <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.6.0 |
 
 ## Resources
@@ -478,6 +478,7 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 | <a name="input_managed_draining"></a> [managed\_draining](#input\_managed\_draining) | Enables or disables a graceful shutdown of instances without disturbing workloads. | `bool` | `true` | no |
 | <a name="input_managed_termination_protection"></a> [managed\_termination\_protection](#input\_managed\_termination\_protection) | Enables or disables container-aware termination of instances in the auto scaling group when scale-in happens. | `bool` | `true` | no |
 | <a name="input_on_demand_base_capacity"></a> [on\_demand\_base\_capacity](#input\_on\_demand\_base\_capacity) | If specified, the ASG will request spot instances and this will be the minimal number of on-demand instances. | `number` | `null` | no |
+| <a name="input_replication_region"></a> [replication\_region](#input\_replication\_region) | AWS region for cross-region replication of the ALB access log S3 bucket.<br/>Required when lb\_type is "alb" for Vanta DR compliance.<br/><br/>Example: "us-east-1" | `string` | `null` | no |
 | <a name="input_root_volume_size"></a> [root\_volume\_size](#input\_root\_volume\_size) | Root volume size in EC2 instance in Gigabytes | `number` | `30` | no |
 | <a name="input_service_health_check_grace_period_seconds"></a> [service\_health\_check\_grace\_period\_seconds](#input\_service\_health\_check\_grace\_period\_seconds) | Seconds to ignore failing load balancer health checks on newly instantiated tasks.<br/>This prevents ECS from killing tasks that are still starting up.<br/><br/>Use this when:<br/>- Your application takes time to initialize (e.g., loading data, warming caches)<br/>- Health checks fail during the startup period<br/>- You see tasks being killed and restarted repeatedly<br/><br/>Default: null (uses ECS default behavior)<br/>Range: 0 to 2147483647 seconds<br/><br/>Example: 300 (5 minutes grace period for slow-starting applications) | `number` | `null` | no |
 | <a name="input_service_name"></a> [service\_name](#input\_service\_name) | Service name | `string` | n/a | yes |
@@ -516,6 +517,8 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_access_log_bucket_name"></a> [access\_log\_bucket\_name](#output\_access\_log\_bucket\_name) | Name of the ALB access log S3 bucket (null if lb\_type is not alb) |
+| <a name="output_access_log_replica_bucket_name"></a> [access\_log\_replica\_bucket\_name](#output\_access\_log\_replica\_bucket\_name) | Name of the access log replica S3 bucket in the replication region (null if lb\_type is not alb) |
 | <a name="output_acm_certificate_arn"></a> [acm\_certificate\_arn](#output\_acm\_certificate\_arn) | ARN of the ACM certificate used by the load balancer |
 | <a name="output_alb_access_log_glue_database"></a> [alb\_access\_log\_glue\_database](#output\_alb\_access\_log\_glue\_database) | Name of the Glue catalog database for ALB access logs (null if not enabled) |
 | <a name="output_alb_access_log_glue_table"></a> [alb\_access\_log\_glue\_table](#output\_alb\_access\_log\_glue\_table) | Name of the Glue catalog table for ALB access logs (null if not enabled) |

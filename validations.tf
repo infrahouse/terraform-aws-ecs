@@ -258,6 +258,21 @@ check "weighted_routing_requires_set_identifier" {
   }
 }
 
+# Validate replication_region is set when using ALB
+check "replication_region_required_for_alb" {
+  assert {
+    condition     = var.lb_type != "alb" || var.replication_region != null
+    error_message = <<-EOF
+      replication_region is required when lb_type is "alb".
+
+      ALB access logs are replicated to a secondary region for disaster recovery
+      (Vanta compliance). Set replication_region to the target AWS region:
+
+        replication_region = "us-east-1"
+    EOF
+  }
+}
+
 # Validate weighted routing is only supported for ALB
 check "weighted_routing_alb_only" {
   assert {

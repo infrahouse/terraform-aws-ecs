@@ -1,4 +1,6 @@
 locals {
+  replication_region = var.region == "us-east-1" ? "us-west-2" : "us-east-1"
+
   tempo_config = <<-YAML
     server:
       http_listen_port: 3200
@@ -41,6 +43,7 @@ module "tempo" {
 
   task_role_arn            = aws_iam_role.task_role.arn
   enable_cloudwatch_logs   = true
+  replication_region       = local.replication_region
   access_log_force_destroy = true
   alarm_emails             = ["test@example.com"]
 
