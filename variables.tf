@@ -631,6 +631,17 @@ variable "on_demand_base_capacity" {
   default     = null
 }
 
+variable "replication_region" {
+  description = <<-EOT
+    AWS region for cross-region replication of the ALB access log S3 bucket.
+    Required when lb_type is "alb" for Vanta DR compliance.
+
+    Example: "us-east-1"
+  EOT
+  type        = string
+  default     = null
+}
+
 variable "root_volume_size" {
   description = "Root volume size in EC2 instance in Gigabytes"
   type        = number
