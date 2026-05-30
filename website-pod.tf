@@ -12,7 +12,6 @@ module "pod" {
   replication_region                    = var.replication_region
   alb_access_log_force_destroy          = var.access_log_force_destroy
   alb_access_log_athena_enabled         = var.alb_access_log_athena_enabled
-  alb_healthcheck_enabled               = true
   alb_healthcheck_port                  = "traffic-port"
   alb_healthcheck_path                  = var.healthcheck_path
   alb_idle_timeout                      = var.idle_timeout
@@ -38,7 +37,6 @@ module "pod" {
   target_group_port                     = var.container_port
   userdata                              = data.cloudinit_config.ecs.rendered
   instance_profile_permissions          = data.aws_iam_policy_document.instance_policy.json
-  internet_gateway_id                   = data.aws_internet_gateway.default.id
   protect_from_scale_in                 = true # this is to allow ECS manage ASG instances
   autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
   root_volume_size                      = var.root_volume_size

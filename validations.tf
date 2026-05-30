@@ -131,52 +131,6 @@ check "task_count_range" {
   }
 }
 
-# Validation: VPC must have an Internet Gateway attached
-check "vpc_has_internet_gateway" {
-  assert {
-    condition     = data.aws_internet_gateway.default.id != null && data.aws_internet_gateway.default.id != ""
-    error_message = <<-EOF
-      ╔════════════════════════════════════════════════════════════════════════╗
-      ║                    ⚠️  CONFIGURATION ERROR ⚠️                          ║
-      ╚════════════════════════════════════════════════════════════════════════╝
-
-      No Internet Gateway found attached to the VPC.
-
-      Current configuration:
-        - VPC ID: ${data.aws_subnet.load_balancer.vpc_id}
-        - Load balancer subnets require internet access
-
-      Problem:
-        This module creates a public-facing load balancer that requires an Internet
-        Gateway for inbound traffic. The VPC does not have an Internet Gateway attached.
-
-      Solution:
-        Create and attach an Internet Gateway to your VPC:
-
-        resource "aws_internet_gateway" "main" {
-          vpc_id = "${data.aws_subnet.load_balancer.vpc_id}"
-
-          tags = {
-            Name = "main-igw"
-          }
-        }
-
-        # Ensure the IGW is attached before running this module
-        module "ecs_service" {
-          depends_on = [aws_internet_gateway.main]
-          # ... your configuration
-        }
-
-      Note:
-        - Each VPC can have exactly ONE Internet Gateway (AWS limitation)
-        - For private VPCs without internet access, this module is not suitable
-        - The Internet Gateway is auto-discovered from the VPC of your load balancer subnets
-
-      ════════════════════════════════════════════════════════════════════════
-    EOF
-  }
-}
-
 # Cross-variable validation: container_memory_reservation must be <= container_memory
 check "memory_reservation_within_limit" {
   assert {
