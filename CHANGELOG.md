@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.0.0] - 2026-05-30
+
+### Bug Fixes
+
+- Fix Makefile quoting and clean up for website-pod 6.0.1 upgrade
+
+### Features
+
+- Upgrade website-pod to 6.0.1 for cross-region access log replication
+
 ## [7.13.1] - 2026-04-01
 
 ### Bug Fixes
