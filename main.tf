@@ -203,7 +203,5 @@ resource "aws_ecs_service" "ecs" {
       VantaContainsEPHI : false
     }
   )
-  timeouts {
-    delete = "10m"
-  }
+  force_delete = true
 }
