@@ -1,7 +1,7 @@
 module "ecr_image_tagger" {
   count   = var.enable_ecr_image_tagging ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/lambda-monitored/aws"
-  version = "1.0.4"
+  version = "1.1.1"
 
   function_name     = "${var.service_name}-ecr-image-tagger"
   description       = "Tags deployed ECR images for lifecycle retention"
