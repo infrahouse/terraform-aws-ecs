@@ -109,6 +109,7 @@ resource "aws_ecs_service" "cloudwatch_agent_service" {
   task_definition     = aws_ecs_task_definition.cloudwatch_agent[0].arn
   launch_type         = "EC2"
   scheduling_strategy = "DAEMON"
+  force_delete        = true
   tags = merge(
     local.default_module_tags,
     {
