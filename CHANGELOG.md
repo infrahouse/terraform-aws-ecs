@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.1.0] - 2026-06-03
+
+### Bug Fixes
+
+- Add force_delete to ECS services to prevent destroy timeouts
+
+### Features
+
+- Bump lambda-monitored to 1.1.1 for Vanta S3 CRR exemption
+
 ## [8.0.0] - 2026-05-30
 
 ### Bug Fixes
