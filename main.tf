@@ -101,6 +101,14 @@ resource "aws_ecs_task_definition" "ecs" {
             "interval" : 30,
             "startPeriod" : null
           }
+        } : {},
+        var.gpu_count > 0 ? {
+          resourceRequirements = [
+            {
+              type  = "GPU"
+              value = tostring(var.gpu_count)
+            }
+          ]
         } : {}
       )
     ]

@@ -407,6 +407,23 @@ variable "container_command" {
   default     = null
 }
 
+variable "gpu_count" {
+  description = <<-EOT
+    Number of GPUs to reserve for the container.
+    When greater than 0, a resourceRequirements block with type "GPU"
+    is added to the container definition.
+
+    Requires ECS instances with GPU capacity (e.g., g4dn, g6e, p3).
+  EOT
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.gpu_count >= 0 && floor(var.gpu_count) == var.gpu_count
+    error_message = "gpu_count must be a non-negative integer. Got: ${var.gpu_count}"
+  }
+}
+
 variable "container_healthcheck_command" {
   description = <<-EOT
     A shell command that a container runs to check if it's healthy.
