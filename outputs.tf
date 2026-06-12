@@ -13,6 +13,11 @@ output "service_arn" {
   )
 }
 
+output "task_definition_arn" {
+  description = "ARN of the ECS task definition."
+  value       = aws_ecs_task_definition.ecs.arn
+}
+
 output "asg_arn" {
   description = "Autoscaling group ARN created for the ECS service."
   value       = local.arg_arn
