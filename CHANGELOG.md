@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.2.0] - 2026-06-14
+
+### Bug Fixes
+
+- Bump website-pod to 6.2.0 for unconditional root volume encryption ([#161](https://github.com/infrahouse/terraform-aws-ecs/issues/161))
+- Keep ECS instance role attached during service teardown
+
+### Features
+
+- Add gpu_count variable for ECS GPU task support
+
+### Testing
+
+- Add GPU smoke test, GPU-aware ASG sizing, and AMI auto-selection
+- Harden GPU smoke-test teardown and health check
+- Skip test_httpd_autoscaling to cut CI runtime
+
 ## [8.1.0] - 2026-06-03
 
 ### Bug Fixes
