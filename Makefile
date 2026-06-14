@@ -16,6 +16,7 @@ TEST_ROLE ?= arn:aws:iam::303467602807:role/ecs-tester
 TEST_SELECTOR ?= tests/
 TEST_PATH ?= tests/test_httpd.py
 TEST_FILTER ?= test_ and aws-6
+TEST_ZONE_NAME ?= ci-cd.infrahouse.com
 
 help: install-hooks
 	@python -c "$$PRINT_HELP_PYSCRIPT" < Makefile
@@ -52,6 +53,17 @@ test-clean:  ## Run a test and destroy resources
 		${TEST_PATH} \
 		2>&1 | tee pytest-`date +%Y%m%d-%H%M%S`-output.log
 
+
+.PHONY: test-gpu
+test-gpu:  ## Run the real GPU smoke test (not run in CI). Set KEEP_AFTER=1 to keep resources.
+	pytest -xvvs \
+		--aws-region=${TEST_REGION} \
+		--test-role-arn=${TEST_ROLE} \
+		--test-zone-name=${TEST_ZONE_NAME} \
+		-m gpu \
+		$(if ${KEEP_AFTER},--keep-after) \
+		tests/test_gpu.py \
+		2>&1 | tee pytest-gpu-`date +%Y%m%d-%H%M%S`-output.log
 
 .PHONY: bootstrap
 bootstrap: install-hooks ## bootstrap the development environment

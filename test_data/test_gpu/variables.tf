@@ -26,5 +26,10 @@ variable "subnet_private_ids" {
 
 variable "gpu_count" {
   type    = number
-  default = 0
+  default = 1
+}
+
+variable "instance_type" {
+  type    = string
+  default = "g4dn.xlarge"
 }

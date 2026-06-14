@@ -39,7 +39,8 @@ variable "alarm_emails" {
 variable "ami_id" {
   description = <<-EOT
     Image for host EC2 instances.
-    If not specified, the latest Amazon Linux 2023 ECS-optimized image will be used.
+    If not specified, the latest Amazon Linux 2023 ECS-optimized image is used,
+    or the GPU-optimized ECS image when gpu_count > 0.
   EOT
   type        = string
   default     = null
@@ -83,10 +84,13 @@ variable "asg_max_size" {
     - Memory capacity: instances needed to run task_max_count tasks based on container_memory
       (or container_memory_reservation if set)
     - CPU capacity: instances needed to run task_max_count tasks based on container_cpu
+    - GPU capacity (when gpu_count > 0): instances needed to run task_max_count tasks,
+      where each instance hosts floor(instance_gpus / gpu_count) tasks. GPUs cannot be
+      oversubscribed, so this term usually dominates for GPU workloads.
     - Minimum headroom: at least asg_min_size + 1 to allow scaling
 
     The calculation accounts for:
-    - Instance type memory/CPU (from var.asg_instance_type)
+    - Instance type memory/CPU/GPU (from var.asg_instance_type)
     - Reserved resources for system overhead (~1GB memory)
     - Daemon overhead: CloudWatch agent (128 CPU, 256MB) and, if enabled,
       Vector Agent (128 CPU, 256MB)
@@ -407,23 +411,6 @@ variable "container_command" {
   default     = null
 }
 
-variable "gpu_count" {
-  description = <<-EOT
-    Number of GPUs to reserve for the container.
-    When greater than 0, a resourceRequirements block with type "GPU"
-    is added to the container definition.
-
-    Requires ECS instances with GPU capacity (e.g., g4dn, g6e, p3).
-  EOT
-  type        = number
-  default     = 0
-
-  validation {
-    condition     = var.gpu_count >= 0 && floor(var.gpu_count) == var.gpu_count
-    error_message = "gpu_count must be a non-negative integer. Got: ${var.gpu_count}"
-  }
-}
-
 variable "container_healthcheck_command" {
   description = <<-EOT
     A shell command that a container runs to check if it's healthy.
@@ -460,6 +447,28 @@ variable "container_memory_reservation" {
   validation {
     condition     = var.container_memory_reservation == null ? true : var.container_memory_reservation > 0
     error_message = "container_memory_reservation must be greater than 0 when specified."
+  }
+}
+
+variable "gpu_count" {
+  description = <<-EOT
+    Number of GPUs to reserve for the container.
+    When greater than 0, a resourceRequirements block with type "GPU" is added to
+    the container definition, and — unless ami_id is set — the module selects the
+    GPU-optimized ECS AMI automatically so the host exposes its GPUs to the agent.
+
+    You must still choose a GPU instance family in asg_instance_type
+    (e.g. g4dn, g6e, p3); a GPU reservation cannot place on a non-GPU instance.
+    If you pin ami_id yourself, it must be a GPU-optimized AMI (the default,
+    auto-selected one comes from the SSM parameter
+    /aws/service/ecs/optimized-ami/amazon-linux-2023/gpu/recommended/image_id).
+  EOT
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.gpu_count >= 0 && floor(var.gpu_count) == var.gpu_count
+    error_message = "gpu_count must be a non-negative integer. Got: ${var.gpu_count}"
   }
 }
 
