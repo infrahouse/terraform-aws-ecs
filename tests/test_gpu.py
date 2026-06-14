@@ -1,4 +1,5 @@
 import json
+import time
 from os import path as osp
 from textwrap import dedent
 from typing import Callable
@@ -6,6 +7,7 @@ from typing import Callable
 import pytest
 from boto3 import Session
 from infrahouse_core.aws.ec2_instance import EC2Instance
+from infrahouse_core.timeout import timeout
 from pytest_infrahouse import terraform_apply
 
 from tests.conftest import (
@@ -143,29 +145,54 @@ def test_gpu_smoke(
         ), f"Expected GPU value '1', got: '{gpu_reqs[0]['value']}'"
         LOG.info("Task definition reserves GPU: %s", gpu_reqs)
 
-        # Allocation proof: the running task got a physical GPU device bound to
-        # it, and the nvidia-smi container health check reports HEALTHY.
-        running_task_arns = ecs_client.list_tasks(
-            cluster=cluster_name, desiredStatus="RUNNING"
-        )["taskArns"]
-        running_tasks = ecs_client.describe_tasks(
-            cluster=cluster_name, tasks=running_task_arns
-        )["tasks"]
-        gpu_tasks = [t for t in running_tasks if t["taskDefinitionArn"] == task_def_arn]
-        assert (
-            gpu_tasks
-        ), f"No running task for {task_def_arn}; running={running_task_arns}"
-        task_containers = gpu_tasks[0]["containers"]
-        gpu_container = next(
-            (c for c in task_containers if c["name"] == service_name), None
-        )
-        assert (
-            gpu_container
-        ), f"No container named {service_name} in running task; got {[c['name'] for c in task_containers]}"
+        # Allocation + health proof: the running task gets a physical GPU device
+        # bound to it, and its container reaches HEALTHY (the nvidia-smi health
+        # check). Poll for HEALTHY rather than asserting once: on a freshly booted
+        # GPU host the first health-check result can lag the ALB target becoming
+        # healthy, so the status is briefly UNKNOWN.
+        gpu_container = None
+        try:
+            with timeout(300):
+                while True:
+                    running_task_arns = ecs_client.list_tasks(
+                        cluster=cluster_name, desiredStatus="RUNNING"
+                    )["taskArns"]
+                    running_tasks = ecs_client.describe_tasks(
+                        cluster=cluster_name, tasks=running_task_arns
+                    )["tasks"]
+                    gpu_tasks = [
+                        t
+                        for t in running_tasks
+                        if t["taskDefinitionArn"] == task_def_arn
+                    ]
+                    assert (
+                        gpu_tasks
+                    ), f"No running task for {task_def_arn}; running={running_task_arns}"
+                    task_containers = gpu_tasks[0]["containers"]
+                    gpu_container = next(
+                        (c for c in task_containers if c["name"] == service_name), None
+                    )
+                    assert gpu_container, (
+                        f"No container named {service_name} in running task; "
+                        f"got {[c['name'] for c in task_containers]}"
+                    )
+                    health = gpu_container.get("healthStatus")
+                    assert (
+                        health != "UNHEALTHY"
+                    ), "Container reported UNHEALTHY (nvidia-smi health check failed)"
+                    if health == "HEALTHY":
+                        break
+                    LOG.info(
+                        "Waiting for container to become HEALTHY (now: %s)", health
+                    )
+                    time.sleep(10)
+        except TimeoutError as err:
+            raise AssertionError(
+                "Container did not become HEALTHY (nvidia-smi health check); "
+                f"last status: {gpu_container.get('healthStatus') if gpu_container else 'n/a'}"
+            ) from err
+
         assert gpu_container["gpuIds"], "Running task was not allocated a GPU device"
-        assert (
-            gpu_container["healthStatus"] == "HEALTHY"
-        ), f"Container not HEALTHY (nvidia-smi health check): {gpu_container['healthStatus']}"
         LOG.info(
             "Running task GPU devices: %s (health=%s)",
             gpu_container["gpuIds"],

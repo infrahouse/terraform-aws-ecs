@@ -212,4 +212,12 @@ resource "aws_ecs_service" "ecs" {
     }
   )
   force_delete = true
+
+  # An ALB/NLB-attached service can sit in DRAINING for longer than the AWS
+  # provider's default 20m delete timeout while ECS deregisters from the load
+  # balancer, which makes `terraform destroy` fail spuriously even though the
+  # deletion eventually succeeds. Give it more headroom.
+  timeouts {
+    delete = "40m"
+  }
 }
