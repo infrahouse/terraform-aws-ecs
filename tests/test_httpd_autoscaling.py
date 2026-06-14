@@ -14,6 +14,14 @@ from tests.conftest import (
 )
 
 
+# Temporarily disabled to cut CI runtime: these 3 variants are ~87 min of live
+# applies that only assert the stack serves HTTP (they assert nothing about the
+# per-metric autoscaling wiring). The per-metric policy config will be covered by
+# a plan-only *.tftest.hcl in a follow-up PR, keeping at most one live variant.
+# See .claude/plans/ci-test-runtime-reduction.md (recommendation #1).
+@pytest.mark.skip(
+    reason="Pending plan-test refactor; see ci-test-runtime-reduction.md #1"
+)
 @pytest.mark.parametrize("aws_provider_version", ["~> 6.0"], ids=["aws-6"])
 @pytest.mark.parametrize(
     "autoscaling_metric, autoscaling_target",

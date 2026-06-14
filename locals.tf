@@ -57,6 +57,20 @@ locals {
     } : {}
   )
 
+  # AMI selection: an explicit ami_id always wins. Otherwise GPU workloads get
+  # the GPU-optimized ECS AMI (which ships the NVIDIA drivers) and everything else
+  # gets the standard ECS AMI. nonsensitive() unwraps the SSM parameter value,
+  # which is a public AMI id, not a secret.
+  selected_ami = (
+    var.ami_id != null
+    ? var.ami_id
+    : (
+      var.gpu_count > 0
+      ? nonsensitive(data.aws_ssm_parameter.ecs_gpu_ami[0].value)
+      : data.aws_ami.ecs.image_id
+    )
+  )
+
   cloudwatch_group = var.cloudwatch_log_group == null ? "/ecs/${var.environment}/${var.service_name}" : var.cloudwatch_log_group
   log_configuration = var.enable_cloudwatch_logs ? {
     logDriver = "awslogs"
@@ -114,24 +128,10 @@ locals {
     (var.enable_vector_agent ? local.vector_agent_container_resources.cpu : 0)
   )
 
-  # ASG sizing: User-provided values take precedence over calculated defaults.
-  # - asg_min_size defaults to subnet count (one instance per AZ for HA)
-  # - asg_max_size defaults to calculated capacity based on task requirements
-  # When overriding asg_max_size, ensure it's sufficient for task_max_count tasks
-  # or ECS may fail to place tasks during scaling events.
-  asg_min_size = var.asg_min_size != null ? var.asg_min_size : length(var.asg_subnets)
-  asg_max_size = var.asg_max_size != null ? var.asg_max_size : max(
-    # How many EC2 instances we need to host task_max_count assuming memory consumption
-    # Note: ECS uses memory reservation (soft limit) for task placement decisions when set
-    ceil(
-      var.task_max_count / ((data.aws_ec2_instance_type.backend.memory_size - 1024 - local.daemon_memory_overhead) / coalesce(var.container_memory_reservation, var.container_memory))
-    ),
-    # How many EC2 instances we need to host task_max_count assuming CPU consumption
-    ceil(
-      var.task_max_count / ((data.aws_ec2_instance_type.backend.default_vcpus * 1024 - local.daemon_cpu_overhead) / var.container_cpu)
-    ),
-    # Or at least one more than min size.
-    local.asg_min_size + 1
-  )
-
+  # ASG sizing is resolved by the provider-free ./modules/scaling submodule (see
+  # scaling.tf and tests/math.tftest.hcl). User-provided values take precedence;
+  # otherwise sizes derive from task_max_count and the instance's CPU, memory,
+  # and GPU capacity.
+  asg_min_size = module.scaling.asg_min_size
+  asg_max_size = module.scaling.asg_max_size
 }
