@@ -1,6 +1,9 @@
 # CI test-runtime reduction plan
 
-Status: proposed / not started
+Status: in progress — interim: `test_httpd_autoscaling` is `@pytest.mark.skip`ped on
+branch `update-ecs-gpu-support` to reclaim ~87 min now. The plan-only `*.tftest.hcl`
+replacement (recommendation #1) is still TODO in a follow-up PR, which should also
+restore one live variant.
 Author: analysis of the `make test` integration suite
 Source run: PR #161 CI — GitHub Actions run `27482657531`, job `81233032275`
 (`8 passed in 13089.06s (3:38:09)`).
