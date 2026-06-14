@@ -101,6 +101,14 @@ resource "aws_ecs_task_definition" "ecs" {
             "interval" : 30,
             "startPeriod" : null
           }
+        } : {},
+        var.gpu_count > 0 ? {
+          resourceRequirements = [
+            {
+              type  = "GPU"
+              value = tostring(var.gpu_count)
+            }
+          ]
         } : {}
       )
     ]
@@ -180,6 +188,15 @@ resource "aws_ecs_service" "ecs" {
   depends_on = [
     aws_iam_role.ecs_task_execution_role,
     aws_iam_role_policy_attachment.ecs_task_execution_role_policy,
+    # Keep the container-instance role's ECS permissions attached until this
+    # service is fully deleted. On destroy Terraform would otherwise detach
+    # AmazonEC2ContainerServiceforEC2Role (in parallel, since nothing links it
+    # to the service) while the service is still DRAINING. That deauthorizes
+    # the still-running instance's ECS agent (agentConnected -> false), so the
+    # service can never finalize to INACTIVE and the destroy deadlocks until the
+    # delete timeout. Holding the attachment until the service is gone keeps the
+    # agent connected through the drain.
+    aws_iam_role_policy_attachment.ecs_instance_role,
   ]
   tags = merge(
     {

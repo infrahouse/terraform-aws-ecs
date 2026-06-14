@@ -36,6 +36,15 @@ data "aws_ami" "ecs" {
   owners = ["591542846629"] # Amazon
 }
 
+# GPU-optimized ECS AMI. Selected automatically when gpu_count > 0 and the caller
+# did not pin ami_id (see local.selected_ami). The standard data.aws_ami.ecs above
+# has no NVIDIA drivers, so a GPU reservation would never place on it. Read only
+# when actually needed.
+data "aws_ssm_parameter" "ecs_gpu_ami" {
+  count = var.ami_id == null && var.gpu_count > 0 ? 1 : 0
+  name  = "/aws/service/ecs/optimized-ami/amazon-linux-2023/gpu/recommended/image_id"
+}
+
 
 data "cloudinit_config" "ecs" {
   gzip          = false

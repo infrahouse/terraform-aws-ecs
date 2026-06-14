@@ -32,7 +32,7 @@ module "pod" {
   zone_id                               = var.zone_id
   dns_a_records                         = var.dns_names
   assume_dns                            = var.assume_dns
-  ami                                   = var.ami_id == null ? data.aws_ami.ecs.image_id : var.ami_id
+  ami                                   = local.selected_ami
   key_pair_name                         = var.ssh_key_name != null ? var.ssh_key_name : aws_key_pair.ecs.key_name
   target_group_port                     = var.container_port
   userdata                              = data.cloudinit_config.ecs.rendered

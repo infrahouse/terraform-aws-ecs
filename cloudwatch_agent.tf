@@ -117,4 +117,11 @@ resource "aws_ecs_service" "cloudwatch_agent_service" {
       VantaContainsEPHI : false
     }
   )
+
+  # Same destroy-ordering guard as aws_ecs_service.ecs: keep the instance role's
+  # ECS permissions attached until this service is fully deleted, so the
+  # container-instance agent stays connected while the service drains.
+  depends_on = [
+    aws_iam_role_policy_attachment.ecs_instance_role,
+  ]
 }
