@@ -451,6 +451,60 @@ module "victorialogs" {
 
 ---
 
+## GPU Tasks Won't Place or Can't See the GPU
+
+**Symptom:** With `gpu_count > 0`, the task stays in PENDING, or it runs but the
+application reports no GPU (`nvidia-smi` fails inside the container).
+
+**Common Causes & Solutions:**
+
+1. **Non-GPU instance type.** A GPU reservation can only place on a GPU instance.
+   Set `asg_instance_type` to a GPU family:
+
+   ```hcl
+   asg_instance_type = "g4dn.xlarge"   # not t3/m5/etc.
+   gpu_count         = 1
+   ```
+
+2. **`gpu_count` exceeds the GPUs per instance.** This fails the plan with a
+   precondition error (a task cannot span instances). Lower `gpu_count` or pick a
+   larger GPU instance type. For example, request at most 1 GPU on a `g4dn.xlarge`
+   (1 GPU), or up to 4 on a `g4dn.12xlarge`.
+
+3. **Wrong AMI — host exposes no GPU.** If you pinned `ami_id` to a non-GPU image,
+   the ECS agent never advertises GPU capacity and the task can't place. Either
+   remove `ami_id` (the module auto-selects the GPU-optimized ECS AMI when
+   `gpu_count > 0`) or pin a GPU-optimized AMI.
+
+**Diagnosis:**
+
+```bash
+# Did any container instance register a GPU resource?
+aws ecs describe-container-instances \
+  --cluster my-cluster \
+  --container-instances $(aws ecs list-container-instances --cluster my-cluster --query 'containerInstanceArns' --output text) \
+  --query 'containerInstances[*].registeredResources[?name==`GPU`]'
+
+# Does the host see the GPU? (via SSM Session Manager on the instance)
+nvidia-smi -L
+
+# Does the container see the GPU?
+docker exec "$(docker ps -qf label=com.amazonaws.ecs.container-name=<service_name> | head -n1)" nvidia-smi -L
+```
+
+An `nvidia-smi`-based `container_healthcheck_command` is a good way to make "GPU
+visible inside the container" a hard health requirement:
+
+```hcl
+container_healthcheck_command = "nvidia-smi || exit 1"
+```
+
+> **Note:** The module's GPU smoke test (`tests/test_gpu.py`) runs exactly these
+> checks. It's excluded from CI (it needs real GPU capacity and incurs cost) — run
+> it on demand with `make test-gpu`.
+
+---
+
 ## Frequently Asked Questions
 
 ### Can I use Fargate instead of EC2?
@@ -465,6 +519,15 @@ If you need Fargate, this module is not for you. The module targets users who ne
 - **Lower cost** than Fargate for sustained workloads
 
 EC2-backed ECS provides all of this at a lower price point than Fargate. Using Fargate would defeat the purpose.
+
+### Can I run GPU workloads?
+
+Yes — and this is another reason the module is EC2-only. Set `gpu_count` and a GPU
+`asg_instance_type`; the module reserves the GPU(s) for the container and
+auto-selects the GPU-optimized ECS AMI. See
+[Configuration → `gpu_count`](configuration.md#gpu_count) and the
+[GPU walkthrough](getting-started.md#running-a-gpu-workload). Fargate does not
+support GPUs.
 
 ### How do I access logs?
 

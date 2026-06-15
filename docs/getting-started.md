@@ -238,6 +238,69 @@ module "dev_service" {
 }
 ```
 
+### Running a GPU Workload
+
+ECS on EC2 can run GPU workloads (Fargate cannot). Set `gpu_count` to reserve
+GPUs for the container and choose a GPU instance type — the module auto-selects the
+GPU-optimized ECS AMI so the host exposes its GPUs to the scheduler.
+
+The example below mirrors the module's GPU smoke test (`tests/test_gpu.py`): a
+single `g4dn.xlarge` (1 GPU) running one task that reserves that GPU. The health
+check runs `nvidia-smi`, so the task only becomes healthy if the GPU device and
+driver are visible **inside the container** — an end-to-end proof that the GPU is
+usable, not just present on the host.
+
+```hcl
+module "gpu_service" {
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
+  version = "8.3.0"  # first release with GPU support (#162) — check the registry for the latest
+
+  providers = {
+    aws     = aws
+    aws.dns = aws
+  }
+
+  service_name   = "gpu-app"
+  docker_image   = "httpd"
+  container_port = 80
+
+  # GPU: reserve 1 GPU per task on a GPU instance type.
+  # ami_id is omitted, so the module selects the GPU-optimized ECS AMI.
+  asg_instance_type = "g4dn.xlarge"
+  gpu_count         = 1
+
+  # The task is only healthy if the GPU is visible inside the container.
+  container_healthcheck_command = "nvidia-smi || exit 1"
+
+  # One GPU instance, one task.
+  asg_min_size       = 1
+  asg_max_size       = 1
+  task_desired_count = 1
+
+  # Networking / DNS / monitoring
+  load_balancer_subnets = var.public_subnet_ids
+  asg_subnets           = var.private_subnet_ids
+  zone_id               = var.zone_id
+  dns_names             = ["gpu-app"]
+  alarm_emails          = ["devops@example.com"]
+}
+```
+
+A real GPU service (e.g. an inference server) follows the same shape — swap
+`docker_image` for your GPU image and size `asg_instance_type` / `task_max_count`
+to your workload. For a multi-GPU host, `floor(instance_gpus / gpu_count)` tasks
+fit per instance.
+
+> **Cost & validation notes:**
+>
+> - GPU instances are expensive — `g4dn.xlarge` is roughly **$0.50+/hour** on-demand,
+>   far more than the `t3` types used elsewhere in these docs. Size and scale
+>   deliberately.
+> - Requesting more GPUs than one instance has (`gpu_count > instance_gpus`) fails
+>   the plan. Pick a larger GPU instance type or lower `gpu_count`.
+> - The repo's GPU smoke test is excluded from CI (it needs real GPU capacity and
+>   incurs cost). Run it on demand with `make test-gpu`.
+
 ## Deploying Updates
 
 There are two ways to deploy new container versions:

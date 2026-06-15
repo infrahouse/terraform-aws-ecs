@@ -149,6 +149,47 @@ Container health check command. Exit 0 = healthy.
 container_healthcheck_command = "wget -q --spider http://localhost:8080/health || exit 1"
 ```
 
+### `gpu_count`
+
+Number of GPUs to reserve for the container. When greater than `0`, the module
+adds a `resourceRequirements` block of type `GPU` to the container definition, so
+ECS only places the task on a container instance that has that many free GPUs and
+binds the physical GPU device(s) to the container.
+
+| Default | Validation |
+|---------|------------|
+| `0` (no GPU) | Non-negative integer; must not exceed the GPUs on one `asg_instance_type` instance |
+
+Behavior when `gpu_count > 0`:
+
+- **GPU instance type required.** You must set `asg_instance_type` to a GPU family
+  (e.g. `g4dn`, `g6e`, `p3`). A GPU reservation cannot place on a non-GPU instance.
+- **Automatic GPU AMI.** Unless you set `ami_id`, the module selects the
+  GPU-optimized ECS AMI from
+  `/aws/service/ecs/optimized-ami/amazon-linux-2023/gpu/recommended/image_id`, so the
+  host exposes its GPUs to the ECS agent. An explicit `ami_id` always wins — and if
+  you pin one, it must be a GPU-optimized AMI.
+- **GPU-aware ASG sizing.** A task reserves whole GPUs, so
+  `floor(instance_gpus / gpu_count)` tasks fit per host. The module factors this into
+  the automatic `asg_max_size` calculation, and GPU capacity is usually the binding
+  cap (see [`asg_max_size`](#asg_max_size)).
+
+```hcl
+# Minimal GPU service (mirrors the module's GPU smoke test, tests/test_gpu.py):
+# one g4dn.xlarge (1 GPU), one task reserving that GPU. The health check runs
+# nvidia-smi, so the task only becomes healthy if the GPU is visible inside the
+# container.
+asg_instance_type             = "g4dn.xlarge"  # GPU instance (1 GPU)
+gpu_count                     = 1              # reserve 1 GPU per task
+container_healthcheck_command = "nvidia-smi || exit 1"
+
+# ami_id omitted -> module auto-selects the GPU-optimized ECS AMI
+```
+
+> **Precondition:** Requesting more GPUs than a single instance provides
+> (`gpu_count > instance_gpus`) fails the plan — a task cannot span instances.
+> Pick a larger GPU instance type or lower `gpu_count`.
+
 ---
 
 ## Auto Scaling Group (ASG) Configuration
@@ -191,6 +232,8 @@ When not specified, the module automatically calculates the optimal max size bas
 
 - Memory capacity needed to run `task_max_count` tasks
 - CPU capacity needed to run `task_max_count` tasks
+- GPU capacity, when `gpu_count > 0`: `floor(instance_gpus / gpu_count)` tasks fit per
+  host, which usually becomes the binding cap
 - Minimum of `asg_min_size + 1` for scaling headroom
 
 **When to Override:**
@@ -827,6 +870,7 @@ The module includes built-in validation to catch errors early:
 | `asg_min_size` | 1-1000 when set |
 | `asg_max_size` | 1-1000 when set, must be >= asg_min_size |
 | `container_port` | 1-65535 |
+| `gpu_count` | Non-negative integer; must not exceed the GPUs on one `asg_instance_type` instance (enforced via output precondition) |
 | `lb_type` | "alb" or "nlb" |
 | `autoscaling_metric` | Valid ECS/ALB metric |
 | `autoscaling_target_cpu_usage` | 1-100 |
@@ -919,6 +963,7 @@ The module exports these outputs for use in downstream configurations.
 | `service_arn` | ECS service ARN |
 | `service_name` | ECS service name (for CloudWatch Container Insights metrics) |
 | `cluster_name` | ECS cluster name (for CloudWatch Container Insights metrics) |
+| `task_definition_arn` | ARN of the ECS task definition |
 
 ### DNS and Load Balancer
 

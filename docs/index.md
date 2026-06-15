@@ -11,6 +11,9 @@ and runs containerized services with automatic scaling, load balancing, and moni
   load balancer type with SSL/TLS termination
 - **Automatic SSL Certificates** - ACM certificate creation and DNS validation
 - **Auto Scaling** - Task-level scaling based on CPU, memory, or request count metrics
+- **GPU Workloads** - Run GPU-backed tasks on EC2 GPU instances via `gpu_count`, with
+  GPU-aware Auto Scaling Group sizing and automatic GPU-optimized AMI selection — a
+  capability Fargate does not offer
 - **CloudWatch Integration** - Container and EC2 instance logging with configurable retention
 - **CloudWatch Alarms** - Health monitoring with email notifications
 - **EFS Volume Support** - Mount persistent storage to containers with encryption in transit
@@ -72,6 +75,11 @@ The module creates:
 4. **Task Definition** - Container configuration with resource limits
 5. **ECS Service** - Maintains desired task count with rolling deployments
 6. **CloudWatch** - Logging and monitoring with alerting
+
+When `gpu_count > 0`, the task definition gains a GPU `resourceRequirements` block
+and — unless you pin `ami_id` — the Auto Scaling Group launches the GPU-optimized
+ECS AMI so the ECS agent advertises each host's GPUs to the scheduler. See
+[Configuration → `gpu_count`](configuration.md#gpu_count) for details.
 
 ## Requirements
 
