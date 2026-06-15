@@ -65,6 +65,17 @@ test-gpu:  ## Run the real GPU smoke test (not run in CI). Set KEEP_AFTER=1 to k
 		tests/test_gpu.py \
 		2>&1 | tee pytest-gpu-`date +%Y%m%d-%H%M%S`-output.log
 
+.PHONY: test-experiment2
+test-experiment2:  ## Run the vLLM GPU serving experiment (not in CI; builds an image, launches g5 GPU nodes). Set KEEP_AFTER=1 to keep resources.
+	pytest -xvvs \
+		--aws-region=${TEST_REGION} \
+		--test-role-arn=${TEST_ROLE} \
+		--test-zone-name=${TEST_ZONE_NAME} \
+		-m serving \
+		$(if ${KEEP_AFTER},--keep-after) \
+		tests/test_experiment2.py \
+		2>&1 | tee pytest-experiment2-`date +%Y%m%d-%H%M%S`-output.log
+
 .PHONY: bootstrap
 bootstrap: install-hooks ## bootstrap the development environment
 	pip install -U "pip ~= 26.0"
