@@ -86,7 +86,7 @@ ECS AMI so the ECS agent advertises each host's GPUs to the scheduler. See
 | Name | Version |
 |------|---------|
 | terraform | ~> 1.5 |
-| aws | >= 5.56, < 7.0 |
+| aws | ~> 6.0 |
 
 ## Next Steps
 
