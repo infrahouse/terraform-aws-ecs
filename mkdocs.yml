@@ -1,4 +1,4 @@
-site_name: InfraHouse terraform-aws-ecs
+site_name: InfraHouse ecs
 site_url: https://infrahouse.github.io/terraform-aws-ecs/
 site_description: Terraform module documentation
 site_author: InfraHouse
@@ -65,6 +65,7 @@ markdown_extensions:
 
 plugins:
   - search
+  - glightbox
   - minify:
       minify_html: true
 
