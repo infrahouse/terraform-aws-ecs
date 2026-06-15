@@ -27,6 +27,8 @@ The module creates an Elastic Container Service and runs one docker image in it.
 - Spot instance support for cost optimization
 - Extra target groups for multi-port containers
 - Vector Agent daemon for log/metrics collection via Vector pipeline
+- GPU workloads on EC2 GPU instances (`gpu_count`) with GPU-aware Auto Scaling Group
+  sizing and automatic GPU-optimized AMI selection (Fargate cannot run GPUs)
 
 ## Quick Start
 
@@ -160,6 +162,62 @@ module "tempo" {
 > replacement (AWS API limitation on `load_balancer` blocks). Use
 > [`dns_routing_policy = "weighted"`](#input_dns_routing_policy) to perform
 > zero-downtime migrations when changing extra target groups.
+
+---
+
+## GPU Workloads
+
+Run GPU-backed tasks on EC2 GPU instances by setting `gpu_count` (Fargate does not
+support GPUs). When `gpu_count > 0`, the module adds a GPU `resourceRequirements`
+block to the task definition and — unless you set `ami_id` — automatically selects
+the GPU-optimized ECS AMI so the host exposes its GPUs to the ECS agent. You must
+choose a GPU instance family in `asg_instance_type` (e.g. `g4dn`, `g6e`, `p3`); a
+GPU reservation cannot place on a non-GPU instance.
+
+The example below mirrors the module's GPU smoke test (`tests/test_gpu.py`): one
+`g4dn.xlarge` (1 GPU) running a single task that reserves the GPU. The health check
+runs `nvidia-smi`, so the task only becomes healthy if the GPU is visible inside the
+container.
+
+```hcl
+module "gpu_service" {
+  source  = "registry.infrahouse.com/infrahouse/ecs/aws"
+  version = "8.3.0"  # first release with GPU support; check the registry for the latest
+
+  providers = {
+    aws     = aws
+    aws.dns = aws
+  }
+
+  service_name   = "gpu-app"
+  docker_image   = "httpd"
+  container_port = 80
+
+  # GPU: reserve 1 GPU per task on a GPU instance type.
+  # ami_id omitted -> module auto-selects the GPU-optimized ECS AMI.
+  asg_instance_type = "g4dn.xlarge"
+  gpu_count         = 1
+
+  # The task is only healthy if the GPU is visible inside the container.
+  container_healthcheck_command = "nvidia-smi || exit 1"
+
+  # One GPU instance, one task.
+  asg_min_size       = 1
+  asg_max_size       = 1
+  task_desired_count = 1
+
+  load_balancer_subnets = module.vpc.subnet_public_ids
+  asg_subnets           = module.vpc.subnet_private_ids
+  zone_id               = data.aws_route53_zone.main.zone_id
+  dns_names             = ["gpu-app"]
+  alarm_emails          = ["devops@example.com"]
+}
+```
+
+On a multi-GPU host, `floor(instance_gpus / gpu_count)` tasks fit per instance, so
+GPU capacity usually becomes the binding cap on `asg_max_size`. Requesting more GPUs
+than one instance provides fails the plan. The GPU smoke test is excluded from CI
+(it needs real GPU capacity and incurs cost); run it with `make test-gpu`.
 
 ---
 
