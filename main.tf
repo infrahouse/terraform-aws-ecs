@@ -58,60 +58,63 @@ resource "aws_ecs_cluster" "ecs" {
 resource "aws_ecs_task_definition" "ecs" {
   family = var.service_name
   container_definitions = jsonencode(
-    [
-      merge(
-        {
-          name      = var.service_name
-          image     = var.docker_image
-          cpu       = var.container_cpu
-          memory    = var.container_memory
-          essential = true
-          portMappings = concat(
-            [
-              {
-                containerPort = var.container_port
-              }
-            ],
-            [
-              for k, v in var.extra_target_groups : {
-                containerPort = v.container_port
+    concat(
+      [
+        merge(
+          {
+            name      = var.service_name
+            image     = var.docker_image
+            cpu       = var.container_cpu
+            memory    = var.container_memory
+            essential = true
+            portMappings = concat(
+              [
+                {
+                  containerPort = var.container_port
+                }
+              ],
+              [
+                for k, v in var.extra_target_groups : {
+                  containerPort = v.container_port
+                }
+              ]
+            )
+            logConfiguration = local.log_configuration
+            environment      = var.task_environment_variables
+            secrets          = var.task_secrets
+            mountPoints = [
+              for name, def in merge(var.task_efs_volumes, var.task_local_volumes) : {
+                sourceVolume : name
+                containerPath : def.container_path
               }
             ]
-          )
-          logConfiguration = local.log_configuration
-          environment      = var.task_environment_variables
-          secrets          = var.task_secrets
-          mountPoints = [
-            for name, def in merge(var.task_efs_volumes, var.task_local_volumes) : {
-              sourceVolume : name
-              containerPath : def.container_path
+          },
+          var.container_command != null ? { command : var.container_command } : {},
+          var.dockerSecurityOptions != null ? { dockerSecurityOptions : var.dockerSecurityOptions } : {},
+          var.container_memory_reservation != null ? { memoryReservation : var.container_memory_reservation } : {},
+          var.container_healthcheck_command != null ? {
+            healthCheck = {
+              "retries" : 3,
+              "command" : [
+                "CMD-SHELL", var.container_healthcheck_command
+              ],
+              "timeout" : 5,
+              "interval" : 30,
+              "startPeriod" : null
             }
-          ]
-        },
-        var.container_command != null ? { command : var.container_command } : {},
-        var.dockerSecurityOptions != null ? { dockerSecurityOptions : var.dockerSecurityOptions } : {},
-        var.container_memory_reservation != null ? { memoryReservation : var.container_memory_reservation } : {},
-        var.container_healthcheck_command != null ? {
-          healthCheck = {
-            "retries" : 3,
-            "command" : [
-              "CMD-SHELL", var.container_healthcheck_command
-            ],
-            "timeout" : 5,
-            "interval" : 30,
-            "startPeriod" : null
-          }
-        } : {},
-        var.gpu_count > 0 ? {
-          resourceRequirements = [
-            {
-              type  = "GPU"
-              value = tostring(var.gpu_count)
-            }
-          ]
-        } : {}
-      )
-    ]
+          } : {},
+          var.gpu_count > 0 ? {
+            resourceRequirements = [
+              {
+                type  = "GPU"
+                value = tostring(var.gpu_count)
+              }
+            ]
+          } : {}
+        )
+      ],
+      var.extra_containers
+    )
   )
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = var.task_role_arn

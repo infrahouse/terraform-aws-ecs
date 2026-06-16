@@ -519,6 +519,24 @@ variable "environment" {
   default     = "development"
 }
 
+variable "extra_containers" {
+  description = <<-EOT
+    Additional container definitions to include in the ECS task definition.
+    Each element is a map representing a full ECS container definition
+    (name, image, cpu, memory, etc.).  The primary application container
+    is always the first element; extra containers are appended after it.
+
+    Typical use-cases: ADOT/OpenTelemetry collector sidecars, DCGM
+    exporter for GPU metrics, log forwarders, or any helper container
+    that must share the task network namespace with the application.
+
+    Default is empty, which preserves the existing single-container
+    behaviour.
+  EOT
+  type        = list(any)
+  default     = []
+}
+
 variable "extra_files" {
   description = "Additional files to create on a host EC2 instance."
   type = list(
