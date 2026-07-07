@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.2.1] - 2026-07-07
+
+### Bug Fixes
+
+- Pin cryptography >= 48.0.1 for GHSA-537c-gmf6-5ccf
+
+### Documentation
+
+- Document GPU task support (gpu_count)
+- Correct aws provider requirement to ~> 6.0
+- Update mkdocs config (site_name, glightbox plugin)
+- Add GPU workloads to README (Features + usage section)
+
+### Testing
+
+- Add Experiment 2 — vLLM GPU model-serving test (not in CI)
+
 ## [8.2.0] - 2026-06-14
 
 ### Bug Fixes
