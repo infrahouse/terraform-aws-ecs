@@ -1,1 +1,5 @@
 infrahouse-core ~= 0.26, >= 0.26.1
+# Security floor only: cryptography is an unused transitive dep
+# (infrahouse-core -> PyGithub -> pyjwt[crypto]). Pin >= 48.0.1 to clear
+# GHSA-537c-gmf6-5ccf. No API dependency, so no ~= upper cap.
+cryptography >= 48.0.1
