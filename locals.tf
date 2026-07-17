@@ -96,6 +96,32 @@ locals {
     memory = 256
   }
 
+  # The CloudWatch agent's ECS service discovery writes discovered targets to
+  # sd_result_file (/tmp/cwagent_ecs_auto_sd.yaml) already carrying their job,
+  # TaskDefinitionFamily, container_name, and __metrics_path__ labels. Prometheus
+  # consumes that file via file_sd_configs. This is the canonical single-job
+  # pattern from the AWS docs: per-target job names and metrics paths come from
+  # the ecs_service_discovery config (sd_job_name / sd_metrics_path), not from
+  # separate scrape_configs, so one file_sd job covers every target.
+  # See: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-Setup-autodiscovery-ecs.html
+  prometheus_scrape_config = length(var.cloudwatch_prometheus_scrape_targets) > 0 ? yamlencode({
+    global = {
+      scrape_interval = "1m"
+      scrape_timeout  = "10s"
+    }
+    scrape_configs = [
+      {
+        job_name     = "cwagent-ecs-file-sd-config"
+        sample_limit = 10000
+        file_sd_configs = [
+          {
+            files = ["/tmp/cwagent_ecs_auto_sd.yaml"]
+          }
+        ]
+      }
+    ]
+  }) : ""
+
   vector_agent_config_path = "/etc/vector/vector.yaml"
   vector_agent_container_resources = {
     cpu    = 128

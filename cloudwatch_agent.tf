@@ -55,6 +55,25 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_agent_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+data "aws_iam_policy_document" "prometheus_ecs_sd" {
+  count = var.enable_cloudwatch_logs && length(var.cloudwatch_prometheus_scrape_targets) > 0 ? 1 : 0
+  statement {
+    actions = [
+      "ecs:ListTasks",
+      "ecs:DescribeTaskDefinition",
+      "ecs:DescribeContainerInstances",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "cloudwatch_agent_prometheus_sd" {
+  count  = var.enable_cloudwatch_logs && length(var.cloudwatch_prometheus_scrape_targets) > 0 ? 1 : 0
+  name   = "prometheus-ecs-service-discovery"
+  role   = aws_iam_role.cloudwatch_agent_task_role[0].id
+  policy = data.aws_iam_policy_document.prometheus_ecs_sd[0].json
+}
+
 resource "aws_ecs_task_definition" "cloudwatch_agent" {
   count              = var.enable_cloudwatch_logs ? 1 : 0
   family             = format("%s-cw-agent-daemon", var.service_name)
@@ -63,24 +82,34 @@ resource "aws_ecs_task_definition" "cloudwatch_agent" {
 
   container_definitions = jsonencode(
     [
-      {
-        name      = "cloudwatch-agent"
-        image     = var.cloudwatch_agent_image
-        memory    = local.cloudwatch_agent_container_resources.memory
-        cpu       = local.cloudwatch_agent_container_resources.cpu
-        essential = true
-        mountPoints = [
-          {
-            sourceVolume  = "log-volume"
-            containerPath = "/var/log"
-          },
-          {
-            sourceVolume  = "config-volume"
-            containerPath = "/etc/cwagentconfig"
-            readOnly      = true
-          }
-        ]
-      }
+      merge(
+        {
+          name      = "cloudwatch-agent"
+          image     = var.cloudwatch_agent_image
+          memory    = local.cloudwatch_agent_container_resources.memory
+          cpu       = local.cloudwatch_agent_container_resources.cpu
+          essential = true
+          mountPoints = [
+            {
+              sourceVolume  = "log-volume"
+              containerPath = "/var/log"
+            },
+            {
+              sourceVolume  = "config-volume"
+              containerPath = "/etc/cwagentconfig"
+              readOnly      = true
+            }
+          ]
+        },
+        length(var.cloudwatch_prometheus_scrape_targets) > 0 ? {
+          environment = [
+            {
+              name  = "PROMETHEUS_CONFIG_CONTENT"
+              value = local.prometheus_scrape_config
+            }
+          ]
+        } : {}
+      )
     ]
   )
 

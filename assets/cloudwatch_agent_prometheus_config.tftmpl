@@ -1,0 +1,79 @@
+${jsonencode({
+  "agent" = {
+    "logfile" = "/var/log/amazon-cloudwatch-agent.log"
+    "debug"   = false
+  }
+  "logs" = {
+    "logs_collected" = {
+      "files" = {
+        "collect_list" = [
+          {
+            "file_path"       = "/var/log/messages"
+            "log_group_name"  = syslog_group_name
+            "log_stream_name" = "{local_hostname}"
+          },
+          {
+            "file_path"       = "/var/log/dmesg"
+            "log_group_name"  = dmesg_group_name
+            "log_stream_name" = "{local_hostname}"
+          }
+        ]
+      }
+    }
+    "metrics_collected" = {
+      "prometheus" = {
+        "cluster_name"           = cluster_name
+        "prometheus_config_path" = "env:PROMETHEUS_CONFIG_CONTENT"
+        "ecs_service_discovery" = {
+          "sd_frequency"         = "1m"
+          "sd_result_file"       = "/tmp/cwagent_ecs_auto_sd.yaml"
+          "sd_cluster_region"    = aws_region
+          "sd_target_cluster"    = cluster_name
+          "docker_label"         = {}
+          "task_definition_list" = [
+            for target in prometheus_targets : {
+              "sd_job_name"             = target.job_name
+              "sd_metrics_path"         = target.metrics_path
+              "sd_metrics_ports"        = tostring(target.container_port)
+              "sd_task_definition_arn_pattern" = ".*"
+            }
+          ]
+        }
+        "emf_processor" = {
+          "metric_declaration" = [
+            for target in prometheus_targets : {
+              "source_labels"    = ["job"]
+              "label_matcher"    = target.job_name
+              "dimensions"       = [["ClusterName", "TaskDefinitionFamily"]]
+              "metric_selectors" = [".*"]
+            }
+          ]
+        }
+      }
+    }
+  }
+  "metrics" = {
+    "namespace" = "ECS/${cluster_name}"
+    "metrics_collected" = {
+      "cpu" = {
+        "measurement"                = ["cpu_usage_idle", "cpu_usage_iowait", "cpu_usage_user", "cpu_usage_system"]
+        "metrics_collection_interval" = 60
+        "totalcpu"                    = true
+      }
+      "mem" = {
+        "measurement"                = ["mem_used_percent", "mem_available", "mem_total"]
+        "metrics_collection_interval" = 60
+      }
+      "disk" = {
+        "measurement"                = ["used_percent", "inodes_free"]
+        "metrics_collection_interval" = 60
+        "resources"                   = ["*"]
+      }
+      "diskio" = {
+        "measurement"                = ["io_time", "read_bytes", "write_bytes"]
+        "metrics_collection_interval" = 60
+        "resources"                   = ["*"]
+      }
+    }
+  }
+})}

@@ -81,12 +81,25 @@ data "cloudinit_config" "ecs" {
                   {
                     path : local.cloudwatch_agent_config_path
                     permissions : "0644"
-                    content : templatefile(
-                      "${path.module}/assets/cloudwatch_agent_config.tftmpl",
-                      {
-                        syslog_group_name : aws_cloudwatch_log_group.ecs_ec2_syslog[0].name
-                        dmesg_group_name : aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
-                      }
+                    content : var.cloudwatch_agent_config != null ? var.cloudwatch_agent_config : (
+                      length(var.cloudwatch_prometheus_scrape_targets) > 0
+                      ? templatefile(
+                        "${path.module}/assets/cloudwatch_agent_prometheus_config.tftmpl",
+                        {
+                          syslog_group_name  = aws_cloudwatch_log_group.ecs_ec2_syslog[0].name
+                          dmesg_group_name   = aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
+                          prometheus_targets = var.cloudwatch_prometheus_scrape_targets
+                          cluster_name       = var.service_name
+                          aws_region         = data.aws_region.current.name
+                        }
+                      )
+                      : templatefile(
+                        "${path.module}/assets/cloudwatch_agent_config.tftmpl",
+                        {
+                          syslog_group_name = aws_cloudwatch_log_group.ecs_ec2_syslog[0].name
+                          dmesg_group_name  = aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
+                        }
+                      )
                     )
                   }
                 ] : [],
