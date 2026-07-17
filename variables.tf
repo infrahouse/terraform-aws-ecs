@@ -213,6 +213,56 @@ variable "cloudwatch_agent_image" {
   default     = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300062.0b1304"
 }
 
+variable "cloudwatch_agent_config" {
+  description = <<-EOT
+    Custom CloudWatch agent JSON config. When provided, replaces the
+    built-in default config template entirely.
+
+    The default template collects host logs (/var/log/messages, /var/log/dmesg)
+    and, when cloudwatch_prometheus_scrape_targets is non-empty, adds host
+    metrics and Prometheus scraping via ECS service discovery.
+
+    Example:
+      cloudwatch_agent_config = templatefile("files/cwagent.json.tftpl", { ... })
+  EOT
+  type        = string
+  default     = null
+}
+
+variable "cloudwatch_prometheus_scrape_targets" {
+  description = <<-EOT
+    Prometheus-style scrape targets for the CloudWatch agent daemon.
+
+    When non-empty, the CloudWatch agent daemon discovers matching ECS tasks by
+    task-definition ARN and container port (ECS service discovery), scrapes their
+    metrics endpoint, and publishes the metrics to CloudWatch (EMF) in the
+    ECS/ContainerInsights/Prometheus namespace, dimensioned by ClusterName and
+    TaskDefinitionFamily. The daemon also begins collecting host metrics
+    (CPU, memory, disk) into the ECS/{service_name} namespace.
+
+    When empty (default), the rendered config is byte-identical to the existing
+    logs-only behavior, so existing consumers see no change.
+
+    Each target's container_port is the port the app exposes its metrics on
+    (e.g. vLLM's OpenAI API + /metrics on 8000).
+
+    Example (vLLM):
+      cloudwatch_prometheus_scrape_targets = [
+        {
+          job_name       = "vllm"
+          metrics_path   = "/metrics"
+          container_port = 8000
+        }
+      ]
+  EOT
+  type = list(object({
+    job_name       = string
+    metrics_path   = optional(string, "/metrics")
+    container_port = number
+  }))
+  default = []
+}
+
 variable "cloudwatch_log_group" {
   description = <<-EOT
     CloudWatch log group name to create and use.
