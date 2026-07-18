@@ -243,14 +243,14 @@ variable "cloudwatch_agent_image" {
 
 variable "cloudwatch_agent_extra_environment" {
   description = <<-EOT
-    Extra environment variables merged into the cloudwatch-agent daemon container
-    definition. Lets you configure the stock agent image without maintaining a
-    custom wrapper image.
+    Extra environment variables merged into the (logs-only) cloudwatch-agent daemon
+    container definition. Lets you configure the stock agent image without maintaining
+    a custom wrapper image (for example, an HTTPS proxy).
 
-    On GPU hosts (gpu_count > 0) the module already injects
-    NVIDIA_VISIBLE_DEVICES=all and NVIDIA_DRIVER_CAPABILITIES=utility so the agent
-    can collect the nvidia_gpu metrics. A variable listed here with the same name
-    overrides the injected default.
+    This does NOT enable GPU metrics. On gpu_count > 0 GPU metrics are collected by a
+    separate host-level CloudWatch agent (a container cannot see the GPU on the AL2023
+    GPU AMI without a resourceRequirements reservation), so this variable has no effect
+    on them.
 
     Do not put secrets here: values are stored in plain text in the task
     definition. The agent daemon needs no secrets — it authenticates via its
