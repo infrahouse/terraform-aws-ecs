@@ -40,8 +40,8 @@ resource "aws_appautoscaling_policy" "ecs_policy" {
 # max across policies and scales in only when all agree), so the service scales on
 # GPU and CPU together: whichever resource saturates first adds tasks, and a task is
 # removed only when both are slack. Gated on gpu_count > 0. The metric comes from the
-# CloudWatch agent's nvidia_gpu collector (assets/cloudwatch_agent_config_gpu.tftmpl),
-# emitted into local.gpu_metrics_namespace and aggregated by AutoScalingGroupName.
+# host CloudWatch agent's nvidia_gpu collector (configured in datasources.tf), emitted
+# into local.gpu_metrics_namespace and aggregated by AutoScalingGroupName.
 resource "aws_appautoscaling_policy" "gpu_policy" {
   count              = var.gpu_count > 0 ? 1 : 0
   name               = "auto-scaling-gpu"

@@ -16,15 +16,16 @@ from tests.conftest import (
     cleanup_dot_terraform,
 )
 
-# The aggregated series the GPU scaling policy tracks (see autoscaling.tf and
-# assets/cloudwatch_agent_config_gpu.tftmpl): metric nvidia_smi_utilization_gpu in
-# namespace CWAgent, keyed only by AutoScalingGroupName.
+# The aggregated series the GPU scaling policy tracks (see autoscaling.tf; the real
+# metric is produced by the host CloudWatch agent configured in datasources.tf):
+# nvidia_smi_utilization_gpu in namespace CWAgent, keyed only by AutoScalingGroupName.
 GPU_METRICS_NAMESPACE = "CWAgent"
 GPU_UTIL_METRIC = "nvidia_smi_utilization_gpu"
 
 # Publish injected samples with a large Count so their Average dominates the real
-# (idle, ~0%) values the CloudWatch agent emits into the same series. The policy
-# uses the Average statistic, so a high-count injection deterministically drives it.
+# (idle, ~0%) values the host CloudWatch agent publishes into the same series on this
+# GPU stack. The policy uses the Average statistic, so a high-count injection
+# deterministically drives it even alongside the live host emitter.
 INJECT_SAMPLE_COUNT = 1000.0
 
 
@@ -137,9 +138,13 @@ def test_gpu_autoscaling_policy(
     single task, then drives the policy directly via CloudWatch PutMetricData rather
     than by loading a real GPU: it injects a high nvidia_smi_utilization_gpu into the
     aggregated (AutoScalingGroupName) series the policy tracks and asserts the service
-    scales out, then injects a low value and asserts it scales back in. This isolates
-    the policy wiring (metric name / namespace / dimension / target) from any real
-    GPU workload, so it is deterministic and does not need a model.
+    scales out, then injects a low value and asserts it scales back in. This drives the
+    policy wiring (metric name / namespace / dimension / target) deterministically
+    without a real GPU workload -- the host CloudWatch agent is running but idle, so the
+    high-count injection dominates its ~0% samples. test_gpu covers that the host agent
+    actually emits this series; the two together cover the metric -> task-scaling path
+    (the only untested seam being that real GPU load produces high utilization, which is
+    a property of the workload, not the module).
 
     Not run in CI (requires GPU capacity and incurs cost). Run with
     ``make test-gpu-autoscaling`` (add ``KEEP_AFTER=1`` to keep the resources).
