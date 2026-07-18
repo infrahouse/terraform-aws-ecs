@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.3.1] - 2026-07-18
+
+### Bug Fixes
+
+- Collect GPU metrics with a host CloudWatch agent, not the sidecar
+- Keep the container logs-agent config out of the host GPU agent's directory
+
+### Documentation
+
+- Point GPU metric comments at the host agent; drop deleted-template refs
+- Correct GPU-metrics docs to the host-agent reality
+
+### Features
+
+- Add cloudwatch_agent_extra_environment and GPU NVIDIA env defaults
+
+### Miscellaneous Tasks
+
+- Add GPU planning docs and ignore .DS_Store
+
+### Testing
+
+- Verify GPU metric emission end-to-end; robustness fixes
+- Widen GPU autoscaling timeouts for headroom
+
 ## [8.3.0] - 2026-07-18
 
 ### Features
