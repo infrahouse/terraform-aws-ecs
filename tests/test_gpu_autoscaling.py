@@ -201,8 +201,10 @@ def test_gpu_autoscaling_policy(
         LOG.info("Initial desiredCount=%d", initial_desired)
 
         # Scale-out: high GPU utilization must raise desiredCount to the max (2).
-        # Target-tracking scale-out needs ~3 breaching 60s periods plus the scaling
-        # action, so allow generous time.
+        # Target-tracking scale-out latency is highly variable (~3 breaching 60s periods
+        # plus Application Auto Scaling's reaction and the ECS apply) — observed anywhere
+        # from ~3 to ~11 min in practice — so allow generous headroom to avoid flaking on
+        # a timeout rather than a real failure.
         scaled_out = _drive_until_desired(
             ecs_client,
             cloudwatch_client,
@@ -211,7 +213,7 @@ def test_gpu_autoscaling_policy(
             asg_name,
             inject_value=100,
             predicate=lambda desired: desired >= 2,
-            timeout_s=720,
+            timeout_s=1200,
             phase="scale-out",
         )
         assert (
@@ -220,8 +222,10 @@ def test_gpu_autoscaling_policy(
         LOG.info("GPU policy scaled the service out to desiredCount=%d", scaled_out)
 
         # Scale-in: low GPU utilization must return desiredCount to the min (1). ECS
-        # target-tracking scale-in is intentionally slow (a longer alarm window plus
-        # the scale_in_cooldown), so allow substantially more time than scale-out.
+        # target-tracking scale-in is intentionally slow (a longer alarm window plus the
+        # scale_in_cooldown), so allow substantially more time than scale-out. The loop
+        # returns as soon as it scales in, so the large timeout only costs wall-clock on a
+        # genuinely slow scale-in, not on a fast one.
         scaled_in = _drive_until_desired(
             ecs_client,
             cloudwatch_client,
@@ -230,7 +234,7 @@ def test_gpu_autoscaling_policy(
             asg_name,
             inject_value=0,
             predicate=lambda desired: desired <= 1,
-            timeout_s=1500,
+            timeout_s=1800,
             phase="scale-in",
         )
         assert scaled_in == 1, f"Expected scale-in to desiredCount 1, got {scaled_in}"
