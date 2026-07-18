@@ -919,7 +919,7 @@ The module includes built-in validation to catch errors early:
 ```hcl
 module "production_api" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "8.3.0"
+  version = "8.3.1"
 
   providers = {
     aws     = aws
