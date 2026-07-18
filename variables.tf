@@ -241,6 +241,49 @@ variable "cloudwatch_agent_image" {
   default     = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300062.0b1304"
 }
 
+variable "cloudwatch_agent_extra_environment" {
+  description = <<-EOT
+    Extra environment variables merged into the cloudwatch-agent daemon container
+    definition. Lets you configure the stock agent image without maintaining a
+    custom wrapper image.
+
+    On GPU hosts (gpu_count > 0) the module already injects
+    NVIDIA_VISIBLE_DEVICES=all and NVIDIA_DRIVER_CAPABILITIES=utility so the agent
+    can collect the nvidia_gpu metrics. A variable listed here with the same name
+    overrides the injected default.
+
+    Do not put secrets here: values are stored in plain text in the task
+    definition. The agent daemon needs no secrets — it authenticates via its
+    task role.
+
+    Example:
+      cloudwatch_agent_extra_environment = [
+        { name = "HTTPS_PROXY", value = "http://proxy.internal:3128" }
+      ]
+  EOT
+  type = list(
+    object(
+      {
+        name : string
+        value : string
+      }
+    )
+  )
+  default = []
+
+  validation {
+    condition = (
+      length(distinct(var.cloudwatch_agent_extra_environment[*].name))
+      == length(var.cloudwatch_agent_extra_environment)
+    )
+    error_message = <<-EOT
+      cloudwatch_agent_extra_environment contains duplicate variable names.
+      Each name may appear only once; remove or rename the duplicates.
+      Got names: ${join(", ", var.cloudwatch_agent_extra_environment[*].name)}
+    EOT
+  }
+}
+
 variable "cloudwatch_log_group" {
   description = <<-EOT
     CloudWatch log group name to create and use.

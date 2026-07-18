@@ -63,24 +63,32 @@ resource "aws_ecs_task_definition" "cloudwatch_agent" {
 
   container_definitions = jsonencode(
     [
-      {
-        name      = "cloudwatch-agent"
-        image     = var.cloudwatch_agent_image
-        memory    = local.cloudwatch_agent_container_resources.memory
-        cpu       = local.cloudwatch_agent_container_resources.cpu
-        essential = true
-        mountPoints = [
-          {
-            sourceVolume  = "log-volume"
-            containerPath = "/var/log"
-          },
-          {
-            sourceVolume  = "config-volume"
-            containerPath = "/etc/cwagentconfig"
-            readOnly      = true
-          }
-        ]
-      }
+      merge(
+        {
+          name      = "cloudwatch-agent"
+          image     = var.cloudwatch_agent_image
+          memory    = local.cloudwatch_agent_container_resources.memory
+          cpu       = local.cloudwatch_agent_container_resources.cpu
+          essential = true
+          mountPoints = [
+            {
+              sourceVolume  = "log-volume"
+              containerPath = "/var/log"
+            },
+            {
+              sourceVolume  = "config-volume"
+              containerPath = "/etc/cwagentconfig"
+              readOnly      = true
+            }
+          ]
+        },
+        # Rendered only when non-empty so deployments with no extra environment
+        # keep a byte-identical container definition (no task-definition churn
+        # on upgrade).
+        length(local.cloudwatch_agent_environment) > 0 ? {
+          environment = local.cloudwatch_agent_environment
+        } : {}
+      )
     ]
   )
 
