@@ -9,6 +9,7 @@ from boto3 import Session
 from infrahouse_core.aws.ec2_instance import EC2Instance
 from infrahouse_core.timeout import timeout
 from pytest_infrahouse import terraform_apply
+from pytest_infrahouse.utils import wait_for_instance_refresh
 
 from tests.conftest import (
     LOG,
@@ -154,7 +155,19 @@ def test_gpu_smoke(
     ) as tf_output:
         LOG.info(json.dumps(tf_output, indent=4))
         service_name = tf_output["service_name"]["value"]
+        asg_name = tf_output["asg_name"]["value"]
         cleanup_ecs_task_definitions(service_name)
+
+        # The launch-template/user_data change (e.g. the nvidia default-runtime
+        # config) rolls the ASG. Wait for any instance refresh to finish before
+        # asserting, so the checks run against fully-rolled instances carrying the
+        # current user_data rather than instances still being replaced.
+        wait_for_instance_refresh(
+            asg_name=asg_name,
+            autoscaling_client=boto3_session.client(
+                "autoscaling", region_name=aws_region
+            ),
+        )
 
         # End-to-end proof: the service only serves traffic if the GPU task
         # placed on the GPU instance and the nvidia-smi health check passed.
@@ -299,35 +312,21 @@ def test_gpu_smoke(
         assert "GPU" in stdout, f"No GPU visible inside container: {stdout}"
         LOG.info("Container nvidia-smi -L:\n%s", stdout)
 
-        # Daemon-container proof (issue #173): on GPU hosts the cloudwatch-agent
-        # daemon task definition carries the NVIDIA runtime environment variables
-        # (so the default NVIDIA runtime injects nvidia-smi/NVML into the agent)
-        # while carrying no GPU resourceRequirements reservation (the GPU must
-        # stay reservable by the workload).
+        # The containerized cloudwatch-agent daemon must NOT reserve a GPU (it does
+        # logs only; GPU metrics are collected by a host-level agent). A GPU
+        # resourceRequirements here would steal the GPU from the workload on
+        # single-GPU instances.
         agent_container = ecs_client.describe_task_definition(
             taskDefinition=f"{service_name}-cw-agent-daemon"
         )["taskDefinition"]["containerDefinitions"][0]
-        agent_env = {
-            env["name"]: env["value"] for env in agent_container.get("environment", [])
-        }
-        assert agent_env.get("NVIDIA_VISIBLE_DEVICES") == "all", (
-            f"cloudwatch-agent daemon is missing NVIDIA_VISIBLE_DEVICES=all; "
-            f"environment: {agent_env}"
-        )
-        assert agent_env.get("NVIDIA_DRIVER_CAPABILITIES") == "utility", (
-            f"cloudwatch-agent daemon is missing NVIDIA_DRIVER_CAPABILITIES=utility; "
-            f"environment: {agent_env}"
-        )
         assert not agent_container.get("resourceRequirements"), (
             "cloudwatch-agent daemon must not reserve the GPU; got "
             f"resourceRequirements: {agent_container.get('resourceRequirements')}"
         )
-        LOG.info("cloudwatch-agent daemon NVIDIA environment: %s", agent_env)
 
-        # Metric-emission proof (Problem 1a): the CloudWatch agent publishes the
-        # nvidia_gpu metrics into CWAgent, aggregated by AutoScalingGroupName — the
-        # exact series the GPU scaling policy tracks. This closes the loop that the
-        # agent config renders and the metric actually lands in CloudWatch.
-        asg_name = tf_output["asg_name"]["value"]
+        # Metric-emission proof (Problem 1a): the host-level CloudWatch agent publishes
+        # the nvidia_gpu metrics into CWAgent, aggregated by AutoScalingGroupName — the
+        # exact series the GPU scaling policy tracks. This closes the loop that the host
+        # agent is installed/configured and the metric actually lands in CloudWatch.
         cloudwatch_client = boto3_session.client("cloudwatch", region_name=aws_region)
         _wait_for_gpu_metrics(cloudwatch_client, asg_name)
