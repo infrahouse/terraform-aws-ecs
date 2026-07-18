@@ -312,6 +312,23 @@ def test_gpu_smoke(
         assert "GPU" in stdout, f"No GPU visible inside container: {stdout}"
         LOG.info("Container nvidia-smi -L:\n%s", stdout)
 
+        # The containerized (logs) cloudwatch-agent must be RUNNING, not crash-looping.
+        # GPU hosts also run a host-level agent for metrics; the two must not share config
+        # under /opt/aws/amazon-cloudwatch-agent/etc/, or the host agent's fetch-config
+        # clobbers the container's config and the logs agent crash-loops. That regressed
+        # once and this assertion is the guard.
+        exit_code, stdout, stderr = host.execute_command(
+            "docker ps --filter name=cloudwatch-agent --filter status=running "
+            "--format '{{.Status}}'",
+            execution_timeout=60,
+        )
+        assert exit_code == 0 and "Up" in stdout, (
+            "containerized cloudwatch-agent (logs) is not running — likely crash-looping "
+            f"from a config collision with the host GPU agent; running: {stdout!r} "
+            f"stderr: {stderr!r}"
+        )
+        LOG.info("Containerized logs cloudwatch-agent is running: %s", stdout.strip())
+
         # The containerized cloudwatch-agent daemon must NOT reserve a GPU (it does
         # logs only; GPU metrics are collected by a host-level agent). A GPU
         # resourceRequirements here would steal the GPU from the workload on

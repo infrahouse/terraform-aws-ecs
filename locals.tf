@@ -90,7 +90,12 @@ locals {
   instance_role_policy_attachment = var.lb_type == "alb" ? module.pod[0].instance_role_policy_attachment : module.tcp-pod[0].instance_role_policy_attachment
   acm_certificate_arn             = var.lb_type == "alb" ? module.pod[0].acm_certificate_arn : null
 
-  cloudwatch_agent_config_path = "/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json"
+  # Config for the containerized (logs) cloudwatch-agent daemon. Kept OUT of
+  # /opt/aws/amazon-cloudwatch-agent/etc/ on purpose: on GPU hosts the host-level agent
+  # (installed via dnf) owns that directory and its `fetch-config` clobbers any file there,
+  # which turned this into an empty dir and crash-looped the logs agent. This path is the
+  # config-volume host_path in cloudwatch_agent.tf too.
+  cloudwatch_agent_config_path = "/etc/ecs-cloudwatch-agent-config.json"
   cloudwatch_agent_container_resources = {
     cpu    = 128
     memory = 256
