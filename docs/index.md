@@ -29,7 +29,7 @@ and runs containerized services with automatic scaling, load balancing, and moni
 ```hcl
 module "ecs_service" {
   source  = "registry.infrahouse.com/infrahouse/ecs/aws"
-  version = "8.2.1"
+  version = "8.3.0"
 
   providers = {
     aws     = aws
