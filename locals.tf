@@ -103,28 +103,22 @@ locals {
   # and NVML only — no CUDA. Deliberately no GPU resourceRequirements reservation
   # here: the daemon must observe the GPUs without reserving them away from the
   # workload.
-  cloudwatch_agent_gpu_environment = var.gpu_count > 0 ? [
-    { name = "NVIDIA_VISIBLE_DEVICES", value = "all" },
-    { name = "NVIDIA_DRIVER_CAPABILITIES", value = "utility" },
-  ] : []
+  # Extra environment merged into the containerized (logs-only) cloudwatch-agent daemon.
+  # GPU NVIDIA_* env vars are intentionally NOT injected here: the container cannot see
+  # the GPU on the AL2023 AMI regardless (GPU metrics are collected by the host agent,
+  # see datasources.tf). This is the generic passthrough from #174.
+  cloudwatch_agent_environment = var.cloudwatch_agent_extra_environment
 
-  # Surviving GPU defaults first, then user extras; a user-supplied variable
-  # with the same name replaces the GPU default. On existing GPU deployments
-  # the added variables register one new task-definition revision on first
-  # apply — intentional, that is what makes the nvidia_gpu metrics publish.
-  cloudwatch_agent_environment = concat(
-    [
-      for env in local.cloudwatch_agent_gpu_environment : env
-      if !contains([for extra in var.cloudwatch_agent_extra_environment : extra.name], env.name)
-    ],
-    var.cloudwatch_agent_extra_environment
-  )
-
-  # Namespace the CloudWatch agent emits the nvidia_gpu metrics into. Single source
-  # of truth so the agent config template (assets/cloudwatch_agent_config_gpu.tftmpl)
-  # and the GPU scaling policy (autoscaling.tf) never drift. "CWAgent" is the agent's
-  # default namespace; kept as a local (not a variable) because the value is fixed.
+  # Namespace the host CloudWatch agent emits the nvidia_gpu metrics into. Single source
+  # of truth so the host agent config (datasources.tf) and the GPU scaling policy
+  # (autoscaling.tf) never drift. "CWAgent" is the agent's default namespace; kept as a
+  # local (not a variable) because the value is fixed.
   gpu_metrics_namespace = "CWAgent"
+
+  # Config file for the host-level CloudWatch agent that collects GPU metrics (gpu_count
+  # > 0). Separate from the containerized logs agent's config; written by user_data and
+  # loaded via amazon-cloudwatch-agent-ctl.
+  gpu_host_agent_config_path = "/etc/amazon-cloudwatch-agent-gpu.json"
 
   vector_agent_config_path = "/etc/vector/vector.yaml"
   vector_agent_container_resources = {

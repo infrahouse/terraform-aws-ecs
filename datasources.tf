@@ -77,29 +77,50 @@ data "cloudinit_config" "ecs" {
                     )
                   }
                 ],
+                # The containerized cloudwatch-agent daemon is logs-only. GPU metrics are
+                # NOT collected here: a container without a GPU resourceRequirements
+                # reservation cannot see nvidia-smi/NVML on the AL2023 GPU AMI (GPU
+                # injection is gated through ECS's own assignment path). GPU metrics are
+                # instead collected by a host-level CloudWatch agent (see the write_files
+                # and runcmd blocks gated on gpu_count > 0 below), which has native
+                # nvidia-smi access.
                 var.enable_cloudwatch_logs == true ? [
                   {
                     path : local.cloudwatch_agent_config_path
                     permissions : "0644"
-                    # GPU workloads get a variant that also collects nvidia_gpu metrics
-                    # for GPU-utilization autoscaling. Non-GPU workloads render the
-                    # original logs-only template unchanged (byte-identical). The GPU
-                    # driver only exists on the GPU AMI, so the nvidia_gpu collector is
-                    # gated on gpu_count > 0.
-                    content : var.gpu_count > 0 ? templatefile(
-                      "${path.module}/assets/cloudwatch_agent_config_gpu.tftmpl",
-                      {
-                        syslog_group_name : aws_cloudwatch_log_group.ecs_ec2_syslog[0].name
-                        dmesg_group_name : aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
-                        gpu_metrics_namespace : local.gpu_metrics_namespace
-                      }
-                      ) : templatefile(
+                    content : templatefile(
                       "${path.module}/assets/cloudwatch_agent_config.tftmpl",
                       {
                         syslog_group_name : aws_cloudwatch_log_group.ecs_ec2_syslog[0].name
                         dmesg_group_name : aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
                       }
                     )
+                  }
+                ] : [],
+                # Host-level CloudWatch agent config for GPU metrics. The host has native
+                # nvidia-smi, so its nvidia_gpu collector publishes nvidia_smi_utilization_gpu
+                # (and memory) into the same CWAgent namespace, aggregated by
+                # AutoScalingGroupName — the exact series the GPU scaling policy and dashboard
+                # consume. Installed and started by the runcmd below. $${aws:...} is a literal
+                # the agent resolves at runtime.
+                var.gpu_count > 0 ? [
+                  {
+                    path : local.gpu_host_agent_config_path
+                    permissions : "0644"
+                    content : jsonencode({
+                      agent = { run_as_user = "root" }
+                      metrics = {
+                        namespace              = local.gpu_metrics_namespace
+                        append_dimensions      = { AutoScalingGroupName = "$${aws:AutoScalingGroupName}" }
+                        aggregation_dimensions = [["AutoScalingGroupName"]]
+                        metrics_collected = {
+                          nvidia_gpu = {
+                            measurement                 = ["utilization_gpu", "memory_used", "memory_total"]
+                            metrics_collection_interval = 60
+                          }
+                        }
+                      }
+                    })
                   }
                 ] : [],
                 var.enable_vector_agent == true ? [
@@ -122,12 +143,30 @@ data "cloudinit_config" "ecs" {
               )
             },
             {
-              "runcmd" : concat([
-                "fallocate -l ${data.aws_ec2_instance_type.ecs.memory_size * 2}M /swapfile",
-                "chmod 600 /swapfile",
-                "mkswap /swapfile",
-                "swapon /swapfile"
-              ], var.cloudinit_extra_commands)
+              "runcmd" : concat(
+                [
+                  "fallocate -l ${data.aws_ec2_instance_type.ecs.memory_size * 2}M /swapfile",
+                  "chmod 600 /swapfile",
+                  "mkswap /swapfile",
+                  "swapon /swapfile"
+                ],
+                # Install and start the host-level CloudWatch agent for GPU metrics.
+                # It runs as a systemd service (independent of docker/ecs) and reads the
+                # host's GPUs via native nvidia-smi. dnf install is a no-op if the agent is
+                # already present on the AMI.
+                #
+                # Tradeoff: this host agent is intentionally left UNPINNED (dnf pulls the
+                # latest amazon-cloudwatch-agent from the AL2023 repo / AMI), unlike the
+                # containerized logs agent which is pinned via var.cloudwatch_agent_image.
+                # It's stock AWS tooling and the AMI already floats, so pinning here buys
+                # little and a pinned RPM version can disappear from the repo. The cost is a
+                # small reproducibility gap: a re-launch may pull a different agent build.
+                var.gpu_count > 0 ? [
+                  "dnf install -y amazon-cloudwatch-agent",
+                  "/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:${local.gpu_host_agent_config_path}"
+                ] : [],
+                var.cloudinit_extra_commands
+              )
             }
           )
 
@@ -152,6 +191,22 @@ data "aws_iam_policy_document" "instance_policy" {
         "logs:PutLogEvents",
       ]
       resources = [format("%s:*", aws_cloudwatch_log_group.ecs[0].arn)]
+    }
+  }
+
+  # The host-level CloudWatch agent (GPU metrics) publishes with the instance role.
+  # PutMetricData has no resource-level scoping, so restrict it to the GPU namespace.
+  dynamic "statement" {
+    for_each = var.gpu_count > 0 ? [1] : []
+    content {
+      sid       = "AllowGpuMetricPublish"
+      actions   = ["cloudwatch:PutMetricData"]
+      resources = ["*"]
+      condition {
+        test     = "StringEquals"
+        variable = "cloudwatch:namespace"
+        values   = [local.gpu_metrics_namespace]
+      }
     }
   }
 }
