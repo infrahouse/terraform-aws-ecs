@@ -28,6 +28,19 @@ output "asg_name" {
   value       = local.asg_name
 }
 
+# Escape hatch: the scalable target and GPU metric namespace let a consumer attach a
+# custom appautoscaling policy (metric math, step scaling, blending GPU with app
+# metrics) alongside the built-in GPU/CPU policies.
+output "appautoscaling_target_resource_id" {
+  description = "Resource ID of the ECS service Application Auto Scaling target (service/<cluster>/<service>). Use to attach a custom scaling policy."
+  value       = aws_appautoscaling_target.ecs_target.resource_id
+}
+
+output "gpu_metrics_namespace" {
+  description = "CloudWatch namespace the CloudWatch agent emits nvidia_gpu metrics into (when gpu_count > 0)."
+  value       = local.gpu_metrics_namespace
+}
+
 output "load_balancer_arn" {
   description = "Load balancer ARN."
   value       = local.load_balancer_arn

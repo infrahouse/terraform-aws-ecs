@@ -18,6 +18,75 @@ from tests.conftest import (
     cleanup_dot_terraform,
 )
 
+# Namespace and metric names the CloudWatch agent's nvidia_gpu collector emits
+# (see assets/cloudwatch_agent_config_gpu.tftmpl). The GPU scaling policy tracks
+# nvidia_smi_utilization_gpu aggregated by AutoScalingGroupName, so the emission
+# test asserts exactly that aggregated series exists.
+GPU_METRICS_NAMESPACE = "CWAgent"
+GPU_EMITTED_METRICS = [
+    "nvidia_smi_utilization_gpu",
+    "nvidia_smi_memory_used",
+    "nvidia_smi_memory_total",
+]
+
+
+def _wait_for_gpu_metrics(
+    cloudwatch_client,
+    asg_name: str,
+    timeout_s: int = 420,
+) -> None:
+    """
+    Poll CloudWatch until the agent's aggregated nvidia_gpu metrics appear.
+
+    The agent emits at a 60s interval and CloudWatch adds ingestion delay, so on a
+    freshly healthy GPU node the metrics take a couple of minutes to show up. Each
+    metric is queried with only the AutoScalingGroupName dimension — the aggregated
+    rollup the GPU scaling policy tracks — so this also proves the append/aggregation
+    dimensions in the agent config are correct.
+
+    :param cloudwatch_client: Boto3 CloudWatch client.
+    :param asg_name: AutoScalingGroupName dimension value to query.
+    :param timeout_s: Maximum seconds to wait for datapoints on every metric.
+    :raises AssertionError: If any metric has no datapoints within the timeout.
+    """
+    pending = set(GPU_EMITTED_METRICS)
+    try:
+        with timeout(timeout_s):
+            while True:
+                for metric_name in list(pending):
+                    stats = cloudwatch_client.get_metric_statistics(
+                        Namespace=GPU_METRICS_NAMESPACE,
+                        MetricName=metric_name,
+                        Dimensions=[
+                            {"Name": "AutoScalingGroupName", "Value": asg_name}
+                        ],
+                        StartTime=time.time() - 900,
+                        EndTime=time.time(),
+                        Period=60,
+                        Statistics=["Average"],
+                    )
+                    if stats["Datapoints"]:
+                        LOG.info(
+                            "GPU metric %s present (%d datapoints, latest Average=%.1f)",
+                            metric_name,
+                            len(stats["Datapoints"]),
+                            sorted(stats["Datapoints"], key=lambda d: d["Timestamp"])[
+                                -1
+                            ]["Average"],
+                        )
+                        pending.discard(metric_name)
+                if not pending:
+                    return
+                LOG.info(
+                    "Waiting for GPU metrics %s on ASG %s", sorted(pending), asg_name
+                )
+                time.sleep(20)
+    except TimeoutError as err:
+        raise AssertionError(
+            f"GPU metrics {sorted(pending)} not published in {GPU_METRICS_NAMESPACE} "
+            f"(dimension AutoScalingGroupName={asg_name}) within {timeout_s}s"
+        ) from err
+
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("aws_provider_version", ["~> 6.0"], ids=["aws-6"])
@@ -229,3 +298,11 @@ def test_gpu_smoke(
         assert exit_code == 0, f"nvidia-smi failed inside container: {stderr}"
         assert "GPU" in stdout, f"No GPU visible inside container: {stdout}"
         LOG.info("Container nvidia-smi -L:\n%s", stdout)
+
+        # Metric-emission proof (Problem 1a): the CloudWatch agent publishes the
+        # nvidia_gpu metrics into CWAgent, aggregated by AutoScalingGroupName — the
+        # exact series the GPU scaling policy tracks. This closes the loop that the
+        # agent config renders and the metric actually lands in CloudWatch.
+        asg_name = tf_output["asg_name"]["value"]
+        cloudwatch_client = boto3_session.client("cloudwatch", region_name=aws_region)
+        _wait_for_gpu_metrics(cloudwatch_client, asg_name)
