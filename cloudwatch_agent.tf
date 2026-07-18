@@ -98,8 +98,10 @@ resource "aws_ecs_task_definition" "cloudwatch_agent" {
   }
 
   volume {
-    name      = "config-volume"
-    host_path = "/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json"
+    name = "config-volume"
+    # Single source of truth with the user_data write_files path. Deliberately outside
+    # /opt/aws/amazon-cloudwatch-agent/etc/ so the host GPU agent doesn't clobber it.
+    host_path = local.cloudwatch_agent_config_path
   }
   tags = merge(
     local.default_module_tags,
