@@ -19,8 +19,8 @@ from tests.conftest import (
     cleanup_dot_terraform,
 )
 
-# Namespace and metric names the CloudWatch agent's nvidia_gpu collector emits
-# (see assets/cloudwatch_agent_config_gpu.tftmpl). The GPU scaling policy tracks
+# Namespace and metric names the host CloudWatch agent's nvidia_gpu collector emits
+# (configured in datasources.tf). The GPU scaling policy tracks
 # nvidia_smi_utilization_gpu aggregated by AutoScalingGroupName, so the emission
 # test asserts exactly that aggregated series exists.
 GPU_METRICS_NAMESPACE = "CWAgent"
