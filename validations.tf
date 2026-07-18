@@ -301,6 +301,75 @@ check "vector_agent_endpoint_required" {
   }
 }
 
+# GPU autoscaling requires the CloudWatch agent: GPU utilization is collected by the
+# agent's nvidia_gpu collector, and the agent only runs when enable_cloudwatch_logs is
+# true. Without it the GPU scaling policy would have no metric to track (silent no-scale).
+check "gpu_requires_cloudwatch_agent" {
+  assert {
+    condition     = var.gpu_count == 0 ? true : var.enable_cloudwatch_logs
+    error_message = <<-EOF
+      gpu_count > 0 requires enable_cloudwatch_logs = true.
+
+      Current configuration:
+        - gpu_count:              ${var.gpu_count}
+        - enable_cloudwatch_logs: ${var.enable_cloudwatch_logs}
+
+      Problem:
+        GPU utilization is collected by the CloudWatch agent's nvidia_gpu collector,
+        which only runs when enable_cloudwatch_logs = true. Without it the GPU
+        target-tracking policy has no metric to scale on.
+
+      Solution:
+        Set enable_cloudwatch_logs = true when running GPU workloads.
+    EOF
+  }
+}
+
+# A GPU capacity reservation backs GPU instances, so it only makes sense for GPU
+# workloads. (GPU already requires lb_type = "alb" via gpu_requires_alb.)
+check "gpu_reservation_requires_gpu" {
+  assert {
+    condition     = var.gpu_capacity_reservation_id == null ? true : var.gpu_count > 0
+    error_message = <<-EOF
+      gpu_capacity_reservation_id requires gpu_count > 0.
+
+      Current configuration:
+        - gpu_capacity_reservation_id: ${coalesce(var.gpu_capacity_reservation_id, "(not set)")}
+        - gpu_count:                   ${var.gpu_count}
+
+      Problem:
+        The capacity reservation backs GPU instances; it has no effect without a GPU
+        workload.
+
+      Solution:
+        Set gpu_count > 0, or remove gpu_capacity_reservation_id.
+    EOF
+  }
+}
+
+# GPU autoscaling is only supported on the ALB path (website-pod). The NLB path uses
+# the tcp-pod module, which does not expose the null-cpu_load behavior GPU scaling
+# relies on. GPU-on-NLB is not in scope.
+check "gpu_requires_alb" {
+  assert {
+    condition     = var.gpu_count == 0 ? true : var.lb_type == "alb"
+    error_message = <<-EOF
+      gpu_count > 0 requires lb_type = "alb".
+
+      Current configuration:
+        - gpu_count: ${var.gpu_count}
+        - lb_type:   ${var.lb_type}
+
+      Problem:
+        GPU-utilization autoscaling is implemented on the ALB (website-pod) path.
+        The NLB (tcp-pod) path does not support it.
+
+      Solution:
+        Use lb_type = "alb" for GPU workloads.
+    EOF
+  }
+}
+
 # Cross-variable validation: autoscaling_target must be appropriate for the metric type
 locals {
   is_percentage_metric = contains([

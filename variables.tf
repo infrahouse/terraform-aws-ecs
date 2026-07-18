@@ -182,6 +182,34 @@ variable "autoscaling_target" {
   default     = null
 }
 
+variable "gpu_autoscaling_target" {
+  description = <<-EOT
+    Target average GPU utilization (percent) for the GPU target-tracking policy.
+    Only used when gpu_count > 0, where the ECS service scales on native NVIDIA GPU
+    utilization (collected by the CloudWatch agent) in addition to the CPU/ALB metric.
+    This is a distinct policy target, independent of autoscaling_target/autoscaling_target_cpu_usage.
+  EOT
+  type        = number
+  default     = 60
+
+  validation {
+    condition     = var.gpu_autoscaling_target >= 1 && var.gpu_autoscaling_target <= 100
+    error_message = "gpu_autoscaling_target must be a percentage between 1 and 100. Got: ${var.gpu_autoscaling_target}"
+  }
+}
+
+variable "gpu_capacity_reservation_id" {
+  description = <<-EOT
+    Optional On-Demand Capacity Reservation (ODCR) ID to back minimum GPU capacity.
+    When set, GPU instances launch into this reservation (targeted). The module
+    consumes an existing reservation; it does not create one. Requires gpu_count > 0.
+    To guarantee the reserved capacity always runs, also set asg_min_size >= the
+    reservation's instance count so autoscaling never scales below the reservation.
+  EOT
+  type        = string
+  default     = null
+}
+
 variable "cloudwatch_agent_image" {
   description = <<-EOT
     CloudWatch agent container image.

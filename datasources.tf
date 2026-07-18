@@ -81,7 +81,19 @@ data "cloudinit_config" "ecs" {
                   {
                     path : local.cloudwatch_agent_config_path
                     permissions : "0644"
-                    content : templatefile(
+                    # GPU workloads get a variant that also collects nvidia_gpu metrics
+                    # for GPU-utilization autoscaling. Non-GPU workloads render the
+                    # original logs-only template unchanged (byte-identical). The GPU
+                    # driver only exists on the GPU AMI, so the nvidia_gpu collector is
+                    # gated on gpu_count > 0.
+                    content : var.gpu_count > 0 ? templatefile(
+                      "${path.module}/assets/cloudwatch_agent_config_gpu.tftmpl",
+                      {
+                        syslog_group_name : aws_cloudwatch_log_group.ecs_ec2_syslog[0].name
+                        dmesg_group_name : aws_cloudwatch_log_group.ecs_ec2_dmesg[0].name
+                        gpu_metrics_namespace : local.gpu_metrics_namespace
+                      }
+                      ) : templatefile(
                       "${path.module}/assets/cloudwatch_agent_config.tftmpl",
                       {
                         syslog_group_name : aws_cloudwatch_log_group.ecs_ec2_syslog[0].name

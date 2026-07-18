@@ -1,7 +1,7 @@
 module "pod" {
   count   = var.lb_type == "alb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/website-pod/aws"
-  version = "6.2.0"
+  version = "6.3.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -38,10 +38,17 @@ module "pod" {
   userdata                              = data.cloudinit_config.ecs.rendered
   instance_profile_permissions          = data.aws_iam_policy_document.instance_policy.json
   protect_from_scale_in                 = true # this is to allow ECS manage ASG instances
-  autoscaling_target_cpu_load           = var.autoscaling_target_cpu_usage
-  root_volume_size                      = var.root_volume_size
-  ssh_cidr_block                        = var.ssh_cidr_block
-  upstream_module                       = local.module_name
+  # For GPU services, ECS capacity-provider managed scaling is the sole driver of ASG
+  # instance count. A host-CPU ASG policy (cpu_load) would be a second controller on
+  # the same DesiredCapacity lever, launching instances ECS has no task for. Passing
+  # null drops that policy entirely (website-pod >= 6.3.0). Non-GPU services keep it.
+  autoscaling_target_cpu_load = var.gpu_count > 0 ? null : var.autoscaling_target_cpu_usage
+  # Targeted ODCR: GPU instances launch into this reservation. null for non-reservation
+  # services. Hold the floor by setting asg_min_size >= the reserved instance count.
+  capacity_reservation_id = var.gpu_capacity_reservation_id
+  root_volume_size        = var.root_volume_size
+  ssh_cidr_block          = var.ssh_cidr_block
+  upstream_module         = local.module_name
   tags = merge(
     {
       Name : var.service_name

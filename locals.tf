@@ -96,6 +96,12 @@ locals {
     memory = 256
   }
 
+  # Namespace the CloudWatch agent emits the nvidia_gpu metrics into. Single source
+  # of truth so the agent config template (assets/cloudwatch_agent_config_gpu.tftmpl)
+  # and the GPU scaling policy (autoscaling.tf) never drift. "CWAgent" is the agent's
+  # default namespace; kept as a local (not a variable) because the value is fixed.
+  gpu_metrics_namespace = "CWAgent"
+
   vector_agent_config_path = "/etc/vector/vector.yaml"
   vector_agent_container_resources = {
     cpu    = 128
@@ -132,6 +138,11 @@ locals {
   # scaling.tf and tests/math.tftest.hcl). User-provided values take precedence;
   # otherwise sizes derive from task_max_count and the instance's CPU, memory,
   # and GPU capacity.
+  #
+  # ODCR floor: to keep at least the reserved GPU capacity always running, set
+  # asg_min_size >= the reservation's instance count (the AWS provider has no
+  # capacity-reservation data source to read the count automatically, and the module
+  # stays a consumer of the reservation, not its owner). See gpu_capacity_reservation_id.
   asg_min_size = module.scaling.asg_min_size
   asg_max_size = module.scaling.asg_max_size
 }
