@@ -32,6 +32,7 @@ terraform.tf
 terraform.tfvars
 tf.plan
 .idea
+.DS_Store
 /docs/_build/
 /plan.stderr
 /plan.stdout
