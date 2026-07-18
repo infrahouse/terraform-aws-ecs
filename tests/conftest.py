@@ -18,6 +18,10 @@ LOG = logging.getLogger(__name__)
 TERRAFORM_ROOT_DIR = "test_data"
 
 setup_logging(LOG, debug=True)
+# setup_logging only attaches handlers to the logger it is given, so pytest-infrahouse
+# helpers (e.g. wait_for_instance_refresh) log to a handler-less logger and stay silent.
+# Configure their package logger too so their progress is visible during the run.
+setup_logging(logging.getLogger("pytest_infrahouse"), debug=True)
 
 
 def wait_for_success(url, wait_time=300, request_timeout=10):
