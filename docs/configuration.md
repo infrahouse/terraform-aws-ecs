@@ -637,21 +637,17 @@ cloudwatch_agent_extra_environment = [
 ]
 ```
 
-On GPU hosts (`gpu_count > 0`) the module automatically injects
-`NVIDIA_VISIBLE_DEVICES=all` and `NVIDIA_DRIVER_CAPABILITIES=utility` into the
-agent container, so the NVIDIA container runtime (the default Docker runtime on
-the GPU-optimized ECS AMI) exposes `nvidia-smi`/NVML to the agent and the
-`nvidia_gpu` metrics — which feed the GPU autoscaling policy and dashboard —
-publish out of the box. `utility` exposes monitoring tools only (no CUDA), and
-the agent container carries no GPU `resourceRequirements` reservation, so the
-GPU is observed without being reserved away from your workload. A variable
-listed in `cloudwatch_agent_extra_environment` with the same name overrides the
-injected default.
+This variable is a generic passthrough for the **logs** cloudwatch-agent daemon
+container (for example, an HTTPS proxy). **It does not enable GPU metrics.**
 
-> **Upgrading with `gpu_count > 0`:** the injected NVIDIA variables register one
-> new revision of the cloudwatch-agent task definition on the first apply. This
-> is intentional — that revision is what makes the `nvidia_gpu` metrics publish.
-> Deployments with `gpu_count = 0` and no extra environment are unaffected.
+> **GPU metrics are collected automatically on `gpu_count > 0` — by a host-level
+> agent, not this container.** On the Amazon Linux 2023 GPU-optimized ECS AMI a
+> container can only see the GPU when ECS assigns it one via `resourceRequirements`,
+> which would reserve the GPU away from your workload. So the module instead installs a
+> host CloudWatch agent (native `nvidia-smi`) that publishes `nvidia_smi_utilization_gpu`
+> and GPU memory into the `CWAgent` namespace — the series that feed the GPU autoscaling
+> policy and dashboard. Nothing to configure; `cloudwatch_agent_extra_environment` has no
+> effect on GPU metrics.
 
 ---
 

@@ -1,10 +1,14 @@
 # GPU Utilization Autoscaling Plan
 
 **Module:** terraform-aws-ecs
-**Branch:** gpu-utilization-autoscaling (proposed)
-**Related:** PR #171 (Prometheus scraping — superseded approach), Slack "Discuss Autoscaling For GPU Instance"
-**Blog:** https://infrahouse.com/blog/2026-06-14-serving-a-7b-model-on-ecs-gpu/
-**Last Updated:** 2026-07-17
+**Status:** policy + dashboard + ODCR shipped in **8.3.0**; GPU metric collection was
+broken there (container couldn't see the GPU) and is fixed by the **host-agent**
+approach on branch `feat/issue-173-gpu-agent-runtime` (builds on #174, closes #173).
+**Related:** #173 (issue), #174 (@kendrickpham-tinyfish env passthrough), PR #171
+(Prometheus scraping — independent), Slack "Discuss Autoscaling For GPU Instance"
+**Blog:** https://infrahouse.com/blog/2026-06-14-serving-a-7b-model-on-ecs-gpu/ (a
+war-story follow-up on the host-agent saga is planned — see "Dead ends" in 1a)
+**Last Updated:** 2026-07-18
 
 ---
 
@@ -73,61 +77,84 @@ Two consequences for implementation:
 
 ## Problem 1 — Scale on GPU utilization
 
-### 1a. Emit the GPU metric (CloudWatch agent)
+### 1a. Emit the GPU metric — host CloudWatch agent (NOT the sidecar)
 
-The default agent config template (`assets/cloudwatch_agent_config.tftmpl`) is
-logs-only today. Add an `nvidia_gpu` metrics block, gated on GPU workloads.
+**Final, shipped decision: GPU metrics are collected by a host-level CloudWatch
+agent, not the containerized cloudwatch-agent daemon.** This was hard-won — the
+original container-based approach (8.3.0) never actually worked. See "Dead ends" below.
 
-The namespace is rendered from a single local (`local.gpu_metrics_namespace = "CWAgent"`)
-so the template and the scaling policy (1b) never drift. It is a local, not an input
-variable — the value is fixed and consumers should not change it; DRY here means one
-source of truth, not one more knob. The template receives it via `templatefile()`;
-the policy reads the same local.
+The host has native `nvidia-smi` (it boots the GPU AMI). On `gpu_count > 0`, user_data
+(`datasources.tf`) writes a host agent config and installs + starts it as a systemd
+service (`dnf install -y amazon-cloudwatch-agent` + `amazon-cloudwatch-agent-ctl -a
+fetch-config`), independent of docker/ecs. It emits exactly the series the policy tracks:
 
 ```json
-"metrics": {
-  "namespace": "${gpu_metrics_namespace}",
-  "append_dimensions": {
-    "AutoScalingGroupName": "${aws:AutoScalingGroupName}"
-  },
-  "aggregation_dimensions": [["AutoScalingGroupName"]],
-  "metrics_collected": {
-    "nvidia_gpu": {
-      "measurement": ["utilization_gpu", "memory_used", "memory_total"],
-      "metrics_collection_interval": 60
+{
+  "metrics": {
+    "namespace": "CWAgent",
+    "append_dimensions": { "AutoScalingGroupName": "${aws:AutoScalingGroupName}" },
+    "aggregation_dimensions": [["AutoScalingGroupName"]],
+    "metrics_collected": {
+      "nvidia_gpu": {
+        "measurement": ["utilization_gpu", "memory_used", "memory_total"],
+        "metrics_collection_interval": 60
+      }
     }
   }
 }
 ```
 
-Why `append_dimensions` + `aggregation_dimensions`: `nvidia_smi_utilization_gpu` is
-per-instance (and per-GPU `index`). Target tracking needs one aggregated time
-series. Rolling the metric up to `AutoScalingGroupName` gives a single fleet-wide
-series the policy can average over. Without it, the policy has no fleet-level value
-to track.
+- Namespace is `local.gpu_metrics_namespace = "CWAgent"` — one source of truth shared
+  with the policy (1b).
+- `append_dimensions` + `aggregation_dimensions` roll the per-instance metric up to a
+  single `AutoScalingGroupName` series that target tracking can average over.
+- The instance role gets `cloudwatch:PutMetricData` (scoped to the CWAgent namespace) so
+  the host agent can publish.
+- The containerized cloudwatch-agent daemon stays **logs-only**.
+- The metric name `nvidia_smi_utilization_gpu` (not the `utilization_gpu` measurement
+  *key*) is what the policy references. Emitting host-side vs. sidecar is invisible to
+  the policy and dashboard — same name/namespace/`AutoScalingGroupName` series.
+- The host agent is intentionally **unpinned** (`dnf` pulls the AMI's latest), unlike the
+  container logs agent pinned via `cloudwatch_agent_image` — a small reproducibility gap
+  accepted because it's stock AWS tooling.
 
-Rendering (decided): extend the existing `templatefile()` selection in
-`datasources.tf` so a GPU variant of the template is chosen when **`gpu_count > 0`**,
-mirroring how the Prometheus template is selected today. No `render_gpu_metrics`
-flag is threaded into a shared template. Pass `local.gpu_metrics_namespace` into the
-`templatefile()` vars so the namespace is not a literal in the template.
+#### Dead ends (why not the sidecar) — the war story
 
-Everything GPU is gated on the single condition `gpu_count > 0` — both metric
-collection (here) and the scaling policy (1b). There is no separate feature flag:
-if the service runs on GPU hardware, it collects GPU metrics and scales on them.
-The driver only exists on the GPU AMI, so `gpu_count > 0` is also the correctness
-boundary for collection.
+The original plan put an `nvidia_gpu` block in the *containerized* agent's config.
+**On the AL2023 ECS GPU-optimized AMI a container can only see the GPU when ECS assigns
+it one via `resourceRequirements`.** Every attempt to give the unreserved agent
+container GPU visibility failed, each verified on the live instance:
 
-Note the three-way precedence already in `datasources.tf`: an explicit
-`cloudwatch_agent_config` override wins, then the Prometheus template, then the
-default. The GPU variant has to slot into that selection without breaking the
-byte-identical default for non-GPU consumers.
+1. **8.3.0 — container `nvidia_gpu` config only.** The telegraf collector can't find
+   `/usr/bin/nvidia-smi` inside the container, exits 1, crash-loops. Metric never
+   publishes; the shipped dashboard + policy consume a phantom. Slipped through because
+   the emission test (`make test-gpu`) was never run before the release.
+2. **#174 — `NVIDIA_VISIBLE_DEVICES=all` + `NVIDIA_DRIVER_CAPABILITIES=utility` env vars.**
+   Inert: the AMI registers the nvidia runtime but keeps docker `default-runtime = runc`,
+   so an unreserved container runs under runc and the env vars do nothing.
+3. **`default-runtime = nvidia`** (daemon.json). The container now runs on the nvidia
+   runtime, but nvidia-smi is *still* not injected — the AL2023 toolkit (1.19, CDI/`auto`
+   mode) doesn't honor `NVIDIA_VISIBLE_DEVICES` for unprivileged containers (tested `all`,
+   the CDI name, the app's exact UUID, legacy mode, and the accept-envvar flag — all
+   failed). Bonus trap: applying it via `runcmd` restarts docker, which propagates to
+   `ecs.service` (`PartOf=docker.service`) and wedges the agent's startup — so it had to
+   move to `write_files` (laid down before docker first starts) anyway.
+4. **CDI** — `docker --device nvidia.com/gpu=all` (with `features.cdi=true`) also fails to
+   inject, and ECS task definitions expose **no** way to request a CDI device regardless.
 
-Open sub-question for implementation: how the GPU variant composes with the existing
-**Prometheus** template — if a consumer sets `gpu_count > 0` *and* enables Prometheus
-scraping, one selection has to win or the two metric blocks have to merge. Resolve
-during implementation; simplest is a defined precedence (e.g. GPU variant is a
-superset that also carries the Prometheus block when both apply).
+The only thing that injects the GPU is ECS's own assignment (`ECS_ENABLE_GPU_SUPPORT` +
+`resourceRequirements`, which bind-mounts nvidia-smi + the driver libs). Reserving a GPU
+for the sidecar is out — it would steal the GPU from the workload on single-GPU
+instances. Hence: **collect on the host, where nvidia-smi is native.** (The
+env-var/default-runtime path *did* work on the legacy AL2 GPU AMI — but that AMI is EOL
+2026-06-30, so it's not a basis to build on.)
+
+The guard that would have caught 8.3.0, and now does: the `make test-gpu` emission
+assertion (`_wait_for_gpu_metrics`) waits for the real metric to land in CloudWatch. The
+injection-based autoscaling test can't catch it — it publishes its own metric.
+
+Everything GPU is gated on the single condition `gpu_count > 0` — both host-agent
+collection (here) and the scaling policy (1b). No separate feature flag.
 
 ### 1b. Scale the ECS service on that metric (`autoscaling.tf`)
 
@@ -316,29 +343,46 @@ default because website-pod's `asg_enabled_metrics` default already enables them
 
 ### terraform-aws-ecs
 
-| File | Change |
-|------|--------|
-| `assets/cloudwatch_agent_config.tftmpl` (or a new GPU variant) | Add gated `nvidia_gpu` metrics block with append/aggregation dimensions |
-| `datasources.tf` | Slot GPU metric rendering into the existing agent-config template selection; pass `local.gpu_metrics_namespace` into the template vars |
-| `locals.tf` | Add `gpu_metrics_namespace = "CWAgent"` — single source of truth for both the template and the scaling policy |
-| `autoscaling.tf` | Add a second gated `aws_appautoscaling_policy` (GPU `customized_metric_specification`); leave `ecs_policy` (CPU) in place so the service scales on GPU + CPU |
-| `website-pod.tf` | Neutralize `cpu_load` for GPU: `autoscaling_target_cpu_load = var.gpu_count > 0 ? 99 : var.autoscaling_target_cpu_usage` (managed scaling becomes the sole instance driver). Plus ODCR pass-through (if targeted path) |
-| `cloudwatch.tf` (or new `dashboard.tf`) | Add gated `aws_cloudwatch_dashboard`: GPU util, service CPU, GPU memory, task count, instance count (Problem 3) |
-| `outputs.tf` | Expose appautoscaling target `resource_id`, ASG name, and `gpu_metrics_namespace` as the escape hatch for consumer-built policies |
-| `variables.tf` | `gpu_autoscaling_target`, ODCR pass-through (id/ARN) |
-| `locals.tf` / `modules/scaling` | Ensure `asg_min_size` floor ≥ reserved GPU count |
-| `test_data/` + `tests/` | GPU fixture is expensive; see testing note |
+Two releases landed here. **8.3.0** shipped the policy + dashboard + ODCR + the
+(broken) container metric collection. The **host-agent fix** (this branch, on top of
+#174) makes the metric actually publish.
 
-### website-pod (separate module, may be required)
+**8.3.0 (already released):**
 
 | File | Change |
 |------|--------|
-| launch template | Expose `capacity_reservation_specification` input (targeted ODCR path only) |
+| `locals.tf` | `gpu_metrics_namespace = "CWAgent"` — single source of truth for collection + policy |
+| `autoscaling.tf` | Second gated `aws_appautoscaling_policy` (GPU `customized_metric_specification`); `ecs_policy` (CPU) stays → service scales on GPU + CPU |
+| `website-pod.tf` | Bump to 6.3.0; `autoscaling_target_cpu_load = gpu_count > 0 ? null : ...` to drop the host-CPU ASG `cpu_load` policy (managed scaling becomes sole instance driver) |
+| `dashboard.tf` | Gated `aws_cloudwatch_dashboard`: GPU util, service CPU, GPU memory, task count, instance count (Problem 3) |
+| `outputs.tf` | Expose appautoscaling target `resource_id` + `gpu_metrics_namespace` (`asg_name` already existed) as the escape hatch |
+| `variables.tf` | `gpu_autoscaling_target`, `gpu_capacity_reservation_id` |
+| `validations.tf` | GPU guards: requires `enable_cloudwatch_logs`, `lb_type = alb`, reservation requires `gpu_count > 0` |
+| `datasources.tf` | (8.3.0) container agent GPU-variant config — **later reverted**, never worked |
+
+**Host-agent fix (this branch, on top of #174):**
+
+| File | Change |
+|------|--------|
+| `datasources.tf` | Container agent → logs-only; on `gpu_count > 0` write a **host** CloudWatch agent config (`nvidia_gpu` collector) + `runcmd` install/start; add `cloudwatch:PutMetricData` to the instance role (namespace-scoped) |
+| `locals.tf` | Add `gpu_host_agent_config_path`; drop #174's obsolete NVIDIA env default, keep its generic `cloudwatch_agent_extra_environment` passthrough |
+| `assets/cloudwatch_agent_config_gpu.tftmpl` | **Deleted** (the container GPU config that couldn't work) |
+| `tests/test_gpu.py` | Emission gate (`_wait_for_gpu_metrics`) + instance-refresh wait; drop the obsolete container-env assertion |
+| `tests/conftest.py` | Configure the `pytest_infrahouse` logger so helper progress is visible |
+
+**website-pod 6.3.0 (separate module, released):**
+
+| File | Change |
+|------|--------|
+| launch template | `capacity_reservation_specification` input (targeted ODCR) |
+| `autoscaling.tf` | `autoscaling_target_cpu_load` nullable → `null` skips the `cpu_load` policy (`moved` block preserves state) |
 
 ### Not changing
 
 - PR #171 Prometheus path — stays independent and opt-in.
-- `modules/tcp-pod` — unless NLB GPU services are in scope (not requested).
+- `modules/tcp-pod` — GPU is ALB-only (validation enforces `lb_type = alb`).
+- ODCR floor (`asg_min_size` ≥ reserved count) — left to the consumer; no
+  `aws_ec2_capacity_reservation` data source exists to auto-read the count.
 
 ---
 

@@ -96,13 +96,6 @@ locals {
     memory = 256
   }
 
-  # On GPU hosts the agent config enables the nvidia_gpu collector (see
-  # datasources.tf), but the daemon container itself needs nvidia-smi/NVML, which
-  # the NVIDIA container runtime (the default Docker runtime on the GPU-optimized
-  # ECS AMI) injects when these variables are set. "utility" exposes nvidia-smi
-  # and NVML only — no CUDA. Deliberately no GPU resourceRequirements reservation
-  # here: the daemon must observe the GPUs without reserving them away from the
-  # workload.
   # Extra environment merged into the containerized (logs-only) cloudwatch-agent daemon.
   # GPU NVIDIA_* env vars are intentionally NOT injected here: the container cannot see
   # the GPU on the AL2023 AMI regardless (GPU metrics are collected by the host agent,
