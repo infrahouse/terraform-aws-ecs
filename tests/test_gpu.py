@@ -299,6 +299,31 @@ def test_gpu_smoke(
         assert "GPU" in stdout, f"No GPU visible inside container: {stdout}"
         LOG.info("Container nvidia-smi -L:\n%s", stdout)
 
+        # Daemon-container proof (issue #173): on GPU hosts the cloudwatch-agent
+        # daemon task definition carries the NVIDIA runtime environment variables
+        # (so the default NVIDIA runtime injects nvidia-smi/NVML into the agent)
+        # while carrying no GPU resourceRequirements reservation (the GPU must
+        # stay reservable by the workload).
+        agent_container = ecs_client.describe_task_definition(
+            taskDefinition=f"{service_name}-cw-agent-daemon"
+        )["taskDefinition"]["containerDefinitions"][0]
+        agent_env = {
+            env["name"]: env["value"] for env in agent_container.get("environment", [])
+        }
+        assert agent_env.get("NVIDIA_VISIBLE_DEVICES") == "all", (
+            f"cloudwatch-agent daemon is missing NVIDIA_VISIBLE_DEVICES=all; "
+            f"environment: {agent_env}"
+        )
+        assert agent_env.get("NVIDIA_DRIVER_CAPABILITIES") == "utility", (
+            f"cloudwatch-agent daemon is missing NVIDIA_DRIVER_CAPABILITIES=utility; "
+            f"environment: {agent_env}"
+        )
+        assert not agent_container.get("resourceRequirements"), (
+            "cloudwatch-agent daemon must not reserve the GPU; got "
+            f"resourceRequirements: {agent_container.get('resourceRequirements')}"
+        )
+        LOG.info("cloudwatch-agent daemon NVIDIA environment: %s", agent_env)
+
         # Metric-emission proof (Problem 1a): the CloudWatch agent publishes the
         # nvidia_gpu metrics into CWAgent, aggregated by AutoScalingGroupName — the
         # exact series the GPU scaling policy tracks. This closes the loop that the

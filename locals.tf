@@ -96,6 +96,30 @@ locals {
     memory = 256
   }
 
+  # On GPU hosts the agent config enables the nvidia_gpu collector (see
+  # datasources.tf), but the daemon container itself needs nvidia-smi/NVML, which
+  # the NVIDIA container runtime (the default Docker runtime on the GPU-optimized
+  # ECS AMI) injects when these variables are set. "utility" exposes nvidia-smi
+  # and NVML only — no CUDA. Deliberately no GPU resourceRequirements reservation
+  # here: the daemon must observe the GPUs without reserving them away from the
+  # workload.
+  cloudwatch_agent_gpu_environment = var.gpu_count > 0 ? [
+    { name = "NVIDIA_VISIBLE_DEVICES", value = "all" },
+    { name = "NVIDIA_DRIVER_CAPABILITIES", value = "utility" },
+  ] : []
+
+  # Surviving GPU defaults first, then user extras; a user-supplied variable
+  # with the same name replaces the GPU default. On existing GPU deployments
+  # the added variables register one new task-definition revision on first
+  # apply — intentional, that is what makes the nvidia_gpu metrics publish.
+  cloudwatch_agent_environment = concat(
+    [
+      for env in local.cloudwatch_agent_gpu_environment : env
+      if !contains([for extra in var.cloudwatch_agent_extra_environment : extra.name], env.name)
+    ],
+    var.cloudwatch_agent_extra_environment
+  )
+
   # Namespace the CloudWatch agent emits the nvidia_gpu metrics into. Single source
   # of truth so the agent config template (assets/cloudwatch_agent_config_gpu.tftmpl)
   # and the GPU scaling policy (autoscaling.tf) never drift. "CWAgent" is the agent's

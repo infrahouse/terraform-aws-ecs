@@ -621,6 +621,38 @@ enable_container_insights = true
 >   '/aws/ecs/containerinsights/<cluster>/performance'
 > ```
 
+### `cloudwatch_agent_extra_environment`
+
+Extra environment variables merged into the cloudwatch-agent daemon container
+definition. Lets you configure the stock agent image without maintaining a
+custom wrapper image.
+
+| Default |
+|---------|
+| `[]` |
+
+```hcl
+cloudwatch_agent_extra_environment = [
+  { name = "HTTPS_PROXY", value = "http://proxy.internal:3128" }
+]
+```
+
+On GPU hosts (`gpu_count > 0`) the module automatically injects
+`NVIDIA_VISIBLE_DEVICES=all` and `NVIDIA_DRIVER_CAPABILITIES=utility` into the
+agent container, so the NVIDIA container runtime (the default Docker runtime on
+the GPU-optimized ECS AMI) exposes `nvidia-smi`/NVML to the agent and the
+`nvidia_gpu` metrics — which feed the GPU autoscaling policy and dashboard —
+publish out of the box. `utility` exposes monitoring tools only (no CUDA), and
+the agent container carries no GPU `resourceRequirements` reservation, so the
+GPU is observed without being reserved away from your workload. A variable
+listed in `cloudwatch_agent_extra_environment` with the same name overrides the
+injected default.
+
+> **Upgrading with `gpu_count > 0`:** the injected NVIDIA variables register one
+> new revision of the cloudwatch-agent task definition on the first apply. This
+> is intentional — that revision is what makes the `nvidia_gpu` metrics publish.
+> Deployments with `gpu_count = 0` and no extra environment are unaffected.
+
 ---
 
 ## Environment and Secrets
@@ -882,6 +914,7 @@ The module includes built-in validation to catch errors early:
 | `deployment_maximum_percent` | 100-400 |
 | `extra_target_groups` | Only supported with `lb_type = "alb"` |
 | `ecs_log_level` | One of: debug, info, warn, error, crit |
+| `cloudwatch_agent_extra_environment` | Variable names must be unique |
 
 ---
 
