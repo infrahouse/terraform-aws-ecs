@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.3.0] - 2026-07-18
+
+### Features
+
+- GPU-utilization autoscaling, observability dashboard, and targeted ODCR
+
 ## [8.2.1] - 2026-07-07
 
 ### Bug Fixes
