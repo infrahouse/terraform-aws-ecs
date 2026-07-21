@@ -281,6 +281,21 @@ Minimum on-demand instances when using spot instances.
 on_demand_base_capacity = 1
 ```
 
+### `ignore_failed_scaling_activities`
+
+Ignore failed Auto Scaling scaling activities while Terraform waits for the ASG to reach capacity.
+
+| Default |
+|---------|
+| `false` |
+
+```hcl
+ignore_failed_scaling_activities = true
+```
+
+This can be useful for workloads that run on instance types or Availability Zones with fluctuating capacity.
+Auto Scaling can record a failed launch activity, retry placement, and still satisfy the requested capacity.
+
 ---
 
 ## Task Scaling Configuration

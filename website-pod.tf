@@ -57,17 +57,18 @@ module "pod" {
     },
     local.vanta_tags
   )
-  vanta_contains_ephi           = var.vanta_contains_ephi
-  vanta_contains_user_data      = var.vanta_contains_user_data
-  vanta_description             = var.vanta_description
-  vanta_no_alert                = var.vanta_no_alert
-  vanta_owner                   = var.vanta_owner
-  vanta_production_environments = var.vanta_production_environments
-  vanta_user_data_stored        = var.vanta_user_data_stored
-  on_demand_base_capacity       = var.on_demand_base_capacity
-  certificate_issuers           = var.certificate_issuers
-  alarm_emails                  = var.alarm_emails
-  alb_ingress_cidr_blocks       = var.alb_ingress_cidr_blocks
+  vanta_contains_ephi              = var.vanta_contains_ephi
+  vanta_contains_user_data         = var.vanta_contains_user_data
+  vanta_description                = var.vanta_description
+  vanta_no_alert                   = var.vanta_no_alert
+  vanta_owner                      = var.vanta_owner
+  vanta_production_environments    = var.vanta_production_environments
+  vanta_user_data_stored           = var.vanta_user_data_stored
+  on_demand_base_capacity          = var.on_demand_base_capacity
+  ignore_failed_scaling_activities = var.ignore_failed_scaling_activities
+  certificate_issuers              = var.certificate_issuers
+  alarm_emails                     = var.alarm_emails
+  alb_ingress_cidr_blocks          = var.alb_ingress_cidr_blocks
 
   # Route53 weighted routing for zero-downtime migrations
   dns_routing_policy = var.dns_routing_policy
