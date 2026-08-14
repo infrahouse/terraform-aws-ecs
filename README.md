@@ -406,10 +406,10 @@ Apache 2.0 - see [LICENSE](LICENSE) for details.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_ecr_image_tagger"></a> [ecr\_image\_tagger](#module\_ecr\_image\_tagger) | registry.infrahouse.com/infrahouse/lambda-monitored/aws | 1.1.1 |
-| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 6.3.0 |
+| <a name="module_ecr_image_tagger"></a> [ecr\_image\_tagger](#module\_ecr\_image\_tagger) | registry.infrahouse.com/infrahouse/lambda-monitored/aws | 2.0.1 |
+| <a name="module_pod"></a> [pod](#module\_pod) | registry.infrahouse.com/infrahouse/website-pod/aws | 6.4.0 |
 | <a name="module_scaling"></a> [scaling](#module\_scaling) | ./modules/scaling | n/a |
-| <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 0.6.0 |
+| <a name="module_tcp-pod"></a> [tcp-pod](#module\_tcp-pod) | registry.infrahouse.com/infrahouse/tcp-pod/aws | 1.0.0 |
 
 ## Resources
 
