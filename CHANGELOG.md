@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.4.0] - 2026-08-14
+
+### Miscellaneous Tasks
+
+- Bump module and Python dependencies
+
 ## [8.3.1] - 2026-07-18
 
 ### Bug Fixes
