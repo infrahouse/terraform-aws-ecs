@@ -31,14 +31,15 @@ module "httpd" {
     aws     = aws
     aws.dns = aws
   }
-  load_balancer_subnets         = var.subnet_public_ids
-  asg_subnets                   = var.subnet_private_ids
-  dns_names                     = ["", "www"]
-  docker_image                  = "httpd"
-  container_port                = 80
-  service_name                  = var.service_name
-  zone_id                       = var.zone_id
-  container_healthcheck_command = "ls"
+  load_balancer_subnets            = var.subnet_public_ids
+  asg_subnets                      = var.subnet_private_ids
+  dns_names                        = ["", "www"]
+  docker_image                     = "httpd"
+  container_port                   = 80
+  service_name                     = var.service_name
+  zone_id                          = var.zone_id
+  container_healthcheck_command    = "ls"
+  ignore_failed_scaling_activities = true
   container_command = [
     "sh", "-c",
     "echo '<html><body><h1>It works!</h1></body></html>' > /usr/local/apache2/htdocs/index.html && httpd-foreground"

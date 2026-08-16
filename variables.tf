@@ -470,6 +470,12 @@ variable "idle_timeout" {
   default     = 60
 }
 
+variable "ignore_failed_scaling_activities" {
+  description = "Whether to ignore failed Auto Scaling scaling activities while waiting for capacity."
+  type        = bool
+  default     = false
+}
+
 variable "healthcheck_response_code_matcher" {
   description = "Range of http return codes that can match"
   type        = string

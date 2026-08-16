@@ -37,6 +37,7 @@ module "tcp-pod" {
   protect_from_scale_in            = true # this is to allow ECS manage ASG instances
   autoscaling_target_cpu_load      = var.autoscaling_target_cpu_usage
   on_demand_base_capacity          = var.on_demand_base_capacity
+  ignore_failed_scaling_activities = var.ignore_failed_scaling_activities
   root_volume_size                 = var.root_volume_size
   ssh_cidr_block                   = var.ssh_cidr_block
   upstream_module                  = local.module_name
