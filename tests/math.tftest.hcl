@@ -47,12 +47,53 @@ run "non_gpu_defaults_unchanged" {
   }
 }
 
+run "fractional_memory_capacity_uses_whole_task_slots" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    // A host has 14,848 MiB available after OS and daemon reservations.
+    // A 5,120 MiB task therefore fits twice, not 2.9 times. Twenty tasks need
+    // ten hosts plus one spare host for rolling deployments.
+    instance_memory_mib    = 16384
+    instance_vcpus         = 32
+    task_max_count         = 20
+    container_cpu          = 128
+    container_memory       = 5120
+    daemon_memory_overhead = 512
+  }
+
+  assert {
+    condition     = output.asg_max_size == 11
+    error_message = "asg_max_size: expected 10 workload hosts plus 1 spare, got ${output.asg_max_size}"
+  }
+}
+
+run "fractional_cpu_capacity_uses_whole_task_slots" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    // A host has 3,968 CPU units after daemon reservations. A 1,400-unit task
+    // fits twice, not 2.83 times. Six tasks need three hosts plus one spare.
+    instance_vcpus   = 4
+    task_max_count   = 6
+    container_cpu    = 1400
+    container_memory = 128
+  }
+
+  assert {
+    condition     = output.asg_max_size == 4
+    error_message = "asg_max_size: expected 3 workload hosts plus 1 spare, got ${output.asg_max_size}"
+  }
+}
+
 run "gpu_single_gpu_per_host_dominates" {
   command = plan
   module { source = "./modules/scaling" }
 
   variables {
-    // g4dn.xlarge: 1 GPU. gpu_count=1 -> 1 task/host -> ceil(10/1)=10 hosts.
+    // g4dn.xlarge: 1 GPU. Ten tasks need ten hosts plus one spare.
     // CPU/memory terms are ~1, so the GPU term dominates. Before this fix the
     // sizing ignored GPUs and would have returned ~3.
     instance_gpus  = 1
@@ -61,8 +102,8 @@ run "gpu_single_gpu_per_host_dominates" {
   }
 
   assert {
-    condition     = output.asg_max_size == 10
-    error_message = "asg_max_size: expected GPU-bound 10, got ${output.asg_max_size}"
+    condition     = output.asg_max_size == 11
+    error_message = "asg_max_size: expected GPU-bound 10 plus 1 spare, got ${output.asg_max_size}"
   }
 }
 
@@ -71,15 +112,15 @@ run "gpu_multi_gpu_per_host" {
   module { source = "./modules/scaling" }
 
   variables {
-    // g4dn.12xlarge: 4 GPUs. gpu_count=1 -> 4 tasks/host -> ceil(20/4)=5 hosts.
+    // g4dn.12xlarge: 4 GPUs. Twenty tasks need five hosts plus one spare.
     instance_gpus  = 4
     gpu_count      = 1
     task_max_count = 20
   }
 
   assert {
-    condition     = output.asg_max_size == 5
-    error_message = "asg_max_size: expected ceil(20/4)=5, got ${output.asg_max_size}"
+    condition     = output.asg_max_size == 6
+    error_message = "asg_max_size: expected GPU-bound 5 plus 1 spare, got ${output.asg_max_size}"
   }
 }
 
@@ -88,15 +129,15 @@ run "gpu_count_two_on_four_gpu_host" {
   module { source = "./modules/scaling" }
 
   variables {
-    // 4 GPUs, gpu_count=2 -> floor(4/2)=2 tasks/host -> ceil(10/2)=5 hosts.
+    // 4 GPUs, gpu_count=2. Ten tasks need five hosts plus one spare.
     instance_gpus  = 4
     gpu_count      = 2
     task_max_count = 10
   }
 
   assert {
-    condition     = output.asg_max_size == 5
-    error_message = "asg_max_size: expected ceil(10/2)=5, got ${output.asg_max_size}"
+    condition     = output.asg_max_size == 6
+    error_message = "asg_max_size: expected GPU-bound 5 plus 1 spare, got ${output.asg_max_size}"
   }
 }
 

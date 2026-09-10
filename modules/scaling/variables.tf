@@ -72,6 +72,9 @@ variable "consumer_asg_min_size" {
 
 variable "consumer_asg_max_size" {
   type        = number
-  description = "User-provided ASG max size. If null, derived from task_max_count and per-instance capacity."
+  description = <<-EOT
+    User-provided ASG max size. If null, derived from task_max_count and whole-task
+    per-instance capacity, plus one spare instance for rolling deployments.
+  EOT
   default     = null
 }

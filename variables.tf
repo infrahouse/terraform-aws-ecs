@@ -87,7 +87,7 @@ variable "asg_max_size" {
     - GPU capacity (when gpu_count > 0): instances needed to run task_max_count tasks,
       where each instance hosts floor(instance_gpus / gpu_count) tasks. GPUs cannot be
       oversubscribed, so this term usually dominates for GPU workloads.
-    - Minimum headroom: at least asg_min_size + 1 to allow scaling
+    - Deployment headroom: one spare instance beyond the calculated workload capacity
 
     The calculation accounts for:
     - Instance type memory/CPU/GPU (from var.asg_instance_type)
