@@ -165,7 +165,7 @@ resource "aws_ecs_service" "ecs" {
   dynamic "load_balancer" {
     for_each = var.extra_target_groups
     content {
-      target_group_arn = aws_lb_target_group.extra[load_balancer.key].arn
+      target_group_arn = local.extra_target_group_arns[load_balancer.key]
       container_name   = var.service_name
       container_port   = load_balancer.value.container_port
     }

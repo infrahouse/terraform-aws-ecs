@@ -643,14 +643,33 @@ variable "ssl_policy" {
   }
 }
 
-variable "alb_ingress_cidr_blocks" {
+variable "ingress_cidr_blocks" {
   description = <<-EOT
-    List of CIDR blocks allowed to access the ALB.
-    Applied to both the primary listener (via website-pod)
-    and any extra target group listeners.
+    List of IPv4 CIDR blocks allowed to connect to the load balancer (ALB or NLB).
+    Applies to the primary listener and to extra target group listeners.
+    Defaults to ["0.0.0.0/0"].
   EOT
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = null
+
+  validation {
+    condition = var.ingress_cidr_blocks == null ? true : alltrue([
+      for cidr in var.ingress_cidr_blocks : can(cidrnetmask(cidr))
+    ])
+    error_message = <<-EOT
+      ingress_cidr_blocks must contain only IPv4 CIDR blocks (e.g. "10.0.0.0/16").
+      Got: ${jsonencode(var.ingress_cidr_blocks)}
+    EOT
+  }
+}
+
+variable "alb_ingress_cidr_blocks" {
+  description = <<-EOT
+    DEPRECATED: use ingress_cidr_blocks. Will be removed in the next major version.
+    Only applies with lb_type = "alb", and only when ingress_cidr_blocks is not set.
+  EOT
+  type        = list(string)
+  default     = null
 }
 
 variable "load_balancing_algorithm_type" {
@@ -1009,16 +1028,23 @@ variable "extra_target_groups" {
   default     = {}
   description = <<-EOT
     Extra target groups to register with the ECS service.
-    Each entry creates a target group, an ALB listener on
-    listener_port, a port mapping in the task definition, and
-    a load_balancer block on the ECS service.
+    Each entry creates a target group, a load balancer listener
+    on listener_port, an ingress rule for listener_port on the
+    load balancer security group, a port mapping in the task
+    definition, and a load_balancer block on the ECS service.
+    The ingress rule allows the sources in ingress_cidr_blocks.
 
-    Use a map keyed by a descriptive name. This is more stable
-    than a list because reordering does not force service
-    replacement.
+    Use a map keyed by a descriptive name, so entries keep their
+    identity when others are added or removed. Adding or removing
+    entries updates the ECS service in place.
 
-    NOTE: adding or removing entries forces ECS service
-    replacement (AWS API limitation on load_balancer blocks).
+    With lb_type = "alb" the listener is HTTPS with the module's
+    ACM certificate.
+
+    With lb_type = "nlb" the target group, its health check, and
+    the listener are plain TCP. TLS is the application's
+    responsibility. NLB ignores protocol, protocol_version,
+    health_check.path, and health_check.matcher.
 
     protocol_version controls the protocol version for the
     target group. Valid values: "HTTP1" (default when null),
