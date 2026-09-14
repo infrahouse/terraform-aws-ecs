@@ -21,6 +21,21 @@ variable "task_max_count" {
   description = "Highest number of ECS tasks to run."
 }
 
+variable "task_min_count" {
+  type        = number
+  description = "Lowest number of ECS tasks to run."
+}
+
+variable "deployment_minimum_healthy_percent" {
+  type        = number
+  description = "Minimum healthy ECS tasks during a deployment, as a percentage of desired count."
+}
+
+variable "deployment_maximum_percent" {
+  type        = number
+  description = "Maximum running ECS tasks during a deployment, as a percentage of desired count."
+}
+
 variable "container_cpu" {
   type        = number
   description = "CPU units one task reserves."
@@ -74,7 +89,7 @@ variable "consumer_asg_max_size" {
   type        = number
   description = <<-EOT
     User-provided ASG max size. If null, derived from task_max_count and whole-task
-    per-instance capacity, plus one spare instance for rolling deployments.
+    per-instance capacity plus any task slot required for a rolling deployment.
   EOT
   default     = null
 }

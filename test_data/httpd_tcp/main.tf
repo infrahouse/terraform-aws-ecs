@@ -28,6 +28,12 @@ module "httpd" {
   asg_max_size                  = 1
   asg_min_size                  = 1
   container_healthcheck_command = "ls"
+
+  # Keep this single-host fixture stop-first so its explicit cost cap is valid.
+  task_min_count                     = 1
+  task_max_count                     = 1
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
   container_command = [
     "sh", "-c",
     "echo '<html><body><h1>It works!</h1></body></html>' > /usr/local/apache2/htdocs/index.html && httpd-foreground"

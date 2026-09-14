@@ -17,10 +17,9 @@ module "httpd" {
   gpu_count         = var.gpu_count
   asg_instance_type = var.instance_type
 
-  # Headroom so the GPU policy can actually move the service: start at one task on
-  # one node, allow scaling to two. Without this the policy has nothing to do.
+  # Start at one task, scale to two, and allow a third host during rolling deploys.
   asg_min_size       = 1
-  asg_max_size       = 2
+  asg_max_size       = 3
   task_min_count     = 1
   task_max_count     = 2
   task_desired_count = 1

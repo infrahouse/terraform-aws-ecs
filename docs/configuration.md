@@ -230,11 +230,12 @@ Maximum number of EC2 instances.
 
 When not specified, the module automatically calculates the optimal max size based on:
 
-- Memory capacity needed to run `task_max_count` tasks
-- CPU capacity needed to run `task_max_count` tasks
+- Whole memory and CPU task slots needed to run `task_max_count` tasks
 - GPU capacity, when `gpu_count > 0`: `floor(instance_gpus / gpu_count)` tasks fit per
   host, which usually becomes the binding cap
-- Minimum of `asg_min_size + 1` for scaling headroom
+- One additional task slot when the deployment must start a replacement before
+  stopping an old task
+- At least `asg_min_size + 1` for automatic host-scaling headroom
 
 **When to Override:**
 
@@ -247,6 +248,8 @@ When not specified, the module automatically calculates the optimal max size bas
 - ECS tasks failing to place
 - Service degradation during traffic spikes
 - Deployment failures
+
+An explicit value below the calculated task and deployment requirement is rejected.
 
 ```hcl
 # Cost control - cap at 10 instances

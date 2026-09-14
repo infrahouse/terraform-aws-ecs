@@ -11,7 +11,10 @@ variables {
   instance_memory_mib          = 16384
   instance_vcpus               = 4
   instance_gpus                = 0
+  task_min_count               = 1
   task_max_count               = 10
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
   container_cpu                = 200
   container_memory             = 128
   container_memory_reservation = null
@@ -23,14 +26,14 @@ variables {
   consumer_asg_max_size        = null
 }
 
-run "non_gpu_defaults_unchanged" {
+run "automatic_max_preserves_host_scaling_headroom" {
   command = plan
   module { source = "./modules/scaling" }
 
   variables {
     // Small non-GPU instance: mem cap = (4096-1024-256)/128 = 22 -> ceil(10/22)=1;
-    // cpu cap = (2*1024-128)/200 = 9.6 -> ceil(10/9.6)=2; asg_min = subnet_count = 2,
-    // so min+1 = 3 dominates. This matches the pre-refactor behavior.
+    // cpu cap = floor((2*1024-128)/200) = 9. Two hosts provide enough task
+    // slots, but the automatic maximum remains one host above the ASG minimum.
     instance_memory_mib = 4096
     instance_vcpus      = 2
     instance_gpus       = 0
@@ -43,7 +46,7 @@ run "non_gpu_defaults_unchanged" {
   }
   assert {
     condition     = output.asg_max_size == 3
-    error_message = "asg_max_size: expected max(1,2,3)=3, got ${output.asg_max_size}"
+    error_message = "asg_max_size: expected one host of scaling room above the two-host minimum"
   }
 }
 
@@ -69,22 +72,63 @@ run "fractional_memory_capacity_uses_whole_task_slots" {
   }
 }
 
+run "partial_final_host_supplies_rollout_slot" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    // Two tasks fit per host. Nineteen steady tasks plus one replacement need
+    // twenty slots, so ten hosts are sufficient; an eleventh would be waste.
+    instance_memory_mib    = 16384
+    instance_vcpus         = 32
+    task_max_count         = 19
+    container_cpu          = 128
+    container_memory       = 5120
+    daemon_memory_overhead = 512
+  }
+
+  assert {
+    condition     = output.asg_max_size == 10
+    error_message = "asg_max_size: expected 20 task slots on 10 hosts, got ${output.asg_max_size}"
+  }
+}
+
+run "small_instance_keeps_single_task_floor" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    instance_memory_mib    = 1024
+    instance_vcpus         = 2
+    task_min_count         = 1
+    task_max_count         = 1
+    container_memory       = 128
+    daemon_memory_overhead = 256
+    subnet_count           = 1
+  }
+
+  assert {
+    condition     = output.asg_max_size == 2
+    error_message = "asg_max_size: expected the t3.micro-sized configuration to remain valid"
+  }
+}
+
 run "fractional_cpu_capacity_uses_whole_task_slots" {
   command = plan
   module { source = "./modules/scaling" }
 
   variables {
     // A host has 3,968 CPU units after daemon reservations. A 1,400-unit task
-    // fits twice, not 2.83 times. Six tasks need three hosts plus one spare.
+    // fits twice, not 2.83 times. Five tasks plus one replacement need three hosts.
     instance_vcpus   = 4
-    task_max_count   = 6
+    task_max_count   = 5
     container_cpu    = 1400
     container_memory = 128
   }
 
   assert {
-    condition     = output.asg_max_size == 4
-    error_message = "asg_max_size: expected 3 workload hosts plus 1 spare, got ${output.asg_max_size}"
+    condition     = output.asg_max_size == 3
+    error_message = "asg_max_size: expected six task slots on three hosts, got ${output.asg_max_size}"
   }
 }
 
@@ -155,23 +199,52 @@ run "gpu_count_exceeds_host_gpus_rejected" {
   expect_failures = [output.asg_max_size]
 }
 
-run "consumer_asg_max_size_wins" {
+run "gpu_task_on_non_gpu_host_rejected" {
   command = plan
   module { source = "./modules/scaling" }
 
   variables {
-    // Even with a GPU-bound calculation that would yield 100, an explicit
-    // consumer override takes precedence.
+    instance_gpus = 0
+    gpu_count     = 1
+  }
+
+  expect_failures = [output.asg_max_size]
+}
+
+run "consumer_asg_max_size_above_requirement_wins" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    // Ten one-GPU tasks plus one replacement require eleven hosts. A larger
+    // explicit cost ceiling remains valid and wins.
     instance_gpus         = 1
     gpu_count             = 1
-    task_max_count        = 100
-    consumer_asg_max_size = 7
+    task_max_count        = 10
+    consumer_asg_max_size = 12
   }
 
   assert {
-    condition     = output.asg_max_size == 7
-    error_message = "asg_max_size: expected user override 7, got ${output.asg_max_size}"
+    condition     = output.asg_max_size == 12
+    error_message = "asg_max_size: expected user override 12, got ${output.asg_max_size}"
   }
+}
+
+run "consumer_asg_max_size_below_requirement_rejected" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    instance_memory_mib    = 16384
+    instance_vcpus         = 32
+    task_max_count         = 20
+    container_cpu          = 128
+    container_memory       = 5120
+    daemon_memory_overhead = 512
+    consumer_asg_max_size  = 10
+  }
+
+  expect_failures = [output.asg_max_size]
 }
 
 run "consumer_asg_min_size_wins" {
@@ -188,6 +261,118 @@ run "consumer_asg_min_size_wins" {
   }
   assert {
     condition     = output.asg_max_size == 5
-    error_message = "asg_max_size: expected min+1=5, got ${output.asg_max_size}"
+    error_message = "asg_max_size: expected one host of scaling room above the four-host minimum"
   }
+}
+
+run "stop_first_deployment_needs_only_steady_state_slots" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    instance_memory_mib                = 16384
+    instance_vcpus                     = 32
+    task_min_count                     = 20
+    task_max_count                     = 20
+    deployment_minimum_healthy_percent = 95
+    deployment_maximum_percent         = 100
+    container_cpu                      = 128
+    container_memory                   = 5120
+    daemon_memory_overhead              = 512
+  }
+
+  assert {
+    condition     = output.asg_max_size == 10
+    error_message = "asg_max_size: expected ten hosts for a stop-first rollout, got ${output.asg_max_size}"
+  }
+}
+
+run "minimum_healthy_ceil_allows_stop_at_66_percent" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    task_min_count                     = 3
+    task_max_count                     = 3
+    deployment_minimum_healthy_percent = 66
+    deployment_maximum_percent         = 100
+    subnet_count                       = 1
+    consumer_asg_max_size              = 1
+  }
+
+  assert {
+    condition     = output.asg_max_size == 1
+    error_message = "asg_max_size: expected ceil(3 * 66%) = 2 to permit a stop-first deployment"
+  }
+}
+
+run "minimum_healthy_ceil_blocks_stop_at_67_percent" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    task_min_count                     = 3
+    task_max_count                     = 3
+    deployment_minimum_healthy_percent = 67
+    deployment_maximum_percent         = 100
+  }
+
+  expect_failures = [output.asg_max_size]
+}
+
+run "stateful_singleton_stop_first_is_valid" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    task_min_count                     = 1
+    task_max_count                     = 1
+    deployment_minimum_healthy_percent = 0
+    deployment_maximum_percent         = 100
+    subnet_count                       = 1
+    consumer_asg_max_size              = 1
+  }
+
+  assert {
+    condition     = output.asg_max_size == 1
+    error_message = "asg_max_size: expected one host for a stop-first singleton, got ${output.asg_max_size}"
+  }
+}
+
+run "deployment_with_no_first_move_rejected" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    task_min_count                     = 1
+    task_max_count                     = 20
+    deployment_minimum_healthy_percent = 100
+    deployment_maximum_percent         = 150
+  }
+
+  expect_failures = [output.asg_max_size]
+}
+
+run "task_leaving_no_host_memory_rejected" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    instance_memory_mib = 4096
+    container_memory    = 3840
+  }
+
+  expect_failures = [output.asg_max_size]
+}
+
+run "task_too_large_for_host_cpu_rejected" {
+  command = plan
+  module { source = "./modules/scaling" }
+
+  variables {
+    instance_vcpus = 1
+    container_cpu  = 1000
+  }
+
+  expect_failures = [output.asg_max_size]
 }

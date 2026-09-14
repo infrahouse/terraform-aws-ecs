@@ -23,6 +23,11 @@ module "httpd" {
   asg_max_size       = 1
   task_desired_count = 1
 
+  task_min_count                     = 1
+  task_max_count                     = 1
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+
   # The container is only healthy if nvidia-smi succeeds inside it, which
   # proves the GPU device and driver are visible to the container.
   container_healthcheck_command = "nvidia-smi || exit 1"

@@ -87,7 +87,10 @@ variable "asg_max_size" {
     - GPU capacity (when gpu_count > 0): instances needed to run task_max_count tasks,
       where each instance hosts floor(instance_gpus / gpu_count) tasks. GPUs cannot be
       oversubscribed, so this term usually dominates for GPU workloads.
-    - Deployment headroom: one spare instance beyond the calculated workload capacity
+    - Deployment headroom: one additional task slot when ECS must start a replacement
+      before stopping an old task
+    - Host scaling headroom: at least one instance above asg_min_size for the
+      automatically calculated maximum
 
     The calculation accounts for:
     - Instance type memory/CPU/GPU (from var.asg_instance_type)
@@ -110,7 +113,7 @@ variable "asg_max_size" {
     - Service degradation during traffic spikes
     - Deployment failures if new tasks can't be scheduled
 
-    Must be >= asg_min_size when both are explicitly set.
+    Must be >= asg_min_size and the calculated workload/deployment requirement.
 
     Example: asg_max_size = 10  # Cap at 10 instances for cost control
   EOT

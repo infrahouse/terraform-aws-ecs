@@ -16,17 +16,20 @@ locals {
 module "scaling" {
   source = "./modules/scaling"
 
-  instance_memory_mib          = data.aws_ec2_instance_type.backend.memory_size
-  instance_vcpus               = data.aws_ec2_instance_type.backend.default_vcpus
-  instance_gpus                = local.instance_gpus
-  task_max_count               = var.task_max_count
-  container_cpu                = var.container_cpu
-  container_memory             = var.container_memory
-  container_memory_reservation = var.container_memory_reservation
-  gpu_count                    = var.gpu_count
-  daemon_cpu_overhead          = local.daemon_cpu_overhead
-  daemon_memory_overhead       = local.daemon_memory_overhead
-  subnet_count                 = length(var.asg_subnets)
-  consumer_asg_min_size        = var.asg_min_size
-  consumer_asg_max_size        = var.asg_max_size
+  instance_memory_mib                = data.aws_ec2_instance_type.backend.memory_size
+  instance_vcpus                     = data.aws_ec2_instance_type.backend.default_vcpus
+  instance_gpus                      = local.instance_gpus
+  task_min_count                     = var.task_min_count
+  task_max_count                     = var.task_max_count
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  deployment_maximum_percent         = var.deployment_maximum_percent
+  container_cpu                      = var.container_cpu
+  container_memory                   = var.container_memory
+  container_memory_reservation       = var.container_memory_reservation
+  gpu_count                          = var.gpu_count
+  daemon_cpu_overhead                = local.daemon_cpu_overhead
+  daemon_memory_overhead             = local.daemon_memory_overhead
+  subnet_count                       = length(var.asg_subnets)
+  consumer_asg_min_size              = var.asg_min_size
+  consumer_asg_max_size              = var.asg_max_size
 }

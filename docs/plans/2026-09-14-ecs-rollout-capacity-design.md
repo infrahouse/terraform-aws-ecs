@@ -19,7 +19,7 @@ crossing the minimum healthy count or start one replacement without crossing the
 For the maximum task count `T`:
 
 ```text
-memory_slots = floor((instance_memory - OS_memory - daemon_memory) / task_memory_reservation)
+memory_slots = max(1, floor((instance_memory - OS_memory - daemon_memory) / task_memory_reservation))
 cpu_slots    = floor((instance_cpu - daemon_cpu) / task_cpu)
 gpu_slots    = floor(instance_gpus / task_gpus) when GPUs are requested
 S            = minimum active whole-resource slot count
@@ -29,12 +29,17 @@ maximum_running = floor(T * deployment_maximum_percent / 100)
 can_stop_first  = minimum_healthy <= T - 1
 can_start_first = maximum_running >= T + 1
 
-required_slots = T when can_stop_first, otherwise T + 1
-asg_max_size   = max(asg_min_size, ceil(required_slots / S))
+required_slots        = T when can_stop_first, otherwise T + 1
+required_instances    = max(asg_min_size, ceil(required_slots / S))
+automatic_asg_max_size = max(required_instances, asg_min_size + 1)
 ```
 
-Planning must fail when a task cannot fit on one instance, neither a stop-first nor start-first move is allowed for
-any desired count in the configured autoscaling range, or an explicit ASG maximum cannot supply the required slots.
+The one-task memory floor preserves the module's small-instance behavior: the 1 GiB OS value is conservative packing
+headroom, not an ECS reservation. Planning still fails if task and daemon reservations leave no host memory, if
+CPU/GPU reservations cannot fit, if neither a stop-first nor start-first move is allowed for any desired
+count in the configured autoscaling range, or if an explicit ASG maximum cannot supply the required slots.
+The automatic maximum retains one host above `asg_min_size` so the existing host-CPU scaling policy can scale out;
+an explicit maximum may intentionally omit that optional scaling headroom but may not omit required task slots.
 
 For ux-labs, `T = 20`, `S = 2`, minimum healthy is 20, and maximum running is 40. The required capacity is therefore
 21 task slots and `ceil(21 / 2) = 11` instances.
@@ -54,6 +59,12 @@ after the rollout.
 
 After the corrected shared module is released and adopted, remove the ux-labs override so the tested calculation is
 the source of truth.
+
+## Release compatibility
+
+Rejecting an explicit maximum below the declared task/deployment requirement changes the public override contract.
+Release the shared-module validation in the next major version and migrate exact-pinned consumers deliberately; the
+ux-labs value of 11 can ship independently against 8.4.0.
 
 ## Alternatives rejected
 

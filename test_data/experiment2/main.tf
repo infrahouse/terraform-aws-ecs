@@ -31,9 +31,9 @@ module "vllm" {
   # instance-store mounting); give it room.
   root_volume_size = 100
 
-  # One task per node; pin the fleet so the test cost is predictable.
+  # One task per node; the ceiling includes one temporary rolling-deploy host.
   asg_min_size       = var.node_count
-  asg_max_size       = var.node_count
+  asg_max_size       = var.node_count + 1
   task_desired_count = var.node_count
   task_max_count     = var.node_count
 

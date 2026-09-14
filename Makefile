@@ -34,6 +34,11 @@ install-hooks:  ## Install repo hooks
 test:  ## Run tests on the module
 	pytest -xvvs ${TEST_SELECTOR}
 
+.PHONY: test-math
+test-math:  ## Run ASG sizing tests (Terraform >= 1.9)
+	terraform init -backend=false -test-directory=tests
+	terraform test -test-directory=tests
+
 .PHONY: test-keep
 test-keep:  ## Run a test and keep resources
 	pytest -xvvs \

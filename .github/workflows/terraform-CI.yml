@@ -46,6 +46,9 @@ jobs:
         with:
           terraform_wrapper: false
 
+      - name: ASG sizing unit tests
+        run: make test-math
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
