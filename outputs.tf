@@ -53,7 +53,7 @@ output "target_group_arn" {
 
 output "extra_target_group_arns" {
   description = "Map of extra target group ARNs, keyed by the extra_target_groups map keys."
-  value       = { for k, v in aws_lb_target_group.extra : k => v.arn }
+  value       = local.extra_target_group_arns
 }
 
 output "load_balancer_dns_name" {
@@ -88,7 +88,12 @@ output "ssl_listener_arn" {
 
 output "load_balancer_security_groups" {
   description = "Security groups associated with the load balancer"
-  value       = var.lb_type == "alb" ? module.pod[0].load_balancer_security_groups : null
+  # website-pod returns a set and tcp-pod a list. toset() keeps the output a set on both paths.
+  value = (
+    var.lb_type == "alb"
+    ? module.pod[0].load_balancer_security_groups
+    : toset(module.tcp-pod[0].load_balancer_security_groups)
+  )
 }
 
 output "acm_certificate_arn" {

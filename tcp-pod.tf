@@ -5,7 +5,7 @@
 module "tcp-pod" {
   count   = var.lb_type == "nlb" ? 1 : 0
   source  = "registry.infrahouse.com/infrahouse/tcp-pod/aws"
-  version = "1.0.0"
+  version = "1.2.0"
   providers = {
     aws     = aws
     aws.dns = aws.dns
@@ -18,6 +18,7 @@ module "tcp-pod" {
   nlb_healthcheck_interval         = var.healthcheck_interval
   nlb_healthcheck_timeout          = var.healthcheck_timeout
   nlb_listener_port                = var.container_port
+  nlb_ingress_cidr_blocks          = local.ingress_cidr_blocks
   health_check_grace_period        = var.asg_health_check_grace_period
   health_check_type                = "EC2"
   attach_target_group_to_asg       = false

@@ -260,22 +260,11 @@ check "weighted_routing_alb_only" {
   }
 }
 
-# Validate extra_target_groups is only used with ALB
-check "extra_target_groups_alb_only" {
+# Warn about the deprecated alb_ingress_cidr_blocks variable
+check "alb_ingress_cidr_blocks_deprecated" {
   assert {
-    condition = (
-      length(var.extra_target_groups) == 0 ? true : var.lb_type == "alb"
-    )
-    error_message = <<-EOF
-      extra_target_groups is only supported with lb_type = "alb".
-
-      Current configuration:
-        - lb_type:              ${var.lb_type}
-        - extra_target_groups:  ${length(var.extra_target_groups)} entries
-
-      Solution:
-        Either use lb_type = "alb" or remove extra_target_groups.
-    EOF
+    condition     = var.alb_ingress_cidr_blocks == null
+    error_message = "alb_ingress_cidr_blocks is deprecated. Rename it to ingress_cidr_blocks."
   }
 }
 

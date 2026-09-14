@@ -437,6 +437,23 @@ lb_type = "nlb"
 
 > **Note:** With NLB, the `healthcheck_path` variable is ignored. Health checks verify only that a TCP connection can be established on `container_port`.
 
+### `ingress_cidr_blocks`
+
+IPv4 CIDR blocks allowed to connect to the load balancer. Works the same with ALB and NLB, and applies to the
+primary listener and to every `extra_target_groups` listener.
+
+| Default |
+|---------|
+| `null` (allow all, `0.0.0.0/0`) |
+
+```hcl
+# Only allow traffic from the corporate network
+ingress_cidr_blocks = ["10.0.0.0/8"]
+```
+
+> **Deprecated:** `alb_ingress_cidr_blocks` still works with `lb_type = "alb"` and is used when
+> `ingress_cidr_blocks` is not set. Rename it to `ingress_cidr_blocks`; it will be removed in the next major version.
+
 ### `load_balancing_algorithm_type`
 
 ALB target group routing algorithm.
@@ -504,9 +521,11 @@ healthcheck_response_code_matcher = "200-399"
 
 ### `extra_target_groups`
 
-Extra target groups for multi-port containers. Each entry creates an ALB
-listener and target group, adds a port mapping to the task definition, and
-registers the ECS service with the target group.
+Extra target groups for multi-port containers. Each entry creates a target
+group, a listener on `listener_port`, and an ingress rule for `listener_port`
+on the load balancer security group. It also adds a port mapping to the task
+definition and registers the ECS service with the target group. The ingress
+rule allows the sources in `ingress_cidr_blocks`.
 
 | Default |
 |---------|
@@ -520,7 +539,6 @@ extra_target_groups = {
     protocol       = "HTTP"     # optional, default: "HTTP"
     health_check = {            # optional, all fields have defaults
       path     = "/health"      # default: "/"
-      port     = "traffic-port" # default: "traffic-port"
       matcher  = "200"          # default: "200-299"
       interval = 30             # default: 30
       timeout  = 5              # default: 5
@@ -529,8 +547,17 @@ extra_target_groups = {
 }
 ```
 
-> **Note:** Adding or removing entries forces ECS service replacement
-> (AWS API limitation on `load_balancer` blocks).
+What each load balancer type creates:
+
+| | `lb_type = "alb"` | `lb_type = "nlb"` |
+|---|---|---|
+| Listener | HTTPS with the module's ACM certificate | TCP |
+| Health check | All `health_check` fields | TCP, `interval` and `timeout` only |
+| Ignored fields | none | `protocol`, `protocol_version`, `health_check.path`, `health_check.matcher` |
+
+> **Note:** With NLB there is no TLS termination on the load balancer. TLS is the application's responsibility.
+
+Adding or removing entries updates the ECS service in place.
 
 ### `alb_access_log_athena_enabled`
 
@@ -908,7 +935,7 @@ The module includes built-in validation to catch errors early:
 | `vector_aggregator_endpoint` | Required when `enable_vector_agent = true` and no custom config |
 | `deployment_minimum_healthy_percent` | 0-100 |
 | `deployment_maximum_percent` | 100-400 |
-| `extra_target_groups` | Only supported with `lb_type = "alb"` |
+| `ingress_cidr_blocks` | IPv4 CIDR blocks only |
 | `ecs_log_level` | One of: debug, info, warn, error, crit |
 | `cloudwatch_agent_extra_environment` | Variable names must be unique |
 

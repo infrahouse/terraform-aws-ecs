@@ -90,6 +90,14 @@ locals {
   instance_role_policy_attachment = var.lb_type == "alb" ? module.pod[0].instance_role_policy_attachment : module.tcp-pod[0].instance_role_policy_attachment
   acm_certificate_arn             = var.lb_type == "alb" ? module.pod[0].acm_certificate_arn : null
 
+  # Allowed sources for every load balancer listener (primary and extra), on ALB and NLB.
+  ingress_cidr_blocks = (
+    var.ingress_cidr_blocks != null ? var.ingress_cidr_blocks :
+    # alb_ingress_cidr_blocks has never applied to NLB. Keep it that way.
+    var.lb_type == "alb" && var.alb_ingress_cidr_blocks != null ? var.alb_ingress_cidr_blocks :
+    ["0.0.0.0/0"]
+  )
+
   # Config for the containerized (logs) cloudwatch-agent daemon. Kept OUT of
   # /opt/aws/amazon-cloudwatch-agent/etc/ on purpose: on GPU hosts the host-level agent
   # (installed via dnf) owns that directory and its `fetch-config` clobbers any file there,
