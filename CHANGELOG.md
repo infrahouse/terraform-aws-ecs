@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.5.0] - 2026-09-14
+
+### Features
+
+- Support extra_target_groups with lb_type = "nlb"
+
 ## [8.4.0] - 2026-08-14
 
 ### Miscellaneous Tasks
