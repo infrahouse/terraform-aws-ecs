@@ -91,6 +91,7 @@ resource "aws_ecs_task_definition" "ecs" {
         var.container_command != null ? { command : var.container_command } : {},
         var.dockerSecurityOptions != null ? { dockerSecurityOptions : var.dockerSecurityOptions } : {},
         var.container_memory_reservation != null ? { memoryReservation : var.container_memory_reservation } : {},
+        var.container_stop_timeout != null ? { stopTimeout : var.container_stop_timeout } : {},
         var.container_healthcheck_command != null ? {
           healthCheck = {
             "retries" : 3,
