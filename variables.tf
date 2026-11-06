@@ -521,6 +521,21 @@ variable "container_memory_reservation" {
   }
 }
 
+variable "container_stop_timeout" {
+  description = <<-EOT
+    Seconds ECS waits after sending SIGTERM before it kills the container with SIGKILL.
+    Raise it for services that finish in-flight work on SIGTERM and need longer than the default.
+    If null, stopTimeout is omitted and the ECS agent's ECS_CONTAINER_STOP_TIMEOUT applies (30s by default).
+  EOT
+  type        = number
+  default     = null
+
+  validation {
+    condition     = var.container_stop_timeout == null ? true : var.container_stop_timeout >= 2
+    error_message = "container_stop_timeout must be at least 2 seconds when specified. Got: ${var.container_stop_timeout}"
+  }
+}
+
 variable "gpu_count" {
   description = <<-EOT
     Number of GPUs to reserve for the container.

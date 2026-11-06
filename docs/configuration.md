@@ -131,6 +131,20 @@ container_memory_reservation = 256
 container_memory             = 512
 ```
 
+### `container_stop_timeout`
+
+Seconds between SIGTERM and SIGKILL when ECS stops the container (deployments, scale-in, unhealthy task
+replacement). Raise it if the application drains in-flight work on SIGTERM and needs more than 30 seconds.
+
+| Default |
+|---------|
+| `null` (ECS agent default, 30s) |
+
+```hcl
+# Let long-running background jobs finish before the task is killed
+container_stop_timeout = 3000
+```
+
 ### `container_command`
 
 Override the container's default command.
